@@ -1,0 +1,527 @@
+import { eq, and, desc, gte, lte, count, ilike, or } from 'drizzle-orm';
+import { getDb } from '@/db';
+import { documents, branches, users, comments, documentStatusHistory } from '@/db/schema';
+import { 
+  Document, 
+  DocumentWithRelations, 
+  DocumentUploadData, 
+  DocumentFilters, 
+  DocumentStatus,
+  PaginatedResponse,
+  AccessDeniedError,
+  DatabaseError
+} from '@/lib/types';
+import { FileValidationService, FileStorageService } from './file-service';
+import { BranchService } from './branch-service';
+
+export class DocumentService {
+  /**
+   * Create a new document
+   */
+  static async createDocument(
+    file: File,
+    metadata: DocumentUploadData,
+    uploaderId: number
+  ): Promise<Document> {
+    const db = await getDb();
+
+    try {
+      // Validate file
+      const validation = await FileValidationService.validateFile(file);
+      if (!validation.isValid) {
+        throw new Error(`File validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+      }
+
+      // Verify branch exists
+      const branch = await BranchService.getBranchByBaCode(metadata.branchBaCode);
+      if (!branch) {
+        throw new Error(`Branch with BA code ${metadata.branchBaCode} not found`);
+      }
+
+      // Create document record first to get ID
+      const documentData = {
+        filePath: '', // Will be updated after file storage
+        originalFilename: file.name,
+        fileSize: file.size,
+        branchBaCode: metadata.branchBaCode,
+        uploadDate: metadata.mtDate, // Keep as string for date fields
+        mtNumber: metadata.mtNumber,
+        mtDate: metadata.mtDate, // Keep as string for date fields
+        subject: metadata.subject,
+        monthYear: metadata.monthYear,
+        status: DocumentStatus.DRAFT,
+        uploaderId: uploaderId
+      };
+
+      const [newDocument] = await db.insert(documents).values(documentData).returning();
+
+      // Store file with document ID
+      const { filePath } = await FileStorageService.storeFile(file, newDocument.id);
+
+      // Update document with file path
+      const [updatedDocument] = await db
+        .update(documents)
+        .set({ filePath })
+        .where(eq(documents.id, newDocument.id))
+        .returning();
+
+      return updatedDocument;
+    } catch (error) {
+      console.error('Error creating document:', error);
+      throw new DatabaseError('create_document', error as Error);
+    }
+  }
+
+  /**
+   * Get document by ID with relations
+   */
+  static async getDocumentById(id: number): Promise<DocumentWithRelations | null> {
+    const db = await getDb();
+
+    try {
+      const result = await db
+        .select({
+          document: documents,
+          branch: branches,
+          uploader: {
+            id: users.id,
+            username: users.username,
+            firstName: users.firstName,
+            lastName: users.lastName
+          }
+        })
+        .from(documents)
+        .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
+        .leftJoin(users, eq(documents.uploaderId, users.id))
+        .where(eq(documents.id, id))
+        .limit(1);
+
+      if (result.length === 0) return null;
+
+      const { document, branch, uploader } = result[0];
+
+      // Get comments
+      const documentComments = await db
+        .select({
+          comment: comments,
+          user: {
+            id: users.id,
+            username: users.username,
+            firstName: users.firstName,
+            lastName: users.lastName
+          }
+        })
+        .from(comments)
+        .leftJoin(users, eq(comments.userId, users.id))
+        .where(eq(comments.documentId, id))
+        .orderBy(desc(comments.createdAt));
+
+      // Get status history
+      const statusHistory = await db
+        .select({
+          history: documentStatusHistory,
+          user: {
+            id: users.id,
+            username: users.username,
+            firstName: users.firstName,
+            lastName: users.lastName
+          }
+        })
+        .from(documentStatusHistory)
+        .leftJoin(users, eq(documentStatusHistory.changedBy, users.id))
+        .where(eq(documentStatusHistory.documentId, id))
+        .orderBy(desc(documentStatusHistory.createdAt));
+
+      return {
+        ...document,
+        branch: branch || undefined,
+        uploader: uploader || undefined,
+        comments: documentComments.map(({ comment, user }) => ({
+          ...comment,
+          user: user || undefined
+        })) as any,
+        statusHistory: statusHistory.map(({ history }) => history)
+      };
+    } catch (error) {
+      console.error('Error getting document:', error);
+      throw new DatabaseError('get_document', error as Error);
+    }
+  }
+
+  /**
+   * Get documents by branch with pagination and filtering
+   */
+  static async getDocumentsByBranch(
+    branchBaCode: number,
+    filters: DocumentFilters
+  ): Promise<PaginatedResponse<DocumentWithRelations>> {
+    const db = await getDb();
+
+    try {
+      const conditions = [eq(documents.branchBaCode, branchBaCode)];
+
+      // Add status filter
+      if (filters.status && filters.status !== 'all') {
+        conditions.push(eq(documents.status, filters.status));
+      }
+
+      // Add date range filters
+      if (filters.dateFrom) {
+        conditions.push(gte(documents.uploadDate, filters.dateFrom));
+      }
+      if (filters.dateTo) {
+        conditions.push(lte(documents.uploadDate, filters.dateTo));
+      }
+
+      // Add search filter
+      let searchCondition;
+      if (filters.search) {
+        searchCondition = or(
+          ilike(documents.subject, `%${filters.search}%`),
+          ilike(documents.mtNumber, `%${filters.search}%`)
+        );
+      }
+
+      const whereClause = searchCondition 
+        ? and(...conditions, searchCondition)
+        : and(...conditions);
+
+      // Get total count
+      const [{ count: totalCount }] = await db
+        .select({ count: count() })
+        .from(documents)
+        .where(whereClause);
+
+      // Get paginated results
+      const offset = (filters.page - 1) * filters.limit;
+      const result = await db
+        .select({
+          document: documents,
+          branch: branches,
+          uploader: {
+            id: users.id,
+            username: users.username,
+            firstName: users.firstName,
+            lastName: users.lastName
+          }
+        })
+        .from(documents)
+        .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
+        .leftJoin(users, eq(documents.uploaderId, users.id))
+        .where(whereClause)
+        .orderBy(desc(documents.uploadDate))
+        .limit(filters.limit)
+        .offset(offset);
+
+      const documentsWithRelations = result.map(({ document, branch, uploader }) => ({
+        ...document,
+        branch: branch || undefined,
+        uploader: uploader || undefined
+      }));
+
+      return {
+        data: documentsWithRelations,
+        total: totalCount,
+        page: filters.page,
+        limit: filters.limit,
+        totalPages: Math.ceil(totalCount / filters.limit)
+      };
+    } catch (error) {
+      console.error('Error getting documents by branch:', error);
+      throw new DatabaseError('get_documents_by_branch', error as Error);
+    }
+  }
+
+  /**
+   * Update document status
+   */
+  static async updateDocumentStatus(
+    documentId: number,
+    newStatus: DocumentStatus,
+    userId: number,
+    comment?: string
+  ): Promise<Document> {
+    const db = await getDb();
+
+    try {
+      // Get current document
+      const currentDoc = await this.getDocumentById(documentId);
+      if (!currentDoc) {
+        throw new Error('Document not found');
+      }
+
+      // Update document status
+      const [updatedDocument] = await db
+        .update(documents)
+        .set({ 
+          status: newStatus,
+          updatedAt: new Date()
+        })
+        .where(eq(documents.id, documentId))
+        .returning();
+
+      // Record status history
+      await db.insert(documentStatusHistory).values({
+        documentId,
+        fromStatus: currentDoc.status,
+        toStatus: newStatus,
+        changedBy: userId,
+        comment: comment || null
+      });
+
+      return updatedDocument;
+    } catch (error) {
+      console.error('Error updating document status:', error);
+      throw new DatabaseError('update_document_status', error as Error);
+    }
+  }
+
+  /**
+   * Add comment to document
+   */
+  static async addComment(documentId: number, userId: number, content: string): Promise<any> {
+    const db = await getDb();
+
+    try {
+      const [newComment] = await db
+        .insert(comments)
+        .values({
+          documentId,
+          userId,
+          content
+        })
+        .returning();
+
+      // Get comment with user info
+      const result = await db
+        .select({
+          comment: comments,
+          user: {
+            id: users.id,
+            username: users.username,
+            firstName: users.firstName,
+            lastName: users.lastName
+          }
+        })
+        .from(comments)
+        .leftJoin(users, eq(comments.userId, users.id))
+        .where(eq(comments.id, newComment.id))
+        .limit(1);
+
+      return result[0];
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      throw new DatabaseError('add_comment', error as Error);
+    }
+  }
+
+  /**
+   * Delete document
+   */
+  static async deleteDocument(documentId: number): Promise<boolean> {
+    const db = await getDb();
+
+    try {
+      // Get document to get file path
+      const document = await this.getDocumentById(documentId);
+      if (!document) {
+        return false;
+      }
+
+      // Delete from database (cascades to comments and status history)
+      const result = await db
+        .delete(documents)
+        .where(eq(documents.id, documentId))
+        .returning();
+
+      // Delete file from storage
+      if (document.filePath) {
+        await FileStorageService.deleteFile(document.filePath);
+      }
+
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      throw new DatabaseError('delete_document', error as Error);
+    }
+  }
+
+  /**
+   * Check if user can access document
+   */
+  static async canUserAccessDocument(userId: number, documentId: number, userRoles: string[]): Promise<boolean> {
+    try {
+      const document = await this.getDocumentById(documentId);
+      if (!document) return false;
+
+      // Admin can access all documents
+      if (userRoles.includes('admin')) {
+        return true;
+      }
+
+      // Uploader can access their own documents
+      if (document.uploaderId === userId) {
+        return true;
+      }
+
+      // Branch manager can access all documents in R6 region
+      if (userRoles.includes('branch_manager') && document.branch?.regionCode === 'R6') {
+        return true;
+      }
+
+      // Branch user can access documents for their branch
+      if (userRoles.includes('branch_user')) {
+        // Need to implement user-branch mapping here
+        // For now, return false - this should be implemented based on user's branch
+        return false;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error checking document access:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get user's accessible branches based on roles
+   */
+  static async getUserAccessibleBranches(userId: number, userRoles: string[]): Promise<number[]> {
+    try {
+      // Admin can access all branches
+      if (userRoles.includes('admin')) {
+        const allBranches = await BranchService.getAllBranches();
+        return allBranches.map(branch => branch.baCode);
+      }
+
+      // Branch manager can access all R6 branches
+      if (userRoles.includes('branch_manager')) {
+        const allBranches = await BranchService.getAllBranches();
+        return allBranches
+          .filter(branch => branch.regionCode === 'R6')
+          .map(branch => branch.baCode);
+      }
+
+      // For branch users and uploaders, need to implement user-branch mapping
+      // This should be based on the user's PWA data
+      return [];
+    } catch (error) {
+      console.error('Error getting user accessible branches:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get document file for download
+   */
+  static async getDocumentFile(documentId: number): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      const document = await this.getDocumentById(documentId);
+      if (!document) {
+        throw new Error('Document not found');
+      }
+
+      const buffer = await FileStorageService.retrieveFile(document.filePath);
+      
+      return {
+        buffer,
+        filename: document.originalFilename
+      };
+    } catch (error) {
+      console.error('Error getting document file:', error);
+      throw new DatabaseError('get_document_file', error as Error);
+    }
+  }
+
+  /**
+   * Search documents across all accessible branches
+   */
+  static async searchDocuments(
+    searchTerm: string,
+    accessibleBranches: number[],
+    filters: Omit<DocumentFilters, 'search'>
+  ): Promise<PaginatedResponse<DocumentWithRelations>> {
+    const db = await getDb();
+
+    try {
+      if (accessibleBranches.length === 0) {
+        return {
+          data: [],
+          total: 0,
+          page: filters.page,
+          limit: filters.limit,
+          totalPages: 0
+        };
+      }
+
+      const conditions = [
+        or(...accessibleBranches.map(baCode => eq(documents.branchBaCode, baCode)))
+      ];
+
+      // Add status filter
+      if (filters.status && filters.status !== 'all') {
+        conditions.push(eq(documents.status, filters.status));
+      }
+
+      // Add date range filters
+      if (filters.dateFrom) {
+        conditions.push(gte(documents.uploadDate, filters.dateFrom));
+      }
+      if (filters.dateTo) {
+        conditions.push(lte(documents.uploadDate, filters.dateTo));
+      }
+
+      // Add search condition
+      const searchCondition = or(
+        ilike(documents.subject, `%${searchTerm}%`),
+        ilike(documents.mtNumber, `%${searchTerm}%`)
+      );
+
+      const whereClause = and(...conditions, searchCondition);
+
+      // Get total count
+      const [{ count: totalCount }] = await db
+        .select({ count: count() })
+        .from(documents)
+        .where(whereClause);
+
+      // Get paginated results
+      const offset = (filters.page - 1) * filters.limit;
+      const result = await db
+        .select({
+          document: documents,
+          branch: branches,
+          uploader: {
+            id: users.id,
+            username: users.username,
+            firstName: users.firstName,
+            lastName: users.lastName
+          }
+        })
+        .from(documents)
+        .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
+        .leftJoin(users, eq(documents.uploaderId, users.id))
+        .where(whereClause)
+        .orderBy(desc(documents.uploadDate))
+        .limit(filters.limit)
+        .offset(offset);
+
+      const documentsWithRelations = result.map(({ document, branch, uploader }) => ({
+        ...document,
+        branch: branch || undefined,
+        uploader: uploader || undefined
+      }));
+
+      return {
+        data: documentsWithRelations,
+        total: totalCount,
+        page: filters.page,
+        limit: filters.limit,
+        totalPages: Math.ceil(totalCount / filters.limit)
+      };
+    } catch (error) {
+      console.error('Error searching documents:', error);
+      throw new DatabaseError('search_documents', error as Error);
+    }
+  }
+}

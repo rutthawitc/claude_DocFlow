@@ -1,0 +1,204 @@
+// src/auth.ts
+import NextAuth from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
+import { eq } from 'drizzle-orm';
+
+// ประเภทข้อมูลสำหรับผู้ใช้งาน PWA
+interface PWAUserData {
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  costCenter: string;
+  ba: string;
+  part: string;
+  area: string;
+  jobName: string;
+  level: string;
+  divName: string;
+  depName: string;
+  orgName: string;
+  position: string;
+  roles: string[];
+  permissions: string[];
+}
+
+// ขยายประเภทข้อมูล User ของ Auth.js
+declare module 'next-auth' {
+  interface User {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    pwa?: PWAUserData;
+  }
+
+  interface Session {
+    user: User;
+  }
+}
+
+// ขยายประเภทข้อมูล JWT
+declare module 'next-auth/jwt' {
+  interface JWT {
+    sub: string;
+    name?: string | null;
+    email?: string | null;
+    picture?: string | null;
+    pwa?: PWAUserData;
+  }
+}
+
+// หาบทบาทและสิทธิ์ผู้ใช้
+// ไม่ได้ใช้งานในตอนนี้ แต่เก็บไว้สำหรับการใช้งานในอนาคต
+async function getUserRolesAndPermissions(userId: string) {
+  try {
+    // หาบทบาทของผู้ใช้
+    const userRoles = await db.query.userRoles.findMany({
+      where: eq(schema.userRoles.userId, userId),
+      with: {
+        role: true
+      }
+    });
+
+    const roles = userRoles.map(ur => ur.role.name);
+    
+    // หาสิทธิ์ที่เกี่ยวข้องกับบทบาท
+    const permissions: string[] = [];
+    
+    for (const userRole of userRoles) {
+      const rolePermissions = await db.query.rolePermissions.findMany({
+        where: eq(schema.rolePermissions.roleId, userRole.roleId),
+        with: {
+          permission: true
+        }
+      });
+      
+      for (const rp of rolePermissions) {
+        if (!permissions.includes(rp.permission.name)) {
+          permissions.push(rp.permission.name);
+        }
+      }
+    }
+    
+    return { roles, permissions };
+  } catch (error) {
+    console.error('Error getting user roles and permissions:', error);
+    return { roles: ['user'], permissions: [] };
+  }
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  basePath: '/api/auth',
+  debug: process.env.NODE_ENV === 'development',
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  pages: {
+    signIn: '/login',
+    error: '/error',
+  },
+  providers: [
+    Credentials({
+      name: 'PWA Credentials',
+      credentials: {
+        username: { label: 'Username', type: 'text' },
+        pwd: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        // ตรวจสอบข้อมูลที่ได้รับมา
+        const username = credentials?.username;
+        const password = credentials?.pwd;
+
+        if (!username || !password) {
+          console.log('Username or password missing');
+          return null;
+        }
+
+        try {
+          // เรียก API เพื่อตรวจสอบการเข้าสู่ระบบ
+          const response = await fetch('https://intranet.pwa.co.th/login/webservice_login6.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username,
+              pwd: password,
+            }),
+          });
+
+          if (!response.ok) {
+            console.error('API error, status:', response.status);
+            return null;
+          }
+
+          const data = await response.json();
+          console.log('PWA API response:', JSON.stringify(data, null, 2));
+          
+          // ตรวจสอบผลตอบกลับจาก API
+          if (!data?.user || data.success === false) {
+            console.error('Login failed or no user data returned from API');
+            return null;
+          }
+
+          console.log('API login success');
+          
+          // สร้างข้อมูลผู้ใช้ตามโครงสร้างที่กำหนด
+          return {
+            id: data.user.username,
+            name: `${data.user.firstName} ${data.user.lastName}`,
+            email: data.user.email || `${data.user.username}@example.com`,
+            image: null,
+            pwa: {
+              username: data.user.username,
+              firstName: data.user.firstName,
+              lastName: data.user.lastName,
+              email: data.user.email || `${data.user.username}@example.com`,
+              costCenter: data.user.costCenter || '',
+              ba: data.user.ba || '',
+              part: data.user.part || '',
+              area: data.user.area || '',
+              jobName: data.user.jobName || '',
+              level: data.user.level || '',
+              divName: data.user.divName || '',
+              depName: data.user.depName || '',
+              orgName: data.user.orgName || '',
+              position: data.user.position || '',
+              roles: ['user'], // default role
+              permissions: [], // default permissions
+            }
+          };
+        } catch (error) {
+          console.error('Authentication error:', error);
+          return null;
+        }
+      })
+    })
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
+        token.pwa = user.pwa;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.sub;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.image = token.picture;
+        session.user.pwa = token.pwa as PWAUserData;
+      }
+      return session;
+    },
+  },
+});

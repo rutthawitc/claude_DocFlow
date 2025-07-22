@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm db:generate:*)",
+      "Bash(pnpm db:push:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose:*)",
+      "Bash(pnpm docflow:init:*)",
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(pnpm build:*)",
+      "Bash(docker run:*)",
+      "Bash(docker container:*)",
+      "Bash(docker start:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(mv:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "Bash(curl:*)",
+      "Bash(PORT=3002 pnpm dev)",
+      "Bash(HOSTNAME=0.0.0.0 pnpm dev)",
+      "Bash(PORT=3001 pnpm dev)",
+      "Bash(open:*)",
+      "Bash(pnpm next:*)",
+      "Bash(node:*)",
+      "Bash(rm:*)",
+      "Bash(pnpm db:seed-roles:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}
