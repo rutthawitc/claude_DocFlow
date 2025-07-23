@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
       );
     }
 
-    const userId = parseInt(session.user.id);
+    const username = session.user.id;
     const documentId = parseInt(params.id);
 
     if (isNaN(documentId)) {
@@ -34,12 +34,31 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
       );
     }
 
+    // Get user from database by username to get the actual numeric ID
+    const { getDb } = await import('@/db');
+    const { users } = await import('@/db/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const db = await getDb();
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, username)
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 401 }
+      );
+    }
+    
+    const actualUserId = user.id;
+
     // Get user roles for access check
-    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(userId);
-    console.log(`Document access check: userId=${userId}, documentId=${documentId}, roles=${JSON.stringify(roles)}`);
+    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(actualUserId);
+    console.log(`Document access check: userId=${actualUserId}, documentId=${documentId}, roles=${JSON.stringify(roles)}`);
 
     // Check if user can access this document
-    const canAccess = await DocumentService.canUserAccessDocument(userId, documentId, roles);
+    const canAccess = await DocumentService.canUserAccessDocument(actualUserId, documentId, roles);
     console.log(`Access result: ${canAccess}`);
     if (!canAccess) {
       return NextResponse.json(
