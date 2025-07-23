@@ -3,9 +3,9 @@ import { redirect } from 'next/navigation';
 import { DocumentsList } from '@/components/docflow/documents-list';
 
 interface BranchDocumentsPageProps {
-  params: {
+  params: Promise<{
     branchBaCode: string;
-  };
+  }>;
 }
 
 async function getBranchName(branchBaCode: number) {
@@ -39,8 +39,9 @@ async function getBranchName(branchBaCode: number) {
 }
 
 export default async function BranchDocumentsPage({ 
-  params 
+  params: paramsPromise 
 }: BranchDocumentsPageProps) {
+  const params = await paramsPromise;
   const session = await auth();
   
   if (!session?.user) {

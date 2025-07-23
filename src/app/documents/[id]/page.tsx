@@ -3,14 +3,15 @@ import { redirect } from 'next/navigation';
 import { DocumentDetail } from '@/components/docflow/document-detail';
 
 interface DocumentDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function DocumentDetailPage({ 
-  params 
+  params: paramsPromise 
 }: DocumentDetailPageProps) {
+  const params = await paramsPromise;
   const session = await auth();
   
   if (!session?.user) {

@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
     const { roles } = await DocFlowAuth.getUserRolesAndPermissions(userId);
 
     // Check if user can access this document
-    const canAccess = await DocumentService.canUserAccessDocument(documentId, documentId, roles);
+    const canAccess = await DocumentService.canUserAccessDocument(userId, documentId, roles);
     if (!canAccess) {
       return NextResponse.json(
         { success: false, error: 'Access denied to this document' },

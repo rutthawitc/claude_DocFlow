@@ -8,13 +8,14 @@ import { ActivityLogger } from '@/lib/services/activity-logger';
 import { ApiResponse } from '@/lib/types';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
     commentId: string;
-  };
+  }>;
 }
 
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params: paramsPromise }: RouteParams) {
+  const params = await paramsPromise;
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -121,7 +122,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params: paramsPromise }: RouteParams) {
+  const params = await paramsPromise;
   try {
     const session = await auth();
     if (!session?.user?.id) {

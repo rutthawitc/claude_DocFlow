@@ -6,12 +6,13 @@ import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 import { ApiResponse } from '@/lib/types';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params: paramsPromise }: RouteParams) {
+  const params = await paramsPromise;
   try {
     // Check authentication
     const session = await auth();
