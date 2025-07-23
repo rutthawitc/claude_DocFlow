@@ -55,11 +55,9 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
 
     // Get user roles for access check
     const { roles } = await DocFlowAuth.getUserRolesAndPermissions(actualUserId);
-    console.log(`Document access check: userId=${actualUserId}, documentId=${documentId}, roles=${JSON.stringify(roles)}`);
 
     // Check if user can access this document
     const canAccess = await DocumentService.canUserAccessDocument(actualUserId, documentId, roles);
-    console.log(`Access result: ${canAccess}`);
     if (!canAccess) {
       return NextResponse.json(
         { success: false, error: 'Access denied to this document' },
@@ -79,7 +77,7 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
     // Log document view
     const { ipAddress, userAgent } = ActivityLogger.extractRequestMetadata(request);
     await ActivityLogger.logDocumentView(
-      userId,
+      actualUserId,
       documentId,
       document.branchBaCode,
       ipAddress,
