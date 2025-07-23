@@ -106,7 +106,8 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
   }
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params: paramsPromise }: RouteParams) {
+  const params = await paramsPromise;
   try {
     // Check authentication
     const session = await auth();
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const userId = parseInt(session.user.id);
+    const username = session.user.id;
     const documentId = parseInt(params.id);
 
     if (isNaN(documentId)) {
@@ -127,8 +128,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Get user from database by username to get the actual numeric ID
+    const { getDb } = await import('@/db');
+    const { users } = await import('@/db/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const db = await getDb();
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, username)
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 401 }
+      );
+    }
+    
+    const actualUserId = user.id;
+
     // Check comment read permission
-    const hasReadPermission = await DocFlowAuth.hasPermission(userId, DOCFLOW_PERMISSIONS.COMMENTS_READ);
+    const hasReadPermission = await DocFlowAuth.hasPermission(actualUserId, DOCFLOW_PERMISSIONS.COMMENTS_READ);
     if (!hasReadPermission) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to read comments' },
