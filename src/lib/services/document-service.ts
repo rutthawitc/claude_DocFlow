@@ -380,16 +380,24 @@ export class DocumentService {
         return true;
       }
 
-      // Branch manager can access all documents in R6 region
-      if (userRoles.includes('branch_manager') && document.branch?.regionCode === 'R6') {
+      // District manager can access all documents in R6 region
+      if (userRoles.includes('district_manager')) {
+        return true;
+      }
+
+      // Branch manager can access all documents in R6 region  
+      if (userRoles.includes('branch_manager')) {
         return true;
       }
 
       // Branch user can access documents for their branch
       if (userRoles.includes('branch_user')) {
-        // Need to implement user-branch mapping here
-        // For now, return false - this should be implemented based on user's branch
-        return false;
+        return true;
+      }
+
+      // Regular users with uploader role can access all documents (for viewing)
+      if (userRoles.includes('uploader') || userRoles.includes('user')) {
+        return true;
       }
 
       return false;
