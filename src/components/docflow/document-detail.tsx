@@ -27,6 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { StatusManagement } from './status-management';
 import { CommentSystem } from './comment-system';
+import { PDFViewer } from './pdf-viewer';
 import { DocumentStatus } from '@/lib/types';
 
 interface Document {
@@ -373,32 +374,10 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
           </Card>
 
           {/* PDF Viewer */}
-          <Card>
-            <CardHeader>
-              <CardTitle>เอกสาร PDF</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-lg overflow-hidden">
-                <iframe
-                  src={`/api/documents/${documentId}/download`}
-                  className="w-full h-[600px]"
-                  title="PDF Document"
-                >
-                  <p>
-                    เบราว์เซอร์ของคุณไม่รองรับการแสดง PDF โปรด
-                    <a 
-                      href={`/api/documents/${documentId}/download`} 
-                      className="text-blue-500 underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      คลิกที่นี่เพื่อดาวน์โหลด
-                    </a>
-                  </p>
-                </iframe>
-              </div>
-            </CardContent>
-          </Card>
+          <PDFViewer
+            documentId={document.id}
+            filename={document.originalFilename}
+          />
 
           {/* Comments Section */}
           <CommentSystem

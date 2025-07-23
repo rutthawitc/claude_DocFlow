@@ -3,6 +3,16 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* react-pdf styles */
+.react-pdf__Page {
+  margin: 0 auto !important;
+}
+
+.react-pdf__Page__canvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
 /* Self-hosted Sarabun font */
 @font-face {
   font-family: 'Sarabun';
