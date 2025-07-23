@@ -229,7 +229,7 @@ export class FileStorageService {
       const key = crypto.scryptSync(this.ENCRYPTION_KEY, 'salt', 32);
       const iv = crypto.randomBytes(16);
       
-      const cipher = crypto.createCipher(algorithm, key);
+      const cipher = crypto.createCipheriv(algorithm, key, iv);
       const encrypted = Buffer.concat([
         iv,
         cipher.update(buffer),
@@ -258,7 +258,7 @@ export class FileStorageService {
       const iv = encrypted.slice(0, 16);
       const encryptedData = encrypted.slice(16);
       
-      const decipher = crypto.createDecipher(algorithm, key);
+      const decipher = crypto.createDecipheriv(algorithm, key, iv);
       const decrypted = Buffer.concat([
         decipher.update(encryptedData),
         decipher.final()

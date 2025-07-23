@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,16 @@ interface Branch {
 interface DocumentUploadProps {
   branches: Branch[];
   onUploadSuccess?: (document: unknown) => void;
+  editDocument?: {
+    id: number;
+    mtNumber: string;
+    mtDate: string;
+    subject: string;
+    monthYear: string;
+    branchBaCode: number;
+    originalFilename: string;
+  };
+  onEditComplete?: () => void;
 }
 
 interface FormData {
@@ -37,7 +47,7 @@ interface FormData {
   monthYear: string;
 }
 
-export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProps) {
+export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEditComplete }: DocumentUploadProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -45,13 +55,35 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    branchBaCode: '',
-    mtNumber: '',
-    mtDate: '',
-    subject: '',
-    monthYear: ''
+    branchBaCode: editDocument?.branchBaCode.toString() || '',
+    mtNumber: editDocument?.mtNumber || '',
+    mtDate: editDocument?.mtDate || '',
+    subject: editDocument?.subject || '',
+    monthYear: editDocument?.monthYear || ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isEditMode, setIsEditMode] = useState(!!editDocument);
+
+  // Update form data when editDocument prop changes
+  useEffect(() => {
+    if (editDocument) {
+      setIsEditMode(true);
+      setFormData({
+        branchBaCode: editDocument.branchBaCode.toString(),
+        mtNumber: editDocument.mtNumber,
+        mtDate: editDocument.mtDate,
+        subject: editDocument.subject,
+        monthYear: editDocument.monthYear
+      });
+      // Clear any existing file selection when switching to edit mode
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } else {
+      setIsEditMode(false);
+    }
+  }, [editDocument]);
 
   // File validation
   const validateFile = useCallback((file: File) => {
@@ -121,7 +153,7 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
   const validateForm = useCallback(() => {
     const newErrors: Record<string, string> = {};
 
-    if (!selectedFile) {
+    if (!selectedFile && !isEditMode) {
       newErrors.file = 'Please select a PDF file';
     }
 
@@ -147,7 +179,7 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [selectedFile, formData]);
+  }, [selectedFile, formData, isEditMode]);
 
   // Generate month/year options
   const generateMonthYearOptions = () => {
@@ -173,7 +205,22 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
   const handleSubmit = async (e: React.FormEvent, action: 'save' | 'send') => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    // For edit mode, validate form without file if not changed
+    if (isEditMode && !selectedFile) {
+      // Validate form without file requirement for edit
+      const newErrors: Record<string, string> = {};
+      if (!formData.branchBaCode) newErrors.branchBaCode = 'Please select a branch';
+      if (!formData.mtNumber) newErrors.mtNumber = 'MT Number is required';
+      if (!formData.mtDate) newErrors.mtDate = 'MT Date is required';
+      if (!formData.subject) newErrors.subject = 'Subject is required';
+      if (!formData.monthYear) newErrors.monthYear = 'Month/Year is required';
+      
+      setErrors(newErrors);
+      if (Object.keys(newErrors).length > 0) {
+        toast.error('Please fix the form errors');
+        return;
+      }
+    } else if (!validateForm()) {
       toast.error('Please fix the form errors');
       return;
     }
@@ -181,66 +228,133 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
     setUploading(true);
 
     try {
-      const uploadFormData = new FormData();
-      uploadFormData.append('file', selectedFile!);
-      uploadFormData.append('branchBaCode', formData.branchBaCode);
-      uploadFormData.append('mtNumber', formData.mtNumber);
-      uploadFormData.append('mtDate', formData.mtDate);
-      uploadFormData.append('subject', formData.subject);
-      uploadFormData.append('monthYear', formData.monthYear);
+      if (isEditMode && editDocument) {
+        // Update existing document
+        const updateData = {
+          branchBaCode: parseInt(formData.branchBaCode),
+          mtNumber: formData.mtNumber,
+          mtDate: formData.mtDate,
+          subject: formData.subject,
+          monthYear: formData.monthYear
+        };
 
-      const response = await fetch('/api/documents', {
-        method: 'POST',
-        credentials: 'include',
-        body: uploadFormData
-      });
+        let response;
+        if (selectedFile) {
+          // Update with new file
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', selectedFile);
+          uploadFormData.append('branchBaCode', formData.branchBaCode);
+          uploadFormData.append('mtNumber', formData.mtNumber);
+          uploadFormData.append('mtDate', formData.mtDate);
+          uploadFormData.append('subject', formData.subject);
+          uploadFormData.append('monthYear', formData.monthYear);
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        toast.success(
-          action === 'save' 
-            ? 'Document saved as draft successfully' 
-            : 'Document uploaded and sent successfully'
-        );
-        
-        // Reset form
-        setSelectedFile(null);
-        setFormData({
-          branchBaCode: '',
-          mtNumber: '',
-          mtDate: '',
-          subject: '',
-          monthYear: ''
-        });
-        
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-
-        // Update status if sending
-        if (action === 'send' && result.data) {
-          await fetch(`/api/documents/${result.data.id}/status`, {
+          response = await fetch(`/api/documents/${editDocument.id}`, {
+            method: 'PUT',
+            credentials: 'include',
+            body: uploadFormData
+          });
+        } else {
+          // Update metadata only
+          response = await fetch(`/api/documents/${editDocument.id}`, {
             method: 'PATCH',
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ 
-              status: 'sent_to_branch',
-              comment: 'Document sent to branch'
-            })
+            body: JSON.stringify(updateData)
           });
         }
 
-        onUploadSuccess?.(result.data);
-        router.push('/documents');
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          toast.success('อัปเดตเอกสารสำเร็จ');
+          
+          // Update status if sending
+          if (action === 'send' && result.data) {
+            await fetch(`/api/documents/${result.data.id}/status`, {
+              method: 'PATCH',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ 
+                status: 'sent_to_branch',
+                comment: 'Document sent to branch'
+              })
+            });
+          }
+
+          onEditComplete?.();
+          onUploadSuccess?.(result.data);
+          router.push('/documents');
+        } else {
+          throw new Error(result.error || 'Update failed');
+        }
       } else {
-        throw new Error(result.error || 'Upload failed');
+        // Create new document
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', selectedFile!);
+        uploadFormData.append('branchBaCode', formData.branchBaCode);
+        uploadFormData.append('mtNumber', formData.mtNumber);
+        uploadFormData.append('mtDate', formData.mtDate);
+        uploadFormData.append('subject', formData.subject);
+        uploadFormData.append('monthYear', formData.monthYear);
+
+        const response = await fetch('/api/documents', {
+          method: 'POST',
+          credentials: 'include',
+          body: uploadFormData
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          toast.success(
+            action === 'save' 
+              ? 'Document saved as draft successfully' 
+              : 'Document uploaded and sent successfully'
+          );
+          
+          // Reset form
+          setSelectedFile(null);
+          setFormData({
+            branchBaCode: '',
+            mtNumber: '',
+            mtDate: '',
+            subject: '',
+            monthYear: ''
+          });
+          
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+
+          // Update status if sending
+          if (action === 'send' && result.data) {
+            await fetch(`/api/documents/${result.data.id}/status`, {
+              method: 'PATCH',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ 
+                status: 'sent_to_branch',
+                comment: 'Document sent to branch'
+              })
+            });
+          }
+
+          onUploadSuccess?.(result.data);
+          router.push('/documents');
+        } else {
+          throw new Error(result.error || 'Upload failed');
+        }
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error(error instanceof Error ? error.message : 'Upload failed');
+      console.error(isEditMode ? 'Update error:' : 'Upload error:', error);
+      toast.error(error instanceof Error ? error.message : (isEditMode ? 'Update failed' : 'Upload failed'));
     } finally {
       setUploading(false);
     }
@@ -259,13 +373,23 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="h-6 w-6" />
-          อัปโหลดเอกสาร
+          {isEditMode ? 'แก้ไขเอกสาร' : 'อัปโหลดเอกสาร'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* File Upload Area */}
         <div className="space-y-4">
-          <Label>ไฟล์เอกสาร PDF *</Label>
+          <Label>ไฟล์เอกสาร PDF {isEditMode ? '(เว้นว่างหากไม่ต้องการเปลี่ยนไฟล์)' : '*'}</Label>
+          
+          {isEditMode && editDocument && !selectedFile && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-blue-700">
+                <FileText className="h-4 w-4" />
+                <span className="text-sm font-medium">ไฟล์ปัจจุบัน: {editDocument.originalFilename}</span>
+              </div>
+              <p className="text-xs text-blue-600 mt-1">อัปโหลดไฟล์ใหม่เพื่อเปลี่ยนแปลง หรือเว้นว่างเพื่อใช้ไฟล์เดิม</p>
+            </div>
+          )}
           
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
@@ -273,6 +397,8 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
                 ? 'border-blue-500 bg-blue-50' 
                 : errors.file 
                 ? 'border-red-300 bg-red-50' 
+                : isEditMode && !selectedFile
+                ? 'border-gray-200 bg-gray-50'
                 : 'border-gray-300 hover:border-gray-400'
             }`}
             onDragEnter={handleDrag}
@@ -323,6 +449,7 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
                 </div>
                 <p className="text-sm text-gray-500">
                   รองรับไฟล์ PDF เท่านั้น (สูงสุด 10MB)
+                  {isEditMode && <><br />อัปโหลดไฟล์ใหม่เพื่อเปลี่ยนแปลงไฟล์เดิม</>}
                 </p>
               </div>
             )}
@@ -446,7 +573,7 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
               {uploading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              บันทึก (Draft)
+              {isEditMode ? 'บันทึกการแก้ไข' : 'บันทึก (Draft)'}
             </Button>
             
             <Button
@@ -458,8 +585,30 @@ export function DocumentUpload({ branches, onUploadSuccess }: DocumentUploadProp
               {uploading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              ส่งเอกสาร
+              {isEditMode ? 'บันทึกและส่งเอกสาร' : 'ส่งเอกสาร'}
             </Button>
+            
+            {isEditMode && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setIsEditMode(false);
+                  setSelectedFile(null);
+                  setFormData({
+                    branchBaCode: '',
+                    mtNumber: '',
+                    mtDate: '',
+                    subject: '',
+                    monthYear: ''
+                  });
+                  onEditComplete?.();
+                }}
+                disabled={uploading}
+              >
+                ยกเลิก
+              </Button>
+            )}
           </div>
         </form>
       </CardContent>

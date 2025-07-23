@@ -209,10 +209,11 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : undefined;
     const dateTo = searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined;
 
-    // Get user's accessible branches
-    const accessibleBranches = await DocumentService.getUserAccessibleBranches(actualUserId, []);
+    // Get user roles and accessible branches
+    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(actualUserId);
+    const accessibleBranches = await DocumentService.getUserAccessibleBranches(actualUserId, roles);
 
-    if (accessibleBranches.length === 0) {
+    if (accessibleBranches.length === 0 && status !== 'draft') {
       return NextResponse.json({
         success: true,
         data: {
@@ -225,14 +226,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Search documents
-    const result = await DocumentService.searchDocuments(search, accessibleBranches, {
-      status: status as any,
-      dateFrom,
-      dateTo,
-      page,
-      limit
-    });
+    // For draft documents, get user's own documents regardless of branch access
+    let result;
+    if (status === 'draft') {
+      result = await DocumentService.getUserOwnDocuments(actualUserId, {
+        status: status as any,
+        dateFrom,
+        dateTo,
+        page,
+        limit,
+        search
+      });
+    } else {
+      // Search documents
+      result = await DocumentService.searchDocuments(search, accessibleBranches, {
+        status: status as any,
+        dateFrom,
+        dateTo,
+        page,
+        limit
+      });
+    }
 
     return NextResponse.json({
       success: true,

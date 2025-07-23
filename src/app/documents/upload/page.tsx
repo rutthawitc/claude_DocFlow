@@ -1,8 +1,12 @@
-import { auth } from '@/auth';
-import { redirect } from 'next/navigation';
-import { DocumentUpload } from '@/components/docflow/document-upload';
+'use client';
 
-async function getBranches() {
+import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { DocumentUpload } from '@/components/docflow/document-upload';
+import { DraftedDocumentsList } from '@/components/docflow/drafted-documents-list';
+
+function getBranches() {
   // In a real application, you would fetch this from your API
   // For now, we'll return the R6 branches
   const R6_BRANCHES = [
@@ -33,29 +37,90 @@ async function getBranches() {
   return R6_BRANCHES;
 }
 
-export default async function DocumentUploadPage() {
-  const session = await auth();
+interface DraftDocument {
+  id: number;
+  mtNumber: string;
+  mtDate: string;
+  subject: string;
+  monthYear: string;
+  branchBaCode: number;
+  originalFilename: string;
+}
+
+export default function DocumentUploadPage() {
+  const { data: session, status } = useSession();
+  const [branches, setBranches] = useState([]);
+  const [editDocument, setEditDocument] = useState<DraftDocument | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session?.user) {
+      redirect('/login');
+      return;
+    }
+
+    // Check if user has upload permission
+    const userRoles = session.user.pwa?.roles || [];
+    const canUpload = userRoles.includes('uploader') || 
+                     userRoles.includes('admin') ||
+                     userRoles.includes('user'); // Allow regular users to upload
+
+    if (!canUpload) {
+      redirect('/documents');
+      return;
+    }
+  }, [session, status]);
+
+  // Load branches
+  useEffect(() => {
+    setBranches(getBranches());
+  }, []);
+
+  const handleEditDocument = (document: any) => {
+    setEditDocument({
+      id: document.id,
+      mtNumber: document.mtNumber,
+      mtDate: document.mtDate || new Date().toISOString().split('T')[0], // Fallback to today
+      subject: document.subject,
+      monthYear: document.monthYear,
+      branchBaCode: document.branchBaCode,
+      originalFilename: document.originalFilename
+    });
+  };
+
+  const handleEditComplete = () => {
+    setEditDocument(null);
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleUploadSuccess = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  if (status === 'loading') {
+    return <div className="container mx-auto px-4 py-6">Loading...</div>;
+  }
+
   if (!session?.user) {
-    redirect('/login');
+    return null;
   }
-
-  // Check if user has upload permission
-  const userRoles = session.user.pwa?.roles || [];
-  const canUpload = userRoles.includes('uploader') || 
-                   userRoles.includes('admin') ||
-                   userRoles.includes('user'); // Allow regular users to upload
-
-  if (!canUpload) {
-    redirect('/documents');
-  }
-
-  const branches = await getBranches();
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Document Upload Form */}
       <DocumentUpload 
         branches={branches}
+        editDocument={editDocument}
+        onEditComplete={handleEditComplete}
+        onUploadSuccess={handleUploadSuccess}
+      />
+      
+      {/* Drafted Documents List */}
+      <DraftedDocumentsList 
+        onEditDocument={handleEditDocument}
+        refreshTrigger={refreshTrigger}
       />
     </div>
   );

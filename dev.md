@@ -1,6 +1,6 @@
 # Development Status - DocFlow Project
 
-## Current Status (2025-07-22)
+## Current Status (2025-07-23)
 
 ### 🎉 SYSTEM FULLY OPERATIONAL ✅
 
@@ -21,7 +21,9 @@
 
 #### Frontend Components ✅ WORKING
 - **Document Upload**: Drag & drop PDF upload with validation - **FULLY FUNCTIONAL**
+- **Drafted Documents Management**: Personal draft documents with edit/delete - **NEW FEATURE ✅**
 - **Documents List**: Branch overview with document statistics (22 สาขา) - **WORKING**
+- **Branch Sorting**: Sort branches by BA code by default - **NEW FEATURE ✅**
 - **Document Detail**: PDF viewer with comments system
 - **Status Management**: Workflow-based status updates
 - **Comment System**: Real-time commenting with edit/delete
@@ -141,20 +143,51 @@ The DocFlow system is now fully functional:
 
 ---
 
+### 🆕 Latest Updates (2025-07-23)
+
+#### ✅ **New Features Added Today**
+1. **Drafted Documents Management**
+   - Personal draft documents list on upload page
+   - Edit functionality for existing drafts with form pre-population ✅ **FULLY WORKING**
+   - Delete capability for user's own drafts
+   - Auto-refresh after operations
+
+2. **Enhanced User Experience**
+   - Sort branches by BA code by default on main documents page
+   - Hide draft documents from public branch overview (keep private)
+   - Fixed branch access permissions for district managers
+
+3. **Technical Improvements**
+   - Fixed Next.js 15 async params compatibility across all routes
+   - Resolved crypto encryption deprecation warnings
+   - Fixed user ID mapping inconsistencies
+   - Enhanced branch access validation with fallback logic
+
+4. **Bug Fixes**
+   - Fixed "Access denied to this branch" error for district managers
+   - Resolved foreign key constraint violations on document deletion
+   - Fixed document status update permissions
+   - Corrected activity logging order for deletions
+   - **RESOLVED**: Edit button functionality - form now properly updates when editing documents ✅
+
+---
+
 ### 📊 Project Completion Status
 
-**Tasks Completed: 13/22 (59%)** ✅
+**Tasks Completed: 15/22 (68%)** ✅
 **Core System: 100% Functional** ✅
 
 #### ✅ Completed Core Features:
-- Document upload and storage system
-- Role-based branch access control  
+- Document upload and storage system with draft management
+- Role-based branch access control with district manager permissions
 - PWA authentication integration
-- Branch overview dashboard (22 สาขา)
+- Branch overview dashboard (22 สาขา) sorted by BA code
 - User profile with correct role display
-- Database schema and relationships
-- API endpoints for all operations
+- Database schema and relationships with proper foreign key handling
+- API endpoints for all operations (CRUD + status updates)
 - Docker deployment configuration
+- **NEW**: Personal draft documents with edit/delete functionality
+- **NEW**: Enhanced branch access validation and permissions
 
 #### 🔄 Optional Enhancement Features (Remaining 9 tasks):
 - PDF viewer component
@@ -172,10 +205,11 @@ The DocFlow system is now fully functional:
 
 **The DocFlow system is now production-ready for core document management workflows!**
 
-#### Recent Git Commit:
-- **Commit Hash**: `d6bc03f`
-- **Files**: 189 files, 26,952+ lines of code
-- **Status**: Complete system committed to version control
+#### Recent Git Status:
+- **Latest Commit**: `19edbc8` - fix: resolve duplicate ID errors and implement self-hosted Sarabun fonts
+- **Previous Commit**: `d6bc03f` - feat: Complete DocFlow document management system implementation
+- **Untracked Files**: `uploads/doc_2_1753198826405_57271b0f.pdf` (uploaded document)
+- **Status**: System stable with recent font fixes applied
 
 #### Deployment Options:
 1. **Local Development**: `pnpm next dev` ✅ WORKING

@@ -54,7 +54,7 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'total' | 'pending'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'total' | 'pending' | 'ba'>('ba');
 
   // Fetch branches with document counts
   const fetchBranches = async () => {
@@ -110,6 +110,8 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
           return b.documentCounts.total - a.documentCounts.total;
         case 'pending':
           return b.documentCounts.sent_to_branch - a.documentCounts.sent_to_branch;
+        case 'ba':
+          return a.baCode - b.baCode;
         case 'name':
         default:
           return a.name.localeCompare(b.name, 'th');
@@ -233,9 +235,10 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
               <Filter className="h-4 w-4 text-gray-500" />
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'name' | 'total' | 'pending')}
+                onChange={(e) => setSortBy(e.target.value as 'name' | 'total' | 'pending' | 'ba')}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value="ba">เรียงตาม BA</option>
                 <option value="name">เรียงตามชื่อ</option>
                 <option value="total">เรียงตามจำนวนเอกสาร</option>
                 <option value="pending">เรียงตามเอกสารค้าง</option>
@@ -309,11 +312,7 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
                         </div>
                         
                         <div className="grid grid-cols-2 gap-1 text-xs">
-                          {branch.documentCounts.draft > 0 && (
-                            <Badge variant="outline" className={STATUS_COLORS.draft}>
-                              Draft: {branch.documentCounts.draft}
-                            </Badge>
-                          )}
+                          {/* Draft documents are not shown in main overview - they appear only in upload page */}
                           {branch.documentCounts.sent_to_branch > 0 && (
                             <Badge variant="outline" className={STATUS_COLORS.sent_to_branch}>
                               ส่งกลับ: {branch.documentCounts.sent_to_branch}

@@ -1,4 +1,4 @@
-import { eq, count, and } from 'drizzle-orm';
+import { eq, count, and, ne } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { branches, documents } from '@/db/schema';
 import { Branch, BranchWithDocumentCounts, PWAUserData, DocumentCounts, R6_BRANCHES } from '@/lib/types';
@@ -90,19 +90,22 @@ export class BranchService {
   }
 
   /**
-   * Get document counts for a branch
+   * Get document counts for a branch (excluding draft documents)
    */
   static async getBranchDocumentCounts(branchBaCode: number): Promise<DocumentCounts> {
     const db = await getDb();
     
-    // Get counts by status
+    // Get counts by status, excluding draft documents
     const statusCounts = await db
       .select({
         status: documents.status,
         count: count()
       })
       .from(documents)
-      .where(eq(documents.branchBaCode, branchBaCode))
+      .where(and(
+        eq(documents.branchBaCode, branchBaCode),
+        ne(documents.status, 'draft')
+      ))
       .groupBy(documents.status);
 
     // Initialize counts

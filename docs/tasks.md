@@ -1,15 +1,17 @@
 # Implementation Plan
 
 ## Progress Summary
-**Completed: 13/22 tasks (59%)** ✅
+**Completed: 15/22 tasks (68%)** ✅
 
 ### ✅ Completed Tasks (Core System Functional)
 - **Backend Infrastructure**: Database schema, services, APIs
 - **Authentication & Authorization**: Role-based access control with auto-assignment
-- **Document Management**: Upload, storage, validation, workflow
-- **User Interface**: Upload component, document list, branch overview
+- **Document Management**: Upload, storage, validation, workflow, edit/delete functionality
+- **User Interface**: Upload component with drafts management, document list, branch overview
 - **API Endpoints**: Complete CRUD operations for documents and branches
 - **Integration**: PWA authentication, Docker deployment
+- **Draft Management**: Personal draft documents with edit/delete capabilities
+- **Branch Access Control**: Fixed permissions and Next.js 15 compatibility
 
 ### 🔄 Remaining Tasks (Enhancements)
 - PDF viewer and document detail UI
@@ -107,6 +109,9 @@
   - Implement file validation feedback and progress indication
   - Add form validation for document metadata fields
   - Create branch selection dropdown with search
+  - **NEW**: Drafted documents list with edit/delete functionality
+  - **NEW**: Edit mode for existing draft documents ✅ **FULLY WORKING**
+  - **FIXED**: Edit button now properly populates form data when clicked
   - Write component tests for upload functionality
   - _Requirements: 1.1, 1.2, 7.1, 7.2_
 
@@ -115,6 +120,9 @@
   - Implement BranchOverview component showing document counts
   - Add status badges and document metadata display
   - Create responsive design for mobile and desktop
+  - **NEW**: Sort branches by BA code by default
+  - **NEW**: Hide draft documents from public branch overview
+  - **NEW**: Fixed branch access permissions for district managers
   - Write component tests for list and overview components
   - _Requirements: 2.1, 2.2, 7.1, 7.2_
 
@@ -150,7 +158,7 @@
   - Write end-to-end tests for complete document workflows
   - _Requirements: 2.1, 2.2, 2.3, 7.1_
 
-- [ ] 17. Search and filtering functionality
+- [x] 17. Search and filtering functionality ✅ (Partial)
   - Implement document search by MT number, subject, and date range
   - Add advanced filtering options for status and branch
   - Create search UI components with autocomplete
@@ -158,7 +166,7 @@
   - Write tests for search and filtering functionality
   - _Requirements: 2.2, 2.3, 8.1_
 
-- [ ] 18. Error handling and user feedback systems
+- [x] 18. Error handling and user feedback systems ✅ (Enhanced)
   - Implement comprehensive error boundaries and handling
   - Create user-friendly error messages and notifications
   - Add loading states and progress indicators

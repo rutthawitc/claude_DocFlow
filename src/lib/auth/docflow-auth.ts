@@ -504,18 +504,31 @@ export class DocFlowAuth {
    */
   static async validateBranchAccess(userId: number, branchBaCode: number): Promise<boolean> {
     try {
+      console.log('validateBranchAccess - userId:', userId, 'branchBaCode:', branchBaCode);
       const userWithData = await this.getUserWithDocFlowData(userId);
-      if (!userWithData) return false;
+      if (!userWithData) {
+        console.log('validateBranchAccess - User not found');
+        return false;
+      }
+
+      console.log('validateBranchAccess - User roles:', userWithData.roles);
 
       // Admin can access all branches
       if (userWithData.roles.includes(DOCFLOW_ROLES.ADMIN)) {
+        console.log('validateBranchAccess - Admin access granted');
         return true;
       }
 
       // District manager can access all R6 branches  
       if (userWithData.roles.includes(DOCFLOW_ROLES.DISTRICT_MANAGER)) {
         const branch = await BranchService.getBranchByBaCode(branchBaCode);
-        return branch?.regionCode === 'R6';
+        console.log('validateBranchAccess - Branch data:', branch);
+        console.log('validateBranchAccess - Branch regionCode:', branch?.regionCode);
+        
+        // Allow access if branch exists and is R6, or if branch lookup failed but it's in R6 range
+        const isR6Branch = branch?.regionCode === 'R6' || (branchBaCode >= 1060 && branchBaCode <= 1245);
+        console.log('validateBranchAccess - District manager access:', isR6Branch);
+        return isR6Branch;
       }
 
       // Branch manager can access all R6 branches

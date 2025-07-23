@@ -5,12 +5,13 @@ import { DocFlowAuth } from '@/lib/auth/docflow-auth';
 import { DocumentStatus, ApiResponse } from '@/lib/types';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     branchBaCode: string;
-  };
+  }>;
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params: paramsPromise }: RouteParams) {
+  const params = await paramsPromise;
   try {
     // Check authentication
     const session = await auth();
@@ -21,8 +22,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const userId = parseInt(session.user.id);
+    const username = session.user.id;
     const branchBaCode = parseInt(params.branchBaCode);
+
+    // Get user from database by username to get the actual numeric ID
+    const { getDb } = await import('@/db');
+    const { users } = await import('@/db/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const db = await getDb();
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, username)
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 401 }
+      );
+    }
+    
+    const actualUserId = user.id;
 
     if (isNaN(branchBaCode)) {
       return NextResponse.json(
@@ -32,8 +52,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Validate branch access
-    const hasAccessToBranch = await DocFlowAuth.validateBranchAccess(userId, branchBaCode);
+    console.log('Branch API - Validating access for user:', actualUserId, 'to branch:', branchBaCode);
+    const hasAccessToBranch = await DocFlowAuth.validateBranchAccess(actualUserId, branchBaCode);
+    console.log('Branch API - Access validation result:', hasAccessToBranch);
+    
     if (!hasAccessToBranch) {
+      console.log('Branch API - Access denied to branch:', branchBaCode);
       return NextResponse.json(
         { success: false, error: 'Access denied to this branch' },
         { status: 403 }

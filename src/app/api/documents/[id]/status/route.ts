@@ -6,12 +6,13 @@ import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 import { DocumentStatus, ApiResponse } from '@/lib/types';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params: paramsPromise }: RouteParams) {
+  const params = await paramsPromise;
   try {
     // Check authentication
     const session = await auth();
@@ -22,8 +23,27 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const userId = parseInt(session.user.id);
+    const username = session.user.id;
     const documentId = parseInt(params.id);
+
+    // Get user from database by username to get the actual numeric ID
+    const { getDb } = await import('@/db');
+    const { users } = await import('@/db/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const db = await getDb();
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, username)
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 401 }
+      );
+    }
+    
+    const actualUserId = user.id;
 
     if (isNaN(documentId)) {
       return NextResponse.json(
@@ -48,7 +68,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check update status permission
-    const hasUpdatePermission = await DocFlowAuth.hasPermission(userId, DOCFLOW_PERMISSIONS.DOCUMENTS_UPDATE_STATUS);
+    const hasUpdatePermission = await DocFlowAuth.hasPermission(actualUserId, DOCFLOW_PERMISSIONS.DOCUMENTS_UPDATE_STATUS);
     if (!hasUpdatePermission) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to update document status' },
@@ -66,10 +86,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get user roles for access check
-    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(userId);
+    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(actualUserId);
 
     // Check if user can access this document
-    const canAccess = await DocumentService.canUserAccessDocument(userId, documentId, roles);
+    const canAccess = await DocumentService.canUserAccessDocument(actualUserId, documentId, roles);
     if (!canAccess) {
       return NextResponse.json(
         { success: false, error: 'Access denied to this document' },
@@ -96,14 +116,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const updatedDocument = await DocumentService.updateDocumentStatus(
       documentId,
       status,
-      userId,
+      actualUserId,
       comment
     );
 
     // Log status update
     const { ipAddress, userAgent } = ActivityLogger.extractRequestMetadata(request);
     await ActivityLogger.logStatusUpdate(
-      userId,
+      actualUserId,
       documentId,
       currentDocument.branchBaCode,
       currentDocument.status,
