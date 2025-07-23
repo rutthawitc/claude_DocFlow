@@ -226,16 +226,7 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
     
     const actualUserId = user.id;
 
-    // Check update permission
-    const hasUpdatePermission = await DocFlowAuth.hasPermission(actualUserId, DOCFLOW_PERMISSIONS.DOCUMENTS_UPDATE);
-    if (!hasUpdatePermission) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions to update documents' },
-        { status: 403 }
-      );
-    }
-
-    // Get existing document
+    // Get existing document first to check ownership
     const existingDocument = await DocumentService.getDocumentById(documentId);
     if (!existingDocument) {
       return NextResponse.json(
@@ -244,11 +235,13 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       );
     }
 
-    // Check if user can update this document (owner or admin)
+    // Check if user can update this document (owner or admin or has upload permission)
     const isOwner = existingDocument.uploaderId === actualUserId;
     const isAdmin = await DocFlowAuth.hasRole(actualUserId, 'admin');
+    const hasUploadPermission = await DocFlowAuth.hasPermission(actualUserId, DOCFLOW_PERMISSIONS.DOCUMENTS_UPLOAD);
     
-    if (!isOwner && !isAdmin) {
+    // Allow document updates if user is owner, admin, or has upload permissions
+    if (!isOwner && !isAdmin && !hasUploadPermission) {
       return NextResponse.json(
         { success: false, error: 'Access denied - you can only update your own documents' },
         { status: 403 }
@@ -370,16 +363,7 @@ export async function PUT(request: NextRequest, { params: paramsPromise }: Route
     
     const actualUserId = user.id;
 
-    // Check update permission
-    const hasUpdatePermission = await DocFlowAuth.hasPermission(actualUserId, DOCFLOW_PERMISSIONS.DOCUMENTS_UPDATE);
-    if (!hasUpdatePermission) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions to update documents' },
-        { status: 403 }
-      );
-    }
-
-    // Get existing document
+    // Get existing document first to check ownership
     const existingDocument = await DocumentService.getDocumentById(documentId);
     if (!existingDocument) {
       return NextResponse.json(
@@ -388,11 +372,13 @@ export async function PUT(request: NextRequest, { params: paramsPromise }: Route
       );
     }
 
-    // Check if user can update this document (owner or admin)
+    // Check if user can update this document (owner or admin or has upload permission)
     const isOwner = existingDocument.uploaderId === actualUserId;
     const isAdmin = await DocFlowAuth.hasRole(actualUserId, 'admin');
+    const hasUploadPermission = await DocFlowAuth.hasPermission(actualUserId, DOCFLOW_PERMISSIONS.DOCUMENTS_UPLOAD);
     
-    if (!isOwner && !isAdmin) {
+    // Allow document updates if user is owner, admin, or has upload permissions
+    if (!isOwner && !isAdmin && !hasUploadPermission) {
       return NextResponse.json(
         { success: false, error: 'Access denied - you can only update your own documents' },
         { status: 403 }
