@@ -20,17 +20,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 
+// Support both nested and flat comment structures
 interface Comment {
-  id: number;
-  content: string;
-  createdAt: string;
-  userId: number;
-  user: {
+  // Nested structure (from API)
+  comment?: {
+    id: number;
+    documentId: number;
+    userId: number;
+    content: string;
+    createdAt: string;
+  };
+  user?: {
     id: number;
     username: string;
     firstName: string;
     lastName: string;
   };
+  // Flat structure (legacy/alternative)
+  id?: number;
+  documentId?: number;
+  userId?: number;
+  content?: string;
+  createdAt?: string;
 }
 
 interface CommentSystemProps {
@@ -40,6 +51,28 @@ interface CommentSystemProps {
   currentUserId?: number;
   refreshInterval?: number; // in milliseconds, default 10000 (10s)
 }
+
+// Helper functions to safely access comment data
+const getCommentId = (comment: Comment): number => {
+  return comment.comment?.id ?? comment.id ?? 0;
+};
+
+const getCommentContent = (comment: Comment): string => {
+  return comment.comment?.content ?? comment.content ?? '';
+};
+
+const getCommentCreatedAt = (comment: Comment): string => {
+  return comment.comment?.createdAt ?? comment.createdAt ?? '';
+};
+
+const getCommentUser = (comment: Comment) => {
+  return comment.user ?? {
+    id: 0,
+    username: '',
+    firstName: 'Unknown',
+    lastName: 'User'
+  };
+};
 
 export function CommentSystem({ 
   documentId, 
@@ -69,8 +102,9 @@ export function CommentSystem({
     if (!silent) setIsLoading(true);
     
     try {
-      const response = await fetch(`/api/documents/${documentId}/comments`, {
+      const response = await fetch(`/api/documents/${documentId}/comments?t=${Date.now()}`, {
         credentials: 'include',
+        cache: 'no-cache', // Force fresh data
       });
 
       if (response.ok) {
@@ -149,8 +183,8 @@ export function CommentSystem({
 
   // Handle comment edit
   const startEdit = (comment: Comment) => {
-    setEditingCommentId(comment.id);
-    setEditText(comment.content);
+    setEditingCommentId(getCommentId(comment));
+    setEditText(getCommentContent(comment));
   };
 
   const cancelEdit = () => {
@@ -249,8 +283,13 @@ export function CommentSystem({
               <span>กำลังโหลดความคิดเห็น...</span>
             </div>
           ) : comments.length > 0 ? (
-            comments.map((comment, index) => (
-              <div key={comment.id} className="space-y-2 group">
+            comments.map((comment, index) => {
+              // Debug: Log comment structure
+              if (index === 0) {
+                console.log('Comment structure:', comment);
+              }
+              return (
+              <div key={getCommentId(comment) || `comment-${index}`} className="space-y-2 group">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -258,10 +297,35 @@ export function CommentSystem({
                     </div>
                     <div>
                       <p className="text-sm font-medium">
-                        {comment.user.firstName} {comment.user.lastName}
+                        {getCommentUser(comment).firstName} {getCommentUser(comment).lastName}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {format(new Date(comment.createdAt), 'dd/MM/yyyy HH:mm', { locale: th })}
+                        {(() => {
+                          try {
+                            // Check if createdAt exists
+                            const createdAt = getCommentCreatedAt(comment);
+                            if (!createdAt) {
+                              console.warn('Missing createdAt for comment ID:', getCommentId(comment), comment);
+                              return 'ไม่ระบุเวลา';
+                            }
+                            
+                            // Handle both string and Date objects
+                            const date = typeof createdAt === 'string' 
+                              ? new Date(createdAt) 
+                              : createdAt;
+                            
+                            // Check if date is valid
+                            if (!date || isNaN(date.getTime())) {
+                              console.warn('Invalid date for comment ID:', getCommentId(comment), 'createdAt:', createdAt);
+                              return 'วันที่ไม่ถูกต้อง';
+                            }
+                            
+                            return format(date, 'dd/MM/yyyy HH:mm', { locale: th });
+                          } catch (error) {
+                            console.error('Date formatting error for comment ID:', getCommentId(comment), error, 'createdAt:', createdAt);
+                            return 'ข้อผิดพลาดวันที่';
+                          }
+                        })()}
                       </p>
                     </div>
                   </div>
@@ -279,7 +343,7 @@ export function CommentSystem({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => deleteComment(comment.id)}
+                        onClick={() => deleteComment(getCommentId(comment))}
                         className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -288,7 +352,7 @@ export function CommentSystem({
                   )}
                 </div>
 
-                {editingCommentId === comment.id ? (
+                {editingCommentId === getCommentId(comment) ? (
                   <div className="space-y-2 ml-10">
                     <Textarea
                       value={editText}
@@ -307,7 +371,7 @@ export function CommentSystem({
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => saveEdit(comment.id)}
+                        onClick={() => saveEdit(getCommentId(comment))}
                         disabled={!editText.trim()}
                       >
                         <Check className="h-4 w-4 mr-1" />
@@ -317,13 +381,14 @@ export function CommentSystem({
                   </div>
                 ) : (
                   <div className="ml-10">
-                    <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{getCommentContent(comment)}</p>
                   </div>
                 )}
 
                 {index < comments.length - 1 && <Separator />}
               </div>
-            ))
+              );
+            })
           ) : (
             <div className="text-center py-8 text-gray-500">
               <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
