@@ -125,7 +125,14 @@ export function StatusManagement({
         break;
       
       case DocumentStatus.ACKNOWLEDGED:
-        // No further actions available
+        if (isBranchUser) {
+          actions.push({
+            status: DocumentStatus.SENT_BACK_TO_DISTRICT,
+            label: 'ส่งกลับเขต',
+            variant: 'outline',
+            requiresComment: true
+          });
+        }
         break;
       
       case DocumentStatus.SENT_BACK_TO_DISTRICT:

@@ -148,6 +148,12 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
   const handleDownload = async () => {
     if (!document) return;
 
+    // Check if we're in the browser environment
+    if (typeof window === 'undefined') {
+      console.error('Download can only be triggered on the client side');
+      return;
+    }
+
     try {
       const response = await fetch(`/api/documents/${documentId}/download`, {
         credentials: 'include'
@@ -156,13 +162,13 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = document.originalFilename;
-        document.body.appendChild(a);
-        a.click();
+        const link = window.document.createElement('a');
+        link.href = url;
+        link.download = document.originalFilename;
+        window.document.body.appendChild(link);
+        link.click();
         window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        window.document.body.removeChild(link);
         toast.success('ดาวน์โหลดเรียบร้อย');
       } else {
         throw new Error('Download failed');
