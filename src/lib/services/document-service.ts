@@ -156,7 +156,10 @@ export class DocumentService {
             new Date().toISOString(), // fallback for missing dates
           user: user || undefined
         })) as any,
-        statusHistory: statusHistory.map(({ history }) => history)
+        statusHistory: statusHistory.map(({ history, user }) => ({
+          ...history,
+          changedByUser: user || undefined
+        }))
       };
     } catch (error) {
       console.error('Error getting document:', error);

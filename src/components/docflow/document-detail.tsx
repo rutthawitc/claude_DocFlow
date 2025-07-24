@@ -427,7 +427,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
                 <div className="space-y-3">
                   {document.statusHistory.map((history) => (
                     <div key={history.id} className="border-l-2 border-gray-200 pl-3">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center justify-between mb-1">
                         <Badge 
                           variant="outline" 
                           className={STATUS_COLORS[history.toStatus as keyof typeof STATUS_COLORS]}
@@ -435,17 +435,19 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
                           {STATUS_LABELS[history.toStatus as keyof typeof STATUS_LABELS]}
                         </Badge>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        {format(new Date(history.createdAt), 'dd/MM/yyyy HH:mm', { locale: th })}
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-gray-500">
+                          {format(new Date(history.createdAt), 'dd/MM/yyyy HH:mm', { locale: th })}
+                        </p>
+                        {history.changedByUser && (
+                          <p className="text-xs font-medium text-gray-700">
+                            โดย {history.changedByUser.firstName} {history.changedByUser.lastName}
+                          </p>
+                        )}
+                      </div>
                       {history.comment && (
                         <p className="text-sm text-gray-600 mt-1">
                           {history.comment}
-                        </p>
-                      )}
-                      {history.changedByUser && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          โดย: {history.changedByUser.firstName} {history.changedByUser.lastName}
                         </p>
                       )}
                     </div>
