@@ -34,7 +34,15 @@
       "Bash(pnpm db:seed-roles:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(pnpm remove:*)"
+      "Bash(pnpm remove:*)",
+      "Bash(npm ls:*)",
+      "Bash(cp:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm why:*)",
+      "Bash(psql:*)"
     ],
     "deny": []
   }

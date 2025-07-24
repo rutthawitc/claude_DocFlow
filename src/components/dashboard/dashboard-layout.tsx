@@ -48,13 +48,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: <LayoutDashboard className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
     },
     {
-      title: "โปรไฟล์",
+      title: "โปรไฟล์", 
       href: "/profile",
       icon: <User className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
     },
     {
       title: "รายงาน",
-      href: "/reports",
+      href: "/reports", 
       icon: <BarChart3 className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
     },
     {
@@ -98,7 +98,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="bg-primary h-10 w-10 rounded-md flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-lg">A</span>
                 </div>
-                {!isMinimal && <div className="font-bold text-xl">Acme Inc</div>}
+                {!isMinimal && <div className="font-bold text-xl">PWA DocFlow</div>}
               </div>
               <button 
                 onClick={toggleMinimal}

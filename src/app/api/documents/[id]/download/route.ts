@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
       );
     }
 
-    const userId = parseInt(session.user.id);
+    const username = session.user.id; // This is actually the username (11008)
     const documentId = parseInt(params.id);
 
     if (isNaN(documentId)) {
@@ -32,6 +32,25 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
         { status: 400 }
       );
     }
+
+    // Get user from database by username to get the actual numeric ID
+    const { getDb } = await import('@/db');
+    const { users } = await import('@/db/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const db = await getDb();
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, username)
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 401 }
+      );
+    }
+    
+    const userId = user.id; // This is the numeric database ID
 
     // Get document
     const document = await DocumentService.getDocumentById(documentId);
@@ -58,14 +77,19 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
     const { buffer, filename } = await DocumentService.getDocumentFile(documentId);
 
     // Log download
-    const { ipAddress, userAgent } = ActivityLogger.extractRequestMetadata(request);
-    await ActivityLogger.logDocumentDownload(
-      userId,
-      documentId,
-      document.branchBaCode,
-      ipAddress,
-      userAgent
-    );
+    try {
+      const { ipAddress, userAgent } = ActivityLogger.extractRequestMetadata(request);
+      await ActivityLogger.logDocumentDownload(
+        userId,
+        documentId,
+        document.branchBaCode,
+        ipAddress,
+        userAgent
+      );
+    } catch (logError) {
+      console.error('Failed to log document download:', logError);
+      // Continue with download even if logging fails
+    }
 
     // Return file as response
     return new Response(buffer, {

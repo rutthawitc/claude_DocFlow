@@ -103,7 +103,13 @@ export class DocumentService {
       // Get comments
       const documentComments = await db
         .select({
-          comment: comments,
+          comment: {
+            id: comments.id,
+            documentId: comments.documentId,
+            userId: comments.userId,
+            content: comments.content,
+            createdAt: comments.createdAt
+          },
           user: {
             id: users.id,
             username: users.username,
@@ -138,6 +144,16 @@ export class DocumentService {
         uploader: uploader || undefined,
         comments: documentComments.map(({ comment, user }) => ({
           ...comment,
+          createdAt: comment.createdAt ? 
+            (() => {
+              try {
+                return new Date(comment.createdAt).toISOString();
+              } catch (error) {
+                console.error('Error formatting existing comment createdAt:', error);
+                return new Date().toISOString();
+              }
+            })() : 
+            new Date().toISOString(), // fallback for missing dates
           user: user || undefined
         })) as any,
         statusHistory: statusHistory.map(({ history }) => history)
@@ -289,13 +305,20 @@ export class DocumentService {
           documentId,
           userId,
           content
+          // Let database handle createdAt with defaultNow()
         })
         .returning();
 
       // Get comment with user info
       const result = await db
         .select({
-          comment: comments,
+          comment: {
+            id: comments.id,
+            documentId: comments.documentId,
+            userId: comments.userId,
+            content: comments.content,
+            createdAt: comments.createdAt
+          },
           user: {
             id: users.id,
             username: users.username,
@@ -308,7 +331,25 @@ export class DocumentService {
         .where(eq(comments.id, newComment.id))
         .limit(1);
 
-      return result[0];
+      // Ensure createdAt is properly formatted as ISO string
+      const commentResult = result[0];
+      
+      if (commentResult && commentResult.comment) {
+        // Handle potential null/undefined createdAt
+        if (commentResult.comment.createdAt) {
+          try {
+            commentResult.comment.createdAt = new Date(commentResult.comment.createdAt).toISOString();
+          } catch (error) {
+            console.error('Error formatting comment createdAt:', error);
+            commentResult.comment.createdAt = new Date().toISOString(); // fallback to current time
+          }
+        } else {
+          console.warn('Comment created without createdAt, using current time');
+          commentResult.comment.createdAt = new Date().toISOString();
+        }
+      }
+
+      return commentResult;
     } catch (error) {
       console.error('Error adding comment:', error);
       throw new DatabaseError('add_comment', error as Error);

@@ -344,7 +344,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             
             // Create user data for session with actual roles
             const userData = {
-              id: userId,
+              id: userId, // Keep the username as session ID (like '11008')
               name: `${data.firstname || ''} ${data.lastname || ''}`.trim(),  // สร้าง display name จาก firstName และ lastName
               email: userEmail,
               image: null,

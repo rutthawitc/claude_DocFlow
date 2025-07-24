@@ -50,7 +50,9 @@ export class ActivityLogger {
       return result;
     } catch (error) {
       console.error('Error logging activity:', error);
-      throw new Error('Failed to log activity');
+      // Don't throw error - log and continue
+      // Activity logging failure shouldn't break the main functionality
+      return null;
     }
   }
 

@@ -110,7 +110,7 @@ export const comments = pgTable('comments', {
   documentId: integer('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
   userId: integer('user_id').notNull().references(() => users.id),
   content: text('content').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: false }).defaultNow().notNull(),
 });
 
 // Activity logs table (extended)

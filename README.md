@@ -1,28 +1,66 @@
-# PWA Boilerplate with Next.js 15 and Auth.js
+# DocFlow Document Management System
 
-A modern, production-ready Progressive Web Application (PWA) boilerplate built with Next.js 15, pnpm, and Auth.js (formerly NextAuth.js) for authentication. This project includes a complete role-based access control (RBAC) system with user management, role management, and permission management.
+A modern, production-ready document management system built with Next.js 15, featuring advanced PDF viewing, role-based access control, and seamless integration with external PWA authentication systems.
 
 ## Features
 
+### 📄 **Document Management**
+- 📁 **PDF Document Upload** with drag & drop interface
+- 🔍 **Advanced PDF Viewer** with zoom, rotation, fullscreen, and navigation
+- 📝 **Draft Management** - Personal drafts with edit/delete capabilities  
+- 🏢 **Branch-based Organization** - Documents organized by PWA branches (22 สาขา)
+- 💬 **Comment System** - Real-time document commenting and collaboration
+- 📊 **Document Workflow** - Status tracking (draft → sent → acknowledged → sent_back)
+- 📥 **File Download** - Secure PDF download with access control
+
+### 🔐 **Authentication & Security**
 - 🚀 **Next.js 15** with App Router and React 19
 - 🔐 **External PWA Authentication** with Auth.js integration
-- 👥 **Complete RBAC System** with users, roles, and permissions
+- 👥 **Advanced RBAC System** - DocFlow-specific roles and permissions
+- 🏗️ **Auto Role Assignment** - Automatic role assignment based on PWA user data
+- 🛡️ **Branch Access Control** - District and branch-level permissions
+- 📋 **Activity Logging** - Complete audit trail for all operations
+
+### 🛠️ **Technical Features**
 - 🗄️ **PostgreSQL Database** with Drizzle ORM
 - 🎨 **Modern UI** with shadcn/ui and Tailwind CSS v4
 - 📱 **PWA Support** for offline capabilities
 - 🐳 **Docker Ready** with docker-compose setup
 - 🔄 **TypeScript** for type safety
-- �️* **Security Headers** and CSRF protection
+- 🛡️ **Security Headers** and CSRF protection
+- 📱 **Mobile Responsive** - Optimized for all device sizes
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript
+- **PDF Viewer**: react-pdf with PDF.js 5.3.31 (client-side rendering)
 - **Styling**: Tailwind CSS v4, shadcn/ui, Radix UI
 - **Authentication**: Auth.js v5.0.0-beta with external PWA API
 - **Database**: PostgreSQL 17.5, Drizzle ORM
 - **Package Manager**: pnpm v10.11.0+
 - **Containerization**: Docker with Alpine Linux
 - **Development**: Turbopack, ESLint
+
+## PDF Viewer Features
+
+The DocFlow system includes a professional-grade PDF viewer with the following capabilities:
+
+- **📖 Document Display**: High-quality PDF rendering with react-pdf
+- **🔍 Zoom Controls**: 25% to 300% zoom with precise scaling
+- **📄 Page Navigation**: Previous/next page controls with page indicator
+- **🔄 Rotation**: 90-degree rotation controls (left/right)
+- **🖥️ Fullscreen Mode**: Immersive fullscreen viewing experience
+- **📥 Download**: Direct PDF download functionality
+- **📱 Mobile Responsive**: Touch-friendly controls for mobile devices
+- **🎯 Client-Side Rendering**: SSR-safe with dynamic imports to prevent DOMMatrix errors
+- **⚡ Local Workers**: Self-hosted PDF.js workers for reliable performance
+- **🔒 Secure Access**: Permission-based document access control
+
+### Technical Implementation
+- **Component Architecture**: Wrapper + client-only PDF viewer to handle SSR
+- **Worker Management**: Version-matched PDF.js workers (5.3.31) stored locally
+- **Error Handling**: Comprehensive error handling with Thai language support
+- **Loading States**: Professional loading indicators and error messages
 
 ## Project Structure
 
