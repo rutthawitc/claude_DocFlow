@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { DocumentUpload } from '@/components/docflow/document-upload';
 import { DraftedDocumentsList } from '@/components/docflow/drafted-documents-list';
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 
 function getBranches() {
   // In a real application, you would fetch this from your API
@@ -108,20 +109,22 @@ export default function DocumentUploadPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Document Upload Form */}
-      <DocumentUpload 
-        branches={branches}
-        editDocument={editDocument}
-        onEditComplete={handleEditComplete}
-        onUploadSuccess={handleUploadSuccess}
-      />
-      
-      {/* Drafted Documents List */}
-      <DraftedDocumentsList 
-        onEditDocument={handleEditDocument}
-        refreshTrigger={refreshTrigger}
-      />
-    </div>
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Document Upload Form */}
+        <DocumentUpload 
+          branches={branches}
+          editDocument={editDocument}
+          onEditComplete={handleEditComplete}
+          onUploadSuccess={handleUploadSuccess}
+        />
+        
+        {/* Drafted Documents List */}
+        <DraftedDocumentsList 
+          onEditDocument={handleEditDocument}
+          refreshTrigger={refreshTrigger}
+        />
+      </div>
+    </DashboardLayout>
   );
 }

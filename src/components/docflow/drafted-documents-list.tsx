@@ -18,6 +18,7 @@ import {
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { th } from 'date-fns/locale';
+import { DeleteDraftModal } from '@/components/ui/delete-draft-modal';
 
 interface DraftDocument {
   id: number;
@@ -42,6 +43,8 @@ export function DraftedDocumentsList({ onEditDocument, refreshTrigger }: Drafted
   const [draftDocuments, setDraftDocuments] = useState<DraftDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<DraftDocument | null>(null);
 
   // Fetch drafted documents
   const fetchDraftDocuments = async () => {
@@ -84,14 +87,18 @@ export function DraftedDocumentsList({ onEditDocument, refreshTrigger }: Drafted
     }
   };
 
-  // Handle delete document
-  const handleDelete = async (documentId: number) => {
-    if (!confirm('คุณต้องการลบเอกสารร่างนี้หรือไม่?')) {
-      return;
-    }
+  // Handle delete document click
+  const handleDeleteClick = (document: DraftDocument) => {
+    setDocumentToDelete(document);
+    setShowDeleteModal(true);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    if (!documentToDelete) return;
 
     try {
-      const response = await fetch(`/api/documents/${documentId}`, {
+      const response = await fetch(`/api/documents/${documentToDelete.id}`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -100,7 +107,9 @@ export function DraftedDocumentsList({ onEditDocument, refreshTrigger }: Drafted
 
       if (response.ok && result.success) {
         toast.success('ลบเอกสารร่างสำเร็จ');
-        setDraftDocuments(prev => prev.filter(doc => doc.id !== documentId));
+        setDraftDocuments(prev => prev.filter(doc => doc.id !== documentToDelete.id));
+        setShowDeleteModal(false);
+        setDocumentToDelete(null);
       } else {
         throw new Error(result.error || 'Failed to delete document');
       }
@@ -108,6 +117,12 @@ export function DraftedDocumentsList({ onEditDocument, refreshTrigger }: Drafted
       console.error('Error deleting document:', err);
       toast.error('ไม่สามารถลบเอกสารได้');
     }
+  };
+
+  // Handle delete cancel
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setDocumentToDelete(null);
   };
 
   // Handle view document
@@ -238,7 +253,7 @@ export function DraftedDocumentsList({ onEditDocument, refreshTrigger }: Drafted
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(document.id)}
+                      onClick={() => handleDeleteClick(document)}
                       className="text-gray-500 hover:text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -250,6 +265,15 @@ export function DraftedDocumentsList({ onEditDocument, refreshTrigger }: Drafted
           </div>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteDraftModal
+        open={showDeleteModal}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        documentTitle={documentToDelete?.subject}
+        mtNumber={documentToDelete?.mtNumber}
+      />
     </Card>
   );
 }

@@ -1,6 +1,7 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { DocumentDetail } from '@/components/docflow/document-detail';
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 
 interface DocumentDetailPageProps {
   params: Promise<{
@@ -28,12 +29,12 @@ export default async function DocumentDetailPage({
   const userId = session.user.id ? parseInt(session.user.id) : undefined;
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <DashboardLayout>
       <DocumentDetail 
         documentId={documentId}
         userRoles={userRoles}
         userId={userId}
       />
-    </div>
+    </DashboardLayout>
   );
 }

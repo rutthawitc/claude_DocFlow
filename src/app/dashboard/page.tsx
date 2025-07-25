@@ -1,9 +1,17 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function DashboardPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to documents page
+    router.replace('/documents');
+  }, [router]);
   return (
     <DashboardLayout>
       <div className="space-y-8">

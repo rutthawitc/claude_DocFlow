@@ -1,6 +1,7 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { BranchOverview } from '@/components/docflow/branch-overview';
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 
 export default async function DocumentsPage() {
   const session = await auth();
@@ -14,11 +15,11 @@ export default async function DocumentsPage() {
   const userBranchBaCode = session.user.pwa?.ba ? parseInt(session.user.pwa.ba) : undefined;
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <DashboardLayout>
       <BranchOverview 
         userRoles={userRoles}
         userBranchBaCode={userBranchBaCode}
       />
-    </div>
+    </DashboardLayout>
   );
 }

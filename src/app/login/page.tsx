@@ -23,14 +23,14 @@ export default function LoginPage() {
       setLoading(false);
     }
     
-    // ถ้ามี session (ล็อกอินแล้ว) ให้เปลี่ยนเส้นทางไปที่ dashboard
+    // ถ้ามี session (ล็อกอินแล้ว) ให้เปลี่ยนเส้นทางไปที่ documents
     if (session && !redirectAttempted) {
-      console.log('User is logged in, redirecting to dashboard');
+      console.log('User is logged in, redirecting to documents');
       setRedirectAttempted(true);
       
       // ใช้ window.location.href เพื่อทำการ full page redirect แทนการใช้ router.push
       // ซึ่งจะเป็นการบังคับให้เปลี่ยนเส้นทางอย่างแน่นอน
-      window.location.href = '/dashboard';
+      window.location.href = '/documents';
     } else if (status === 'unauthenticated') {
       console.log('User is not authenticated');
     }

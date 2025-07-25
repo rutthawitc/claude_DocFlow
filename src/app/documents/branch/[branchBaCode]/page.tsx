@@ -1,6 +1,7 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { DocumentsList } from '@/components/docflow/documents-list';
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 
 interface BranchDocumentsPageProps {
   params: Promise<{
@@ -72,12 +73,12 @@ export default async function BranchDocumentsPage({
   const branchName = await getBranchName(branchBaCode);
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <DashboardLayout>
       <DocumentsList 
         branchBaCode={branchBaCode}
         title={branchName}
         showBranchFilter={false}
       />
-    </div>
+    </DashboardLayout>
   );
 }

@@ -12,13 +12,35 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default async function AdminDashboardPage() {
   const session = await auth();
 
-  if (!session || !session.user.pwa?.roles?.includes("admin")) {
+  const userRoles = session?.user?.pwa?.roles || [];
+  const canAccessAdmin = userRoles.includes("admin") || userRoles.includes("district_manager");
+  
+  if (!session || !canAccessAdmin) {
     redirect("/unauthorized");
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">หน้าจัดการระบบ</h1>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">จัดการระบบ</h1>
+        <div className="flex space-x-2">
+          <Link href="/admin/users">
+            <Button variant="outline" size="sm">
+              ผู้ใช้งาน
+            </Button>
+          </Link>
+          <Link href="/admin/roles">
+            <Button variant="outline" size="sm">
+              บทบาท
+            </Button>
+          </Link>
+          <Link href="/admin/permissions">
+            <Button variant="outline" size="sm">
+              สิทธิ์
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>

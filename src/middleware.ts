@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
   const protectedRoutes = [
     { 
       path: '/admin', 
-      requiredRoles: ['admin'] 
+      requiredRoles: ['admin', 'district_manager'] 
     },
     { 
       path: '/reports', 

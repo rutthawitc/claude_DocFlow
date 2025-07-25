@@ -19,10 +19,14 @@ import {
   FileText,
   LogOut,
   Menu,
-  X
+  X,
+  Shield,
+  Upload
 } from "lucide-react"
 import { useState } from "react"
 import { signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
+import { LogoutModal } from "@/components/ui/logout-modal"
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -30,8 +34,10 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
+  const { data: session } = useSession()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMinimal, setIsMinimal] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
@@ -41,12 +47,42 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setIsMinimal(!isMinimal)
   }
 
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true)
+  }
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutModal(false)
+    signOut({ callbackUrl: "/" })
+  }
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false)
+  }
+
+  // Check if user has admin or district_manager role
+  const userRoles = session?.user?.pwa?.roles || []
+  const isAdmin = userRoles.includes('admin')
+  const isDistrictManager = userRoles.includes('district_manager')
+  const canAccessAdmin = isAdmin || isDistrictManager
+  
+  // Check if user can upload documents
+  const canUpload = userRoles.includes('uploader') || 
+                   userRoles.includes('admin') ||
+                   userRoles.includes('district_manager') ||
+                   userRoles.includes('user')
+
   const navItems = [
     {
-      title: "แดชบอร์ด",
-      href: "/dashboard",
-      icon: <LayoutDashboard className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
+      title: "เอกสาร",
+      href: "/documents",
+      icon: <FileText className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
     },
+    ...(canUpload ? [{
+      title: "อัปโหลดเอกสาร",
+      href: "/documents/upload",
+      icon: <Upload className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
+    }] : []),
     {
       title: "โปรไฟล์", 
       href: "/profile",
@@ -57,11 +93,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       href: "/reports", 
       icon: <BarChart3 className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
     },
-    {
-      title: "เอกสาร",
-      href: "/documents",
-      icon: <FileText className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
-    },
+    ...(canAccessAdmin ? [{
+      title: "จัดการระบบ",
+      href: "/admin",
+      icon: <Shield className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
+    }] : []),
     {
       title: "ตั้งค่า",
       href: "/settings",
@@ -140,19 +176,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               ))}
             </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter>
-            <div className="px-3 py-2">
+            
+            {/* Logout Button */}
+            <div className="mt-4 px-3">
               <Button 
                 variant="outline" 
                 className={`w-full ${isMinimal ? "justify-center" : "justify-start gap-2"}`}
                 title={isMinimal ? "ออกจากระบบ" : ""}
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={handleLogoutClick}
               >
                 <LogOut className={isMinimal ? "h-6 w-6" : "h-4 w-4"} />
                 {!isMinimal && "ออกจากระบบ"}
               </Button>
             </div>
+          </SidebarContent>
+          <SidebarFooter>
+            {/* Empty footer or add other content here if needed */}
           </SidebarFooter>
         </Sidebar>
       </div>
@@ -161,6 +200,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex-1 overflow-auto p-6 lg:p-8">
         {children}
       </div>
+
+      {/* Logout Modal */}
+      <LogoutModal
+        open={showLogoutModal}
+        onClose={handleLogoutCancel}
+        onConfirm={handleLogoutConfirm}
+      />
     </div>
   )
 }
