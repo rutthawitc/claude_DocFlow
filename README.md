@@ -12,6 +12,8 @@ A modern, production-ready document management system built with Next.js 15, fea
 - 💬 **Comment System** - Real-time document commenting and collaboration
 - 📊 **Document Workflow** - Status tracking (draft → sent → acknowledged → sent_back)
 - 📥 **File Download** - Secure PDF download with access control
+- 📱 **Telegram Notifications** - Real-time notifications for document workflow events
+- ⚙️ **Settings Management** - Persistent configuration with file-based storage
 
 ### 🔐 **Authentication & Security**
 - 🚀 **Next.js 15** with App Router and React 19
@@ -29,6 +31,9 @@ A modern, production-ready document management system built with Next.js 15, fea
 - 🔄 **TypeScript** for type safety
 - 🛡️ **Security Headers** and CSRF protection
 - 📱 **Mobile Responsive** - Optimized for all device sizes
+- 🚀 **Rate Limiting** - API protection with configurable limits
+- ✅ **Request Validation** - Comprehensive Zod schema validation
+- 🤖 **Telegram Bot Integration** - Live notifications with customizable formatting
 
 ## Tech Stack
 
@@ -61,6 +66,44 @@ The DocFlow system includes a professional-grade PDF viewer with the following c
 - **Worker Management**: Version-matched PDF.js workers (5.3.31) stored locally
 - **Error Handling**: Comprehensive error handling with Thai language support
 - **Loading States**: Professional loading indicators and error messages
+
+## Telegram Notification System
+
+The DocFlow system includes a comprehensive Telegram notification system for real-time updates:
+
+### 🔔 **Notification Features**
+- **📤 Document Upload Notifications** - Instant alerts when documents are uploaded
+- **📋 Status Change Notifications** - Updates when document status changes (sent, acknowledged, sent back)
+- **⚠️ System Alert Notifications** - Critical system messages and maintenance alerts
+- **📊 Daily Reports** - Optional daily activity summaries
+- **🎨 Customizable Formatting** - Configure message content (user names, branch info, timestamps)
+- **🧪 Test Functions** - Built-in connection and message testing
+
+### ⚙️ **Configuration**
+- **Admin Access**: Settings available in `/settings` page for admin and district managers
+- **Bot Integration**: Standard Telegram Bot API integration with token validation
+- **Chat Configuration**: Support for private chats, groups, and channels
+- **File Persistence**: Settings stored in `./tmp/telegram-settings.json` for persistence
+- **Environment Fallback**: Optional environment variable configuration
+
+### 🛡️ **Security & Reliability**
+- **Graceful Degradation**: Notification failures don't break document operations
+- **Rate Limiting**: Protected API endpoints prevent abuse
+- **Token Validation**: Comprehensive bot token and chat ID validation
+- **Error Handling**: Detailed error reporting with Thai language support
+
+### 📱 **Message Format Example**
+```
+🔔 DocFlow Notification
+
+📄 เอกสาร MT001-2024 ถูกอัปโหลดใหม่
+📝 เรื่อง: ขออนุมัติโครงการปรับปรุงระบบ
+🏢 สาขา: กปภ.สาขาชัยภูมิ
+👤 โดย: สมหมาย ใจดี
+🕒 เวลา: 29/7/2568 15:30:45
+
+🔗 เอกสาร ID: 123
+```
 
 ## Project Structure
 
@@ -106,6 +149,10 @@ The DocFlow system includes a professional-grade PDF viewer with the following c
    AUTH_SECRET=your-secure-secret-key
    NEXTAUTH_URL=http://localhost:3000
    AUTH_TRUST_HOST=true
+   
+   # Optional: Telegram Bot Configuration (can also be set via UI)
+   TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+   TELEGRAM_CHAT_ID=your-default-chat-id
    ```
 
 3. **Start with Docker**
@@ -237,6 +284,8 @@ docker-compose logs app  # View app logs
 | `AUTH_SECRET` | Auth.js secret key | `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | Application URL | `http://localhost:3000` |
 | `AUTH_TRUST_HOST` | Trust host for Auth.js | `true` |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token (optional) | `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11` |
+| `TELEGRAM_CHAT_ID` | Default Telegram chat ID (optional) | `-1001234567890` or `@channelname` |
 
 ## Troubleshooting
 
