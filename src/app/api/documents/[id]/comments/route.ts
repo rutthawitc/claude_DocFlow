@@ -4,6 +4,16 @@ import { DocumentService } from '@/lib/services/document-service';
 import { ActivityLogger } from '@/lib/services/activity-logger';
 import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 import { ApiResponse } from '@/lib/types';
+import { 
+  commentCreateSchema, 
+  documentIdSchema
+} from '@/lib/validation/schemas';
+import { 
+  ValidationError,
+  validateBody,
+  validateParams,
+  handleValidationError 
+} from '@/lib/validation/middleware';
 
 interface RouteParams {
   params: Promise<{
@@ -14,6 +24,19 @@ interface RouteParams {
 export async function POST(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
   try {
+    // Validate path parameters
+    let validatedParams;
+    try {
+      validatedParams = validateParams(params, documentIdSchema);
+    } catch (validationError) {
+      if (validationError instanceof ValidationError) {
+        return handleValidationError(validationError);
+      }
+      throw validationError;
+    }
+
+    const documentId = validatedParams.id;
+
     // Check authentication
     const session = await auth();
     if (!session?.user?.id) {
@@ -24,14 +47,6 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
     }
 
     const username = session.user.id; // This is actually the username (11008)
-    const documentId = parseInt(params.id);
-
-    if (isNaN(documentId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid document ID' },
-        { status: 400 }
-      );
-    }
 
     // Get user from database by username to get the actual numeric ID
     const { getDb } = await import('@/db');
@@ -52,17 +67,18 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
     
     const userId = user.id; // This is the numeric database ID
 
-    // Parse request body
-    const body = await request.json();
-    const { content } = body;
-
-    // Validate content
-    if (!content || typeof content !== 'string' || content.trim().length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Comment content is required' },
-        { status: 400 }
-      );
+    // Validate request body
+    let validatedBody;
+    try {
+      validatedBody = await validateBody(request, commentCreateSchema);
+    } catch (validationError) {
+      if (validationError instanceof ValidationError) {
+        return handleValidationError(validationError);
+      }
+      throw validationError;
     }
+
+    const { content } = validatedBody;
 
     // Check comment creation permission
     const hasCommentPermission = await DocFlowAuth.hasPermission(userId, DOCFLOW_PERMISSIONS.COMMENTS_CREATE);
@@ -94,8 +110,8 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
       );
     }
 
-    // Add comment
-    const comment = await DocumentService.addComment(documentId, userId, content.trim());
+    // Add comment (content is already trimmed by validation)
+    const comment = await DocumentService.addComment(documentId, userId, content);
 
     // Log comment addition
     const { ipAddress, userAgent } = ActivityLogger.extractRequestMetadata(request);
@@ -118,6 +134,11 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
 
   } catch (error) {
     console.error('Error adding comment:', error);
+    
+    if (error instanceof ValidationError) {
+      return handleValidationError(error);
+    }
+    
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -128,6 +149,19 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
 export async function GET(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
   try {
+    // Validate path parameters
+    let validatedParams;
+    try {
+      validatedParams = validateParams(params, documentIdSchema);
+    } catch (validationError) {
+      if (validationError instanceof ValidationError) {
+        return handleValidationError(validationError);
+      }
+      throw validationError;
+    }
+
+    const documentId = validatedParams.id;
+
     // Check authentication
     const session = await auth();
     if (!session?.user?.id) {
@@ -138,14 +172,6 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
     }
 
     const username = session.user.id;
-    const documentId = parseInt(params.id);
-
-    if (isNaN(documentId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid document ID' },
-        { status: 400 }
-      );
-    }
 
     // Get user from database by username to get the actual numeric ID
     const { getDb } = await import('@/db');
@@ -205,6 +231,11 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
 
   } catch (error) {
     console.error('Error fetching comments:', error);
+    
+    if (error instanceof ValidationError) {
+      return handleValidationError(error);
+    }
+    
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

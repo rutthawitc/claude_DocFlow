@@ -1,10 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from './auth';
+import { rateLimiters, addRateLimitHeaders } from '@/lib/rate-limit';
 
 // กำหนดค่า config สำหรับ middleware
 
 export async function middleware(request: NextRequest) {
   console.log('Middleware executing for path:', request.nextUrl.pathname);
+  
+  // Apply rate limiting to API routes first
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    try {
+      let rateLimiter = rateLimiters.api; // Default API rate limiter
+      
+      // Use specific rate limiters for different endpoints
+      if (request.nextUrl.pathname.startsWith('/api/auth/') && request.method === 'POST') {
+        rateLimiter = rateLimiters.login;
+      } else if (request.nextUrl.pathname.startsWith('/api/documents') && request.method === 'POST') {
+        const contentType = request.headers.get('content-type');
+        if (contentType?.includes('multipart/form-data')) {
+          rateLimiter = rateLimiters.upload;
+        }
+      }
+      
+      // Check rate limit
+      const result = await rateLimiter.checkLimit(request);
+      
+      if (!result.success) {
+        const response = NextResponse.json(
+          {
+            success: false,
+            error: 'Too Many Requests',
+            message: 'Rate limit exceeded. Please try again later.',
+            retryAfter: result.retryAfter
+          },
+          { status: 429 }
+        );
+        addRateLimitHeaders(response, result);
+        return response;
+      }
+      
+      // If this is an API route, we don't need to continue with auth checks
+      // The API routes handle their own authentication
+      const response = NextResponse.next();
+      addRateLimitHeaders(response, result);
+      return response;
+    } catch (error) {
+      console.error('Rate limiting error:', error);
+      // Continue without rate limiting if there's an error
+    }
+  }
   
   // ขั้นตอนแรก ถ้าเป็นการเรียกหน้า login และมีการเพิ่ม parameter debug=1 ให้ดำเนินการต่อโดยไม่มีการตรวจสอบ
   // เพื่อป้องกัน redirect loop ในกรณีที่มีปัญหากับการตรวจสอบสิทธิ์
@@ -121,6 +165,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // กำหนดเส้นทางที่ต้องการให้ middleware ทำงาน
   matcher: [
+    '/api/:path*',     // API routes for rate limiting
     '/dashboard/:path*',
     '/admin/:path*',
     '/reports/:path*',

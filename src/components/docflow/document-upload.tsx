@@ -17,6 +17,15 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { 
+  clientDocumentUploadSchema, 
+  validateForm, 
+  validateField, 
+  validatePDFFile,
+  sanitizeFormData,
+  type ValidationResult,
+  type ClientDocumentUploadInput
+} from '@/lib/validation/client';
 
 interface Branch {
   id: number;
@@ -61,7 +70,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     subject: editDocument?.subject || '',
     monthYear: editDocument?.monthYear || ''
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isEditMode, setIsEditMode] = useState(!!editDocument);
 
   // Update form data when editDocument prop changes
@@ -143,43 +153,76 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     }
   }, [handleFileSelect]);
 
+  // Field-level validation for real-time feedback (define first)
+  const validateSingleField = useCallback((fieldName: keyof ClientDocumentUploadInput, value: string) => {
+    const fieldSchema = clientDocumentUploadSchema.shape[fieldName];
+    const fieldValidation = validateField(value, fieldSchema, fieldName);
+    
+    setFieldErrors(prev => ({
+      ...prev,
+      [fieldName]: fieldValidation.isValid ? '' : fieldValidation.error || ''
+    }));
+    
+    return fieldValidation.isValid;
+  }, []);
+
   // Form input change
   const handleInputChange = useCallback((field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setErrors(prev => ({ ...prev, [field]: '' }));
-  }, []);
-
-  // Form validation
-  const validateForm = useCallback(() => {
-    const newErrors: Record<string, string> = {};
-
-    if (!selectedFile && !isEditMode) {
-      newErrors.file = 'Please select a PDF file';
+    
+    // Clear errors for this field
+    setErrors(prev => ({ ...prev, [field]: [] }));
+    setFieldErrors(prev => ({ ...prev, [field]: '' }));
+    
+    // Real-time validation with debounce
+    if (value.trim()) {
+      setTimeout(() => {
+        validateSingleField(field as keyof ClientDocumentUploadInput, value);
+      }, 300);
     }
+  }, [validateSingleField]);
 
-    if (!formData.branchBaCode) {
-      newErrors.branchBaCode = 'Please select a branch';
+  // Validate file
+  const validateFileSelection = useCallback((file: File | null): { isValid: boolean; error?: string } => {
+    if (!file && !isEditMode) {
+      return { isValid: false, error: 'กรุณาเลือกไฟล์ PDF' };
     }
-
-    if (!formData.mtNumber) {
-      newErrors.mtNumber = 'MT Number is required';
+    
+    if (file) {
+      return validatePDFFile(file);
     }
+    
+    return { isValid: true };
+  }, [isEditMode]);
 
-    if (!formData.mtDate) {
-      newErrors.mtDate = 'MT Date is required';
+  // Form validation with Zod
+  const validateFormData = useCallback((): ValidationResult<ClientDocumentUploadInput> => {
+    // Sanitize form data
+    const sanitizedData = sanitizeFormData(formData);
+    
+    // Validate with Zod schema
+    const validation = validateForm(sanitizedData, clientDocumentUploadSchema);
+    
+    // File validation
+    const fileValidation = validateFileSelection(selectedFile);
+    if (!fileValidation.isValid) {
+      validation.errors = { 
+        ...validation.errors, 
+        file: [fileValidation.error!] 
+      };
+      validation.success = false;
     }
-
-    if (!formData.subject) {
-      newErrors.subject = 'Subject is required';
-    }
-
-    if (!formData.monthYear) {
-      newErrors.monthYear = 'Month/Year is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [selectedFile, formData, isEditMode]);
+    
+    // Update error states
+    setErrors(validation.errors || {});
+    setFieldErrors(
+      Object.fromEntries(
+        Object.entries(validation.errors || {}).map(([key, msgs]) => [key, msgs[0]])
+      )
+    );
+    
+    return validation;
+  }, [formData, selectedFile, validateFileSelection]);
 
   // Generate month/year options
   const generateMonthYearOptions = () => {
@@ -205,23 +248,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
   const handleSubmit = async (e: React.FormEvent, action: 'save' | 'send') => {
     e.preventDefault();
     
-    // For edit mode, validate form without file if not changed
-    if (isEditMode && !selectedFile) {
-      // Validate form without file requirement for edit
-      const newErrors: Record<string, string> = {};
-      if (!formData.branchBaCode) newErrors.branchBaCode = 'Please select a branch';
-      if (!formData.mtNumber) newErrors.mtNumber = 'MT Number is required';
-      if (!formData.mtDate) newErrors.mtDate = 'MT Date is required';
-      if (!formData.subject) newErrors.subject = 'Subject is required';
-      if (!formData.monthYear) newErrors.monthYear = 'Month/Year is required';
-      
-      setErrors(newErrors);
-      if (Object.keys(newErrors).length > 0) {
-        toast.error('Please fix the form errors');
-        return;
-      }
-    } else if (!validateForm()) {
-      toast.error('Please fix the form errors');
+    // Validate form data
+    const validation = validateFormData();
+    if (!validation.success) {
+      toast.error(validation.message || 'กรุณาตรวจสอบข้อมูลที่กรอก');
       return;
     }
 
@@ -310,6 +340,13 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
 
         const result = await response.json();
 
+        // Handle rate limiting
+        if (response.status === 429) {
+          const retryAfter = result.retryAfter || 60;
+          toast.error(`Rate limit exceeded. Please try again in ${retryAfter} seconds.`);
+          return;
+        }
+
         if (response.ok && result.success) {
           toast.success(
             action === 'save' 
@@ -395,7 +432,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
               dragActive 
                 ? 'border-blue-500 bg-blue-50' 
-                : errors.file 
+                : fieldErrors.file || (errors.file && errors.file[0]) 
                 ? 'border-red-300 bg-red-50' 
                 : isEditMode && !selectedFile
                 ? 'border-gray-200 bg-gray-50'
@@ -463,10 +500,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             />
           </div>
           
-          {errors.file && (
+          {(fieldErrors.file || (errors.file && errors.file[0])) && (
             <p className="text-sm text-red-600 flex items-center gap-1">
               <AlertCircle className="h-4 w-4" />
-              {errors.file}
+              {fieldErrors.file || errors.file[0]}
             </p>
           )}
         </div>
@@ -488,8 +525,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                 </option>
               ))}
             </select>
-            {errors.branchBaCode && (
-              <p className="text-sm text-red-600">{errors.branchBaCode}</p>
+            {(fieldErrors.branchBaCode || (errors.branchBaCode && errors.branchBaCode[0])) && (
+              <p className="text-sm text-red-600">{fieldErrors.branchBaCode || errors.branchBaCode[0]}</p>
             )}
           </div>
 
@@ -502,10 +539,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                 value={formData.mtNumber}
                 onChange={(e) => handleInputChange('mtNumber', e.target.value)}
                 placeholder="เช่น MT001-2024"
-                className={errors.mtNumber ? 'border-red-300' : ''}
+                className={fieldErrors.mtNumber || (errors.mtNumber && errors.mtNumber[0]) ? 'border-red-300' : ''}
               />
-              {errors.mtNumber && (
-                <p className="text-sm text-red-600">{errors.mtNumber}</p>
+              {(fieldErrors.mtNumber || (errors.mtNumber && errors.mtNumber[0])) && (
+                <p className="text-sm text-red-600">{fieldErrors.mtNumber || errors.mtNumber[0]}</p>
               )}
             </div>
 
@@ -516,10 +553,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                 type="date"
                 value={formData.mtDate}
                 onChange={(e) => handleInputChange('mtDate', e.target.value)}
-                className={errors.mtDate ? 'border-red-300' : ''}
+                className={fieldErrors.mtDate || (errors.mtDate && errors.mtDate[0]) ? 'border-red-300' : ''}
               />
-              {errors.mtDate && (
-                <p className="text-sm text-red-600">{errors.mtDate}</p>
+              {(fieldErrors.mtDate || (errors.mtDate && errors.mtDate[0])) && (
+                <p className="text-sm text-red-600">{fieldErrors.mtDate || errors.mtDate[0]}</p>
               )}
             </div>
           </div>
@@ -533,10 +570,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
               onChange={(e) => handleInputChange('subject', e.target.value)}
               placeholder="ระบุรายละเอียดเรื่องที่เบิกจ่าย"
               rows={3}
-              className={errors.subject ? 'border-red-300' : ''}
+              className={fieldErrors.subject || (errors.subject && errors.subject[0]) ? 'border-red-300' : ''}
             />
-            {errors.subject && (
-              <p className="text-sm text-red-600">{errors.subject}</p>
+            {(fieldErrors.subject || (errors.subject && errors.subject[0])) && (
+              <p className="text-sm text-red-600">{fieldErrors.subject || errors.subject[0]}</p>
             )}
           </div>
 
@@ -556,8 +593,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                 </option>
               ))}
             </select>
-            {errors.monthYear && (
-              <p className="text-sm text-red-600">{errors.monthYear}</p>
+            {(fieldErrors.monthYear || (errors.monthYear && errors.monthYear[0])) && (
+              <p className="text-sm text-red-600">{fieldErrors.monthYear || errors.monthYear[0]}</p>
             )}
           </div>
 

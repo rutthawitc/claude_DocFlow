@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,42 +10,231 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Settings as SettingsIcon, 
-  User, 
-  Bell, 
-  Shield, 
+import {
+  Settings as SettingsIcon,
+  Shield,
   Database,
   FileText,
-  Palette,
-  Globe,
   Save,
   RefreshCw,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  MessageSquare,
+  Send,
+  Bot,
+  TestTube,
 } from "lucide-react";
 
 export default function SettingsPage() {
   // Mock state for settings
-  const [notifications, setNotifications] = useState({
-    newDocuments: true,
-    statusUpdates: true,
-    systemAlerts: false,
-    dailyReports: true
-  });
-
   const [systemSettings, setSystemSettings] = useState({
     autoBackup: true,
     maintenanceMode: false,
     debugMode: false,
-    cacheEnabled: true
+    cacheEnabled: true,
   });
 
-  const [appearance, setAppearance] = useState({
-    theme: "light",
-    language: "th",
-    compactMode: false
+  const [telegramSettings, setTelegramSettings] = useState({
+    enabled: false,
+    botToken: "",
+    defaultChatId: "",
+    notifications: {
+      documentUploaded: true,
+      documentSent: true,
+      documentAcknowledged: true,
+      documentSentBack: true,
+      systemAlerts: false,
+      dailyReports: true,
+    },
+    messageFormat: {
+      includeUserName: true,
+      includeBranchName: true,
+      includeTimestamp: true,
+    },
   });
+
+  const [loading, setLoading] = useState({
+    testConnection: false,
+    testMessage: false,
+    saving: false,
+    loading: true, // Start with loading true
+    systemAlert: false,
+  });
+
+  // Load settings when component mounts
+  useEffect(() => {
+    const loadSettings = async () => {
+      setLoading(prev => ({ ...prev, loading: true }));
+      
+      try {
+        const response = await fetch('/api/telegram/settings');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setTelegramSettings(result.data);
+          console.log('Settings loaded:', result.data);
+        } else if (response.status === 403) {
+          toast.error("❌ ไม่มีสิทธิ์ในการเข้าถึงการตั้งค่า Telegram");
+        } else {
+          console.log('No saved settings found, using defaults');
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        toast.error("❌ เกิดข้อผิดพลาดในการโหลดการตั้งค่า");
+      } finally {
+        setLoading(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  // Test Telegram bot connection
+  const handleTestConnection = async () => {
+    if (!telegramSettings.botToken) {
+      toast.error("กรุณาใส่ Bot Token");
+      return;
+    }
+
+    setLoading(prev => ({ ...prev, testConnection: true }));
+
+    try {
+      const response = await fetch('/api/telegram/test-connection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          botToken: telegramSettings.botToken,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`✅ เชื่อมต่อสำเร็จ!\nBot: ${result.botInfo?.name} (@${result.botInfo?.username})`);
+      } else {
+        toast.error(`❌ การเชื่อมต่อล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Test connection error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการทดสอบการเชื่อมต่อ");
+    } finally {
+      setLoading(prev => ({ ...prev, testConnection: false }));
+    }
+  };
+
+  // Send test message
+  const handleTestMessage = async () => {
+    if (!telegramSettings.botToken) {
+      toast.error("กรุณาใส่ Bot Token");
+      return;
+    }
+
+    if (!telegramSettings.defaultChatId) {
+      toast.error("กรุณาใส่ Chat ID");
+      return;
+    }
+
+    setLoading(prev => ({ ...prev, testMessage: true }));
+
+    try {
+      const response = await fetch('/api/telegram/test-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          botToken: telegramSettings.botToken,
+          chatId: telegramSettings.defaultChatId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`✅ ส่งข้อความทดสอบสำเร็จ!\nMessage ID: ${result.messageId}`);
+      } else {
+        toast.error(`❌ ส่งข้อความล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Test message error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการส่งข้อความทดสอบ");
+    } finally {
+      setLoading(prev => ({ ...prev, testMessage: false }));
+    }
+  };
+
+  // Save Telegram settings
+  const handleSaveSettings = async () => {
+    setLoading(prev => ({ ...prev, saving: true }));
+
+    try {
+      const response = await fetch('/api/telegram/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(telegramSettings),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("✅ บันทึกการตั้งค่า Telegram สำเร็จ!");
+        
+        // Reload settings to confirm they were saved
+        try {
+          const loadResponse = await fetch('/api/telegram/settings');
+          const loadResult = await loadResponse.json();
+          if (loadResult.success && loadResult.data) {
+            console.log('Settings confirmed saved:', loadResult.data);
+          }
+        } catch (loadError) {
+          console.error('Error confirming settings save:', loadError);
+        }
+      } else {
+        toast.error(`❌ บันทึกล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Save settings error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการบันทึกการตั้งค่า");
+    } finally {
+      setLoading(prev => ({ ...prev, saving: false }));
+    }
+  };
+
+  // Send test system alert
+  const handleTestSystemAlert = async () => {
+    setLoading(prev => ({ ...prev, systemAlert: true }));
+
+    try {
+      const response = await fetch('/api/telegram/system-alert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: 'ทดสอบระบบแจ้งเตือน',
+          message: 'นี่เป็นการทดสอบการแจ้งเตือนระบบของ DocFlow ณ วันที่ ' + new Date().toLocaleString('th-TH'),
+          severity: 'info'
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("✅ ส่งการแจ้งเตือนระบบทดสอบสำเร็จ!");
+      } else {
+        toast.error(`❌ ส่งการแจ้งเตือนล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Test system alert error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการส่งการแจ้งเตือนทดสอบ");
+    } finally {
+      setLoading(prev => ({ ...prev, systemAlert: false }));
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -56,9 +246,17 @@ export default function SettingsPage() {
               <RefreshCw className="h-4 w-4 mr-2" />
               รีเซ็ตการตั้งค่า
             </Button>
-            <Button size="sm">
-              <Save className="h-4 w-4 mr-2" />
-              บันทึก
+            <Button 
+              size="sm" 
+              onClick={handleSaveSettings}
+              disabled={loading.saving}
+            >
+              {loading.saving ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {loading.saving ? "กำลังบันทึก..." : "บันทึก"}
             </Button>
           </div>
         </div>
@@ -75,16 +273,8 @@ export default function SettingsPage() {
             <CardContent>
               <nav className="space-y-2">
                 <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium bg-primary/10 text-primary rounded-md">
-                  <User className="h-4 w-4" />
-                  ข้อมูลส่วนตัว
-                </button>
-                <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                  <Bell className="h-4 w-4" />
-                  การแจ้งเตือน
-                </button>
-                <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                  <Palette className="h-4 w-4" />
-                  การแสดงผล
+                  <MessageSquare className="h-4 w-4" />
+                  Telegram
                 </button>
                 <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
                   <Shield className="h-4 w-4" />
@@ -94,178 +284,441 @@ export default function SettingsPage() {
                   <Database className="h-4 w-4" />
                   ระบบ
                 </button>
+                <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                  <FileText className="h-4 w-4" />
+                  การจัดการไฟล์
+                </button>
               </nav>
             </CardContent>
           </Card>
 
           {/* Settings Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Profile Settings */}
+            {/* Loading indicator */}
+            {loading.loading && (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-center space-x-2">
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>กำลังโหลดการตั้งค่า...</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Telegram Settings */}
+            {!loading.loading && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  ข้อมูลส่วนตัว
+                  <MessageSquare className="h-5 w-5" />
+                  การตั้งค่า Telegram
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">ชื่อ</Label>
-                    <Input id="firstName" placeholder="ชื่อ" defaultValue="สมหมาย" />
+              <CardContent className="space-y-6">
+                {/* Master Enable/Disable */}
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="space-y-0.5">
+                    <Label className="text-lg font-medium">
+                      เปิดใช้งาน Telegram
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      เปิด/ปิดการแจ้งเตือนผ่าน Telegram ทั้งหมด
+                    </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">นามสกุล</Label>
-                    <Input id="lastName" placeholder="นามสกุล" defaultValue="ใจดี" />
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        telegramSettings.enabled ? "default" : "secondary"
+                      }
+                    >
+                      {telegramSettings.enabled ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+                    </Badge>
+                    <Switch
+                      checked={telegramSettings.enabled}
+                      onCheckedChange={(checked) =>
+                        setTelegramSettings((prev) => ({
+                          ...prev,
+                          enabled: checked,
+                        }))
+                      }
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">อีเมล</Label>
-                  <Input id="email" type="email" placeholder="อีเมล" defaultValue="sommai@pwa.co.th" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="position">ตำแหน่ง</Label>
-                  <Input id="position" placeholder="ตำแหน่ง" defaultValue="เจ้าหน้าที่" disabled />
-                  <p className="text-xs text-muted-foreground">ข้อมูลนี้ซิงค์มาจากระบบ PWA Authentication</p>
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Notification Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  การแจ้งเตือน
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>เอกสารใหม่</Label>
-                    <p className="text-sm text-muted-foreground">รับแจ้งเตือนเมื่อมีเอกสารใหม่</p>
+                {/* Bot Configuration (Admin Only) */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5 text-blue-500" />
+                    <Label className="text-lg font-medium">
+                      การตั้งค่า Bot
+                    </Label>
+                    <Badge variant="outline" className="text-xs">
+                      สำหรับผู้ดูแลระบบเท่านั้น
+                    </Badge>
                   </div>
-                  <Switch 
-                    checked={notifications.newDocuments}
-                    onCheckedChange={(checked) => 
-                      setNotifications(prev => ({ ...prev, newDocuments: checked }))
-                    }
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>อัปเดตสถานะ</Label>
-                    <p className="text-sm text-muted-foreground">แจ้งเตือนเมื่อสถานะเอกสารเปลี่ยนแปลง</p>
-                  </div>
-                  <Switch 
-                    checked={notifications.statusUpdates}
-                    onCheckedChange={(checked) => 
-                      setNotifications(prev => ({ ...prev, statusUpdates: checked }))
-                    }
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>การแจ้งเตือนระบบ</Label>
-                    <p className="text-sm text-muted-foreground">แจ้งเตือนเหตุการณ์สำคัญของระบบ</p>
-                  </div>
-                  <Switch 
-                    checked={notifications.systemAlerts}
-                    onCheckedChange={(checked) => 
-                      setNotifications(prev => ({ ...prev, systemAlerts: checked }))
-                    }
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>รายงานประจำวัน</Label>
-                    <p className="text-sm text-muted-foreground">รับรายงานสรุปกิจกรรมประจำวัน</p>
-                  </div>
-                  <Switch 
-                    checked={notifications.dailyReports}
-                    onCheckedChange={(checked) => 
-                      setNotifications(prev => ({ ...prev, dailyReports: checked }))
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Appearance Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5" />
-                  การแสดงผล
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>ธีม</Label>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="botToken">Bot Token</Label>
+                      <Input
+                        id="botToken"
+                        type="password"
+                        placeholder="กรอก Telegram Bot Token"
+                        value={telegramSettings.botToken}
+                        onChange={(e) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            botToken: e.target.value,
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        ได้รับจาก @BotFather บน Telegram
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="chatId">Chat ID เริ่มต้น</Label>
+                      <Input
+                        id="chatId"
+                        placeholder="กรอก Chat ID หรือ Group ID"
+                        value={telegramSettings.defaultChatId}
+                        onChange={(e) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            defaultChatId: e.target.value,
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Chat ID สำหรับส่งการแจ้งเตือนทั่วไป
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="flex gap-2">
-                    <Button 
-                      variant={appearance.theme === "light" ? "default" : "outline"} 
+                    <Button
+                      variant="outline"
                       size="sm"
-                      onClick={() => setAppearance(prev => ({ ...prev, theme: "light" }))}
+                      onClick={handleTestConnection}
+                      disabled={
+                        !telegramSettings.enabled || 
+                        !telegramSettings.botToken ||
+                        loading.testConnection ||
+                        loading.testMessage ||
+                        loading.systemAlert
+                      }
                     >
-                      สว่าง
+                      {loading.testConnection ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <TestTube className="h-4 w-4 mr-2" />
+                      )}
+                      {loading.testConnection ? "กำลังทดสอบ..." : "ทดสอบการเชื่อมต่อ"}
                     </Button>
-                    <Button 
-                      variant={appearance.theme === "dark" ? "default" : "outline"} 
+                    <Button
+                      variant="outline"
                       size="sm"
-                      onClick={() => setAppearance(prev => ({ ...prev, theme: "dark" }))}
+                      onClick={handleTestMessage}
+                      disabled={
+                        !telegramSettings.enabled || 
+                        !telegramSettings.botToken ||
+                        !telegramSettings.defaultChatId ||
+                        loading.testConnection ||
+                        loading.testMessage ||
+                        loading.systemAlert
+                      }
                     >
-                      มืด
+                      {loading.testMessage ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      {loading.testMessage ? "กำลังส่ง..." : "ส่งข้อความทดสอบ"}
                     </Button>
-                    <Button 
-                      variant={appearance.theme === "auto" ? "default" : "outline"} 
+                    <Button
+                      variant="outline"
                       size="sm"
-                      onClick={() => setAppearance(prev => ({ ...prev, theme: "auto" }))}
+                      onClick={handleTestSystemAlert}
+                      disabled={
+                        !telegramSettings.enabled || 
+                        !telegramSettings.botToken ||
+                        !telegramSettings.defaultChatId ||
+                        !telegramSettings.notifications.systemAlerts ||
+                        loading.testConnection ||
+                        loading.testMessage ||
+                        loading.systemAlert
+                      }
                     >
-                      อัตโนมัติ
+                      {loading.systemAlert ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                      )}
+                      {loading.systemAlert ? "กำลังส่ง..." : "ทดสอบแจ้งเตือนระบบ"}
                     </Button>
                   </div>
                 </div>
+
                 <Separator />
-                <div className="space-y-2">
-                  <Label>ภาษา</Label>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant={appearance.language === "th" ? "default" : "outline"} 
-                      size="sm"
-                      onClick={() => setAppearance(prev => ({ ...prev, language: "th" }))}
-                    >
-                      <Globe className="h-4 w-4 mr-1" />
-                      ไทย
-                    </Button>
-                    <Button 
-                      variant={appearance.language === "en" ? "default" : "outline"} 
-                      size="sm"
-                      onClick={() => setAppearance(prev => ({ ...prev, language: "en" }))}
-                    >
-                      <Globe className="h-4 w-4 mr-1" />
-                      English
-                    </Button>
+
+                {/* Notification Types */}
+                <div className="space-y-4">
+                  <Label className="text-lg font-medium">
+                    ประเภทการแจ้งเตือน
+                  </Label>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>📄 เอกสารใหม่ถูกอัปโหลด</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อมีเอกสารใหม่เข้าระบบ
+                        </p>
+                      </div>
+                      <Switch
+                        checked={
+                          telegramSettings.notifications.documentUploaded
+                        }
+                        onCheckedChange={(checked) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              documentUploaded: checked,
+                            },
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>📤 เอกสารส่งไปยังสาขา</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อเอกสารถูกส่งไปยังสาขา
+                        </p>
+                      </div>
+                      <Switch
+                        checked={telegramSettings.notifications.documentSent}
+                        onCheckedChange={(checked) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              documentSent: checked,
+                            },
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>✅ สาขารับทราบเอกสาร</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อสาขารับทราบเอกสาร
+                        </p>
+                      </div>
+                      <Switch
+                        checked={
+                          telegramSettings.notifications.documentAcknowledged
+                        }
+                        onCheckedChange={(checked) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              documentAcknowledged: checked,
+                            },
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>🔄 เอกสารส่งกลับจากสาขา</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อสาขาส่งเอกสารกลับ
+                        </p>
+                      </div>
+                      <Switch
+                        checked={
+                          telegramSettings.notifications.documentSentBack
+                        }
+                        onCheckedChange={(checked) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              documentSentBack: checked,
+                            },
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>⚠️ การแจ้งเตือนระบบ</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเหตุการณ์สำคัญของระบบ
+                        </p>
+                      </div>
+                      <Switch
+                        checked={telegramSettings.notifications.systemAlerts}
+                        onCheckedChange={(checked) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              systemAlerts: checked,
+                            },
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>📊 รายงานประจำวัน</Label>
+                        <p className="text-sm text-muted-foreground">
+                          รายงานสรุปกิจกรรมประจำวัน
+                        </p>
+                      </div>
+                      <Switch
+                        checked={telegramSettings.notifications.dailyReports}
+                        onCheckedChange={(checked) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              dailyReports: checked,
+                            },
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                    </div>
                   </div>
                 </div>
+
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>โหมดกะทัดรัด</Label>
-                    <p className="text-sm text-muted-foreground">แสดงข้อมูลในพื้นที่น้อยลง</p>
+
+                {/* Message Format */}
+                <div className="space-y-4">
+                  <Label className="text-lg font-medium">รูปแบบข้อความ</Label>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>แสดงชื่อผู้ใช้</Label>
+                        <p className="text-sm text-muted-foreground">
+                          รวมชื่อผู้ดำเนินการในข้อความ
+                        </p>
+                      </div>
+                      <Switch
+                        checked={telegramSettings.messageFormat.includeUserName}
+                        onCheckedChange={(checked) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            messageFormat: {
+                              ...prev.messageFormat,
+                              includeUserName: checked,
+                            },
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>แสดงชื่อสาขา</Label>
+                        <p className="text-sm text-muted-foreground">
+                          รวมชื่อสาขาในข้อความ
+                        </p>
+                      </div>
+                      <Switch
+                        checked={
+                          telegramSettings.messageFormat.includeBranchName
+                        }
+                        onCheckedChange={(checked) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            messageFormat: {
+                              ...prev.messageFormat,
+                              includeBranchName: checked,
+                            },
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>แสดงเวลา</Label>
+                        <p className="text-sm text-muted-foreground">
+                          รวมเวลาที่เกิดเหตุการณ์
+                        </p>
+                      </div>
+                      <Switch
+                        checked={
+                          telegramSettings.messageFormat.includeTimestamp
+                        }
+                        onCheckedChange={(checked) =>
+                          setTelegramSettings((prev) => ({
+                            ...prev,
+                            messageFormat: {
+                              ...prev.messageFormat,
+                              includeTimestamp: checked,
+                            },
+                          }))
+                        }
+                        disabled={!telegramSettings.enabled}
+                      />
+                    </div>
                   </div>
-                  <Switch 
-                    checked={appearance.compactMode}
-                    onCheckedChange={(checked) => 
-                      setAppearance(prev => ({ ...prev, compactMode: checked }))
-                    }
-                  />
                 </div>
+
+                {/* Preview Message */}
+                {telegramSettings.enabled && (
+                  <div className="space-y-2">
+                    <Label>ตัวอย่างข้อความ</Label>
+                    <div className="p-4 bg-gray-50 rounded-lg border text-sm font-mono">
+                      <div className="text-blue-600">
+                        🔔 DocFlow Notification
+                      </div>
+                      <div className="mt-2">
+                        📄 เอกสาร MT001-2024 ถูกอัปโหลดใหม่
+                        {telegramSettings.messageFormat.includeBranchName && (
+                          <div>🏢 ส่งไป: กปภ.สาขาชัยภูมิ</div>
+                        )}
+                        {telegramSettings.messageFormat.includeUserName && (
+                          <div>👤 โดย: สมหมาย ใจดี</div>
+                        )}
+                        {telegramSettings.messageFormat.includeTimestamp && (
+                          <div>
+                            🕒 เวลา: {new Date().toLocaleString("th-TH")}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
+            )}
 
             {/* System Settings */}
             <Card>
@@ -279,17 +732,22 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>การสำรองข้อมูลอัตโนมัติ</Label>
-                    <p className="text-sm text-muted-foreground">สำรองข้อมูลทุกวันเวลา 02:00 น.</p>
+                    <p className="text-sm text-muted-foreground">
+                      สำรองข้อมูลทุกวันเวลา 02:00 น.
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">
                       <CheckCircle className="h-3 w-3 mr-1" />
                       เปิดใช้งาน
                     </Badge>
-                    <Switch 
+                    <Switch
                       checked={systemSettings.autoBackup}
-                      onCheckedChange={(checked) => 
-                        setSystemSettings(prev => ({ ...prev, autoBackup: checked }))
+                      onCheckedChange={(checked) =>
+                        setSystemSettings((prev) => ({
+                          ...prev,
+                          autoBackup: checked,
+                        }))
                       }
                     />
                   </div>
@@ -298,7 +756,9 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>โหมดการบำรุงรักษา</Label>
-                    <p className="text-sm text-muted-foreground">ปิดระบบชั่วคราวเพื่อการบำรุงรักษา</p>
+                    <p className="text-sm text-muted-foreground">
+                      ปิดระบบชั่วคราวเพื่อการบำรุงรักษา
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {systemSettings.maintenanceMode && (
@@ -307,10 +767,13 @@ export default function SettingsPage() {
                         ใช้งานด้วยความระมัดระวัง
                       </Badge>
                     )}
-                    <Switch 
+                    <Switch
                       checked={systemSettings.maintenanceMode}
-                      onCheckedChange={(checked) => 
-                        setSystemSettings(prev => ({ ...prev, maintenanceMode: checked }))
+                      onCheckedChange={(checked) =>
+                        setSystemSettings((prev) => ({
+                          ...prev,
+                          maintenanceMode: checked,
+                        }))
                       }
                     />
                   </div>
@@ -319,12 +782,17 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>โหมดดีบัก</Label>
-                    <p className="text-sm text-muted-foreground">แสดงข้อมูลการดีบักในคอนโซล</p>
+                    <p className="text-sm text-muted-foreground">
+                      แสดงข้อมูลการดีบักในคอนโซล
+                    </p>
                   </div>
-                  <Switch 
+                  <Switch
                     checked={systemSettings.debugMode}
-                    onCheckedChange={(checked) => 
-                      setSystemSettings(prev => ({ ...prev, debugMode: checked }))
+                    onCheckedChange={(checked) =>
+                      setSystemSettings((prev) => ({
+                        ...prev,
+                        debugMode: checked,
+                      }))
                     }
                   />
                 </div>
@@ -332,12 +800,17 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>การแคชข้อมูล</Label>
-                    <p className="text-sm text-muted-foreground">เก็บข้อมูลชั่วคราวเพื่อเพิ่มความเร็ว</p>
+                    <p className="text-sm text-muted-foreground">
+                      เก็บข้อมูลชั่วคราวเพื่อเพิ่มความเร็ว
+                    </p>
                   </div>
-                  <Switch 
+                  <Switch
                     checked={systemSettings.cacheEnabled}
-                    onCheckedChange={(checked) => 
-                      setSystemSettings(prev => ({ ...prev, cacheEnabled: checked }))
+                    onCheckedChange={(checked) =>
+                      setSystemSettings((prev) => ({
+                        ...prev,
+                        cacheEnabled: checked,
+                      }))
                     }
                   />
                 </div>
@@ -360,7 +833,12 @@ export default function SettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>ระยะเวลาเก็บไฟล์ (วัน)</Label>
-                    <Input type="number" defaultValue="365" min="30" max="3650" />
+                    <Input
+                      type="number"
+                      defaultValue="365"
+                      min="30"
+                      max="3650"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">

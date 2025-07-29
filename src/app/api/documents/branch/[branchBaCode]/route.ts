@@ -3,6 +3,17 @@ import { auth } from '@/auth';
 import { DocumentService } from '@/lib/services/document-service';
 import { DocFlowAuth } from '@/lib/auth/docflow-auth';
 import { DocumentStatus, ApiResponse } from '@/lib/types';
+import { 
+  branchBaCodeSchema, 
+  documentSearchSchema
+} from '@/lib/validation/schemas';
+import { 
+  ValidationError,
+  validateParams,
+  validateQuery,
+  handleValidationError 
+} from '@/lib/validation/middleware';
+import { rateLimiters, addRateLimitHeaders } from '@/lib/rate-limit';
 
 interface RouteParams {
   params: Promise<{
@@ -13,6 +24,35 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
   try {
+    // Apply general API rate limiting
+    const apiRateLimit = await rateLimiters.api.checkLimit(request);
+    if (!apiRateLimit.success) {
+      const response = NextResponse.json(
+        {
+          success: false,
+          error: 'Too Many Requests',
+          message: 'API rate limit exceeded. Please try again later.',
+          retryAfter: apiRateLimit.retryAfter
+        },
+        { status: 429 }
+      );
+      addRateLimitHeaders(response, apiRateLimit);
+      return response;
+    }
+
+    // Validate path parameters
+    let validatedParams;
+    try {
+      validatedParams = validateParams(params, branchBaCodeSchema);
+    } catch (validationError) {
+      if (validationError instanceof ValidationError) {
+        return handleValidationError(validationError);
+      }
+      throw validationError;
+    }
+
+    const branchBaCode = validatedParams.branchBaCode;
+
     // Check authentication
     const session = await auth();
     if (!session?.user?.id) {
@@ -23,7 +63,6 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
     }
 
     const username = session.user.id;
-    const branchBaCode = parseInt(params.branchBaCode);
 
     // Get user from database by username to get the actual numeric ID
     const { getDb } = await import('@/db');
@@ -44,13 +83,6 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
     
     const actualUserId = user.id;
 
-    if (isNaN(branchBaCode)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid branch BA code' },
-        { status: 400 }
-      );
-    }
-
     // Validate branch access
     console.log('Branch API - Validating access for user:', actualUserId, 'to branch:', branchBaCode);
     const hasAccessToBranch = await DocFlowAuth.validateBranchAccess(actualUserId, branchBaCode);
@@ -66,38 +98,30 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
 
     const { searchParams } = new URL(request.url);
 
-    // Parse query parameters
-    const status = searchParams.get('status') || 'all';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const search = searchParams.get('search') || '';
-    const dateFrom = searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : undefined;
-    const dateTo = searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined;
-
-    // Validate status parameter
-    if (status !== 'all' && !Object.values(DocumentStatus).includes(status as DocumentStatus)) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid status. Must be one of: all, ' + Object.values(DocumentStatus).join(', ')
-        },
-        { status: 400 }
-      );
+    // Validate query parameters with Zod schema
+    let validatedQuery;
+    try {
+      validatedQuery = validateQuery(searchParams, documentSearchSchema);
+      console.log('Branch API - Query parameters validated successfully');
+    } catch (validationError) {
+      console.error('Branch API - Query validation error:', validationError);
+      if (validationError instanceof ValidationError) {
+        return handleValidationError(validationError);
+      }
+      throw validationError;
     }
 
-    // Validate pagination parameters
-    if (page < 1 || limit < 1 || limit > 100) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid pagination parameters. Page must be >= 1, limit must be 1-100' },
-        { status: 400 }
-      );
-    }
+    const { search, status, page, limit, dateFrom, dateTo } = validatedQuery;
+    const dateFromObj = dateFrom ? new Date(dateFrom) : undefined;
+    const dateToObj = dateTo ? new Date(dateTo) : undefined;
+
+    // All validation is now handled by Zod schemas
 
     // Get documents for the branch
     const result = await DocumentService.getDocumentsByBranch(branchBaCode, {
       status: status as any,
-      dateFrom,
-      dateTo,
+      dateFrom: dateFromObj,
+      dateTo: dateToObj,
       search,
       page,
       limit
@@ -108,10 +132,17 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
       data: result
     };
 
-    return NextResponse.json(response);
+    const jsonResponse = NextResponse.json(response);
+    addRateLimitHeaders(jsonResponse, apiRateLimit);
+    return jsonResponse;
 
   } catch (error) {
     console.error('Error fetching branch documents:', error);
+    
+    if (error instanceof ValidationError) {
+      return handleValidationError(error);
+    }
+    
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

@@ -2,8 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { DocumentService } from '@/lib/services/document-service';
 import { ActivityLogger } from '@/lib/services/activity-logger';
+import { NotificationService } from '@/lib/services/notification-service';
+import { BranchService } from '@/lib/services/branch-service';
 import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 import { DocumentStatus, ApiResponse } from '@/lib/types';
+import { 
+  documentStatusUpdateSchema, 
+  documentIdSchema
+} from '@/lib/validation/schemas';
+import { 
+  ValidationError,
+  validateBody,
+  validateParams,
+  handleValidationError 
+} from '@/lib/validation/middleware';
 
 interface RouteParams {
   params: Promise<{
@@ -14,6 +26,19 @@ interface RouteParams {
 export async function PATCH(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
   try {
+    // Validate path parameters
+    let validatedParams;
+    try {
+      validatedParams = validateParams(params, documentIdSchema);
+    } catch (validationError) {
+      if (validationError instanceof ValidationError) {
+        return handleValidationError(validationError);
+      }
+      throw validationError;
+    }
+
+    const documentId = validatedParams.id;
+
     // Check authentication
     const session = await auth();
     if (!session?.user?.id) {
@@ -24,7 +49,6 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
     }
 
     const username = session.user.id;
-    const documentId = parseInt(params.id);
 
     // Get user from database by username to get the actual numeric ID
     const { getDb } = await import('@/db');
@@ -45,27 +69,18 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
     
     const actualUserId = user.id;
 
-    if (isNaN(documentId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid document ID' },
-        { status: 400 }
-      );
+    // Validate request body
+    let validatedBody;
+    try {
+      validatedBody = await validateBody(request, documentStatusUpdateSchema);
+    } catch (validationError) {
+      if (validationError instanceof ValidationError) {
+        return handleValidationError(validationError);
+      }
+      throw validationError;
     }
 
-    // Parse request body
-    const body = await request.json();
-    const { status, comment } = body;
-
-    // Validate status
-    if (!status || !Object.values(DocumentStatus).includes(status)) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid status. Must be one of: ' + Object.values(DocumentStatus).join(', ')
-        },
-        { status: 400 }
-      );
-    }
+    const { status, comment } = validatedBody;
 
     // Check update status permission
     const hasUpdatePermission = await DocFlowAuth.hasPermission(actualUserId, DOCFLOW_PERMISSIONS.DOCUMENTS_UPDATE_STATUS);
@@ -133,10 +148,49 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       userAgent
     );
 
-    // TODO: Send notification for status changes
-    // if (status === DocumentStatus.ACKNOWLEDGED || status === DocumentStatus.SENT_BACK_TO_DISTRICT) {
-    //   await NotificationService.sendStatusChangeNotification(updatedDocument, currentDocument.status, status);
-    // }
+    // Send Telegram notification for status changes
+    try {
+      const branch = await BranchService.getBranchByBaCode(currentDocument.branchBaCode);
+      
+      // Get user details for notification
+      const { getDb } = await import('@/db');
+      const { users } = await import('@/db/schema');
+      const { eq } = await import('drizzle-orm');
+      const db = await getDb();
+      
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, actualUserId)
+      });
+      const userFullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username : 'Unknown User';
+      
+      let notificationAction: 'sent' | 'acknowledged' | 'sent_back' | null = null;
+      
+      if (status === DocumentStatus.SENT_TO_BRANCH) {
+        notificationAction = 'sent';
+      } else if (status === DocumentStatus.ACKNOWLEDGED) {
+        notificationAction = 'acknowledged';
+      } else if (status === DocumentStatus.SENT_BACK_TO_DISTRICT) {
+        notificationAction = 'sent_back';
+      }
+      
+      if (notificationAction) {
+        await NotificationService.sendDocumentNotification({
+          documentId: documentId,
+          mtNumber: currentDocument.mtNumber,
+          subject: currentDocument.subject,
+          branchBaCode: currentDocument.branchBaCode,
+          branchName: branch?.name || `BA ${currentDocument.branchBaCode}`,
+          userName: user?.username || 'unknown',
+          userFullName: userFullName,
+          action: notificationAction,
+          timestamp: new Date(),
+          comment: comment
+        });
+      }
+    } catch (notificationError) {
+      console.error('Failed to send status change notification:', notificationError);
+      // Don't fail the status update if notification fails
+    }
 
     const response: ApiResponse<typeof updatedDocument> = {
       success: true,
@@ -148,6 +202,11 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
 
   } catch (error) {
     console.error('Error updating document status:', error);
+    
+    if (error instanceof ValidationError) {
+      return handleValidationError(error);
+    }
+    
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
