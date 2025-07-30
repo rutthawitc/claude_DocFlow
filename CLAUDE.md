@@ -141,6 +141,13 @@ AUTH_TRUST_HOST=true
 # Optional: Telegram Bot Configuration (can also be set via UI)
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 TELEGRAM_CHAT_ID=your-default-chat-id
+
+# Optional: Redis Configuration for Caching (falls back to in-memory if not configured)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=your-redis-password
+REDIS_DB=0
+REDIS_KEY_PREFIX=docflow:
 ```
 
 ## Development Notes

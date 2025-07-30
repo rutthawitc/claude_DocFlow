@@ -4,6 +4,25 @@ import { SystemSettingsService } from '@/lib/services/system-settings-service';
 import { DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 import { DocFlowAuth } from '@/lib/auth/docflow-auth';
 import { getDb } from '@/db';
+import { eq } from 'drizzle-orm';
+import { users } from '@/db/schema';
+
+// Helper function to get actual user database ID from username
+async function getUserDatabaseId(username: string): Promise<number | null> {
+  try {
+    const db = await getDb();
+    if (!db) return null;
+    
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, username)
+    });
+    
+    return user?.id || null;
+  } catch (error) {
+    console.error('Error getting user database ID:', error);
+    return null;
+  }
+}
 
 // Simple validation function
 function validateSystemSettings(data: any): { 
@@ -57,14 +76,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const userPermissions = await DocFlowAuth.getUserRolesAndPermissions(parseInt(session.user.id));
+    console.log('Session user ID (username):', session.user.id);
+    const actualUserId = await getUserDatabaseId(session.user.id);
+    
+    if (!actualUserId) {
+      return NextResponse.json(
+        { success: false, error: 'User not found in database' },
+        { status: 401 }
+      );
+    }
+    
+    console.log('Actual database user ID:', actualUserId);
+    const userPermissions = await DocFlowAuth.getUserRolesAndPermissions(actualUserId);
+    console.log('User permissions:', userPermissions.permissions);
+    console.log('Required permissions:', [DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS, DOCFLOW_PERMISSIONS.SETTINGS_MANAGE, DOCFLOW_PERMISSIONS.ADMIN_SYSTEM]);
+    
     const hasPermission = userPermissions.permissions.some((permission: string) => 
-      [DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS, DOCFLOW_PERMISSIONS.SETTINGS_MANAGE].includes(permission)
+      [DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS, DOCFLOW_PERMISSIONS.SETTINGS_MANAGE, DOCFLOW_PERMISSIONS.ADMIN_SYSTEM].includes(permission)
     );
+
+    console.log('Has required permission:', hasPermission);
 
     if (!hasPermission) {
       return NextResponse.json(
-        { success: false, error: 'Permission denied. Admin access required.' },
+        { success: false, error: 'Permission denied. Admin access required.', userPermissions: userPermissions.permissions },
         { status: 403 }
       );
     }
@@ -108,14 +143,30 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const userPermissions = await DocFlowAuth.getUserRolesAndPermissions(parseInt(session.user.id));
+    console.log('Session user ID (username):', session.user.id);
+    const actualUserId = await getUserDatabaseId(session.user.id);
+    
+    if (!actualUserId) {
+      return NextResponse.json(
+        { success: false, error: 'User not found in database' },
+        { status: 401 }
+      );
+    }
+    
+    console.log('Actual database user ID:', actualUserId);
+    const userPermissions = await DocFlowAuth.getUserRolesAndPermissions(actualUserId);
+    console.log('User permissions:', userPermissions.permissions);
+    console.log('Required permissions:', [DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS, DOCFLOW_PERMISSIONS.SETTINGS_MANAGE, DOCFLOW_PERMISSIONS.ADMIN_SYSTEM]);
+    
     const hasPermission = userPermissions.permissions.some((permission: string) => 
-      [DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS, DOCFLOW_PERMISSIONS.SETTINGS_MANAGE].includes(permission)
+      [DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS, DOCFLOW_PERMISSIONS.SETTINGS_MANAGE, DOCFLOW_PERMISSIONS.ADMIN_SYSTEM].includes(permission)
     );
+
+    console.log('Has required permission:', hasPermission);
 
     if (!hasPermission) {
       return NextResponse.json(
-        { success: false, error: 'Permission denied. Admin access required.' },
+        { success: false, error: 'Permission denied. Admin access required.', userPermissions: userPermissions.permissions },
         { status: 403 }
       );
     }
@@ -137,7 +188,7 @@ export async function PUT(request: NextRequest) {
 
     const success = await SystemSettingsService.setSettings(
       settingsData, 
-      parseInt(session.user.id)
+      actualUserId
     );
 
     if (!success) {

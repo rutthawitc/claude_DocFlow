@@ -48,12 +48,21 @@ const NEW_PERMISSIONS = [
   { name: 'documents:delete', description: 'ลบเอกสาร' },
   { name: 'comments:create', description: 'เพิ่มความคิดเห็น' },
   { name: 'comments:read', description: 'อ่านความคิดเห็น' },
+  { name: 'comments:update', description: 'แก้ไขความคิดเห็น' },
+  { name: 'comments:delete', description: 'ลบความคิดเห็น' },
   { name: 'notifications:send', description: 'ส่งการแจ้งเตือน' },
+  { name: 'notifications:manage', description: 'จัดการการแจ้งเตือน' },
   { name: 'reports:branch', description: 'ดูรายงานระดับสาขา' },
   { name: 'reports:region', description: 'ดูรายงานระดับเขต' },
+  { name: 'reports:system', description: 'ดูรายงานระดับระบบ' },
   { name: 'admin:users', description: 'จัดการผู้ใช้งาน' },
   { name: 'admin:roles', description: 'จัดการบทบาท' },
-  { name: 'admin:system', description: 'จัดการระบบ' }
+  { name: 'admin:system', description: 'จัดการระบบ' },
+  { name: 'admin:full_access', description: 'เข้าถึงระบบแอดมินทั้งหมด' },
+  { name: 'settings:manage', description: 'จัดการการตั้งค่าระบบ' },
+  { name: 'dashboard:access', description: 'เข้าถึงแดชบอร์ด' },
+  { name: 'reports:read', description: 'อ่านรายงาน' },
+  { name: 'users:read', description: 'อ่านข้อมูลผู้ใช้' }
 ];
 
 async function main() {

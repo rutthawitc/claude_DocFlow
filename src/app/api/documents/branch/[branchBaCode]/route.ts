@@ -14,6 +14,7 @@ import {
   handleValidationError 
 } from '@/lib/validation/middleware';
 import { rateLimiters, addRateLimitHeaders } from '@/lib/rate-limit';
+import { withCache } from '@/lib/cache/cache-middleware';
 
 interface RouteParams {
   params: Promise<{
@@ -21,7 +22,7 @@ interface RouteParams {
   }>;
 }
 
-export async function GET(request: NextRequest, { params: paramsPromise }: RouteParams) {
+async function getHandler(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
   try {
     // Apply general API rate limiting
@@ -149,3 +150,19 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
     );
   }
 }
+
+// Export cached GET handler
+export const GET = withCache(
+  (request: NextRequest, context: any) => getHandler(request, context),
+  {
+    ttl: 300, // 5 minutes
+    keyGenerator: (req) => {
+      const url = new URL(req.url);
+      const branchBaCode = url.pathname.split('/').pop();
+      return `branch_documents:${branchBaCode}${url.search}`;
+    },
+    shouldCache: (req, res) => res.status === 200,
+    tags: ['documents'],
+    prefix: 'api'
+  }
+);

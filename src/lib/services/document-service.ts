@@ -13,8 +13,11 @@ import {
 } from '@/lib/types';
 import { FileValidationService, FileStorageService } from './file-service';
 import { BranchService } from './branch-service';
+import { CacheService } from '@/lib/cache/cache-service';
+import { CacheUtils } from '@/lib/cache/cache-middleware';
 
 export class DocumentService {
+  private static cache = CacheService.getInstance();
   /**
    * Create a new document
    */
@@ -65,6 +68,9 @@ export class DocumentService {
         .where(eq(documents.id, newDocument.id))
         .returning();
 
+      // Invalidate cache for documents in this branch
+      await CacheUtils.invalidateDocuments(undefined, metadata.branchBaCode);
+
       return updatedDocument;
     } catch (error) {
       console.error('Error creating document:', error);
@@ -76,6 +82,16 @@ export class DocumentService {
    * Get document by ID with relations
    */
   static async getDocumentById(id: number): Promise<DocumentWithRelations | null> {
+    // Try to get from cache first
+    const cacheKey = `document:${id}`;
+    const cached = await this.cache.get<DocumentWithRelations>(cacheKey, 'documents');
+
+    if (cached) {
+      console.log(`🎯 Cache HIT for document: ${id}`);
+      return cached;
+    }
+
+    console.log(`❌ Cache MISS for document: ${id}`);
     const db = await getDb();
 
     try {
@@ -138,7 +154,7 @@ export class DocumentService {
         .where(eq(documentStatusHistory.documentId, id))
         .orderBy(desc(documentStatusHistory.createdAt));
 
-      return {
+      const documentWithRelations = {
         ...document,
         branch: branch || undefined,
         uploader: uploader || undefined,
@@ -161,6 +177,19 @@ export class DocumentService {
           changedByUser: user || undefined
         }))
       };
+
+      // Cache the document for 10 minutes with appropriate tags
+      await this.cache.set(
+        cacheKey,
+        documentWithRelations,
+        {
+          ttl: 600, // 10 minutes
+          tags: CacheUtils.generateDocumentTags(id, document.branchBaCode),
+        },
+        'documents'
+      );
+
+      return documentWithRelations;
     } catch (error) {
       console.error('Error getting document:', error);
       throw new DatabaseError('get_document', error as Error);
@@ -174,6 +203,26 @@ export class DocumentService {
     branchBaCode: number,
     filters: DocumentFilters
   ): Promise<PaginatedResponse<DocumentWithRelations>> {
+    // Generate cache key based on branch and filters
+    const cacheKey = CacheUtils.generateDocumentKey({
+      branchBaCode,
+      status: filters.status,
+      page: filters.page,
+      limit: filters.limit,
+    });
+
+    // Try to get from cache first
+    const cached = await this.cache.get<PaginatedResponse<DocumentWithRelations>>(
+      `${cacheKey}_${JSON.stringify({ dateFrom: filters.dateFrom, dateTo: filters.dateTo, search: filters.search })}`,
+      'documents'
+    );
+
+    if (cached) {
+      console.log(`🎯 Cache HIT for documents: ${cacheKey}`);
+      return cached;
+    }
+
+    console.log(`❌ Cache MISS for documents: ${cacheKey}`);
     const db = await getDb();
 
     try {
@@ -238,13 +287,26 @@ export class DocumentService {
         uploader: uploader || undefined
       }));
 
-      return {
+      const response = {
         data: documentsWithRelations,
         total: totalCount,
         page: filters.page,
         limit: filters.limit,
         totalPages: Math.ceil(totalCount / filters.limit)
       };
+
+      // Cache the result for 5 minutes with appropriate tags
+      await this.cache.set(
+        `${cacheKey}_${JSON.stringify({ dateFrom: filters.dateFrom, dateTo: filters.dateTo, search: filters.search })}`,
+        response,
+        {
+          ttl: 300, // 5 minutes
+          tags: CacheUtils.generateDocumentTags(undefined, branchBaCode),
+        },
+        'documents'
+      );
+
+      return response;
     } catch (error) {
       console.error('Error getting documents by branch:', error);
       throw new DatabaseError('get_documents_by_branch', error as Error);

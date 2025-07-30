@@ -15,8 +15,13 @@ services:
       - AUTH_TRUST_HOST=true
       - NEXTAUTH_SECRET=your-secret-key-change-this-in-production
       - PWA_AUTH_URL=https://intranet.pwa.co.th/login/webservice_login6.php
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_KEY_PREFIX=docflow:
     depends_on:
       - db
+      - redis
     networks:
       - app-network
 
@@ -57,10 +62,30 @@ services:
     networks:
       - app-network
 
+  # Redis cache
+  redis:
+    image: redis:7.4-alpine
+    container_name: pwa-next15-authjs-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
     driver: local

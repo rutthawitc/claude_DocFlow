@@ -105,7 +105,12 @@ export class DocFlowAuth {
         { name: DOCFLOW_PERMISSIONS.REPORTS_SYSTEM, description: 'ดูรายงานระดับระบบ' },
         { name: DOCFLOW_PERMISSIONS.ADMIN_USERS, description: 'จัดการผู้ใช้งาน' },
         { name: DOCFLOW_PERMISSIONS.ADMIN_ROLES, description: 'จัดการบทบาท' },
-        { name: DOCFLOW_PERMISSIONS.ADMIN_SYSTEM, description: 'จัดการระบบ' }
+        { name: DOCFLOW_PERMISSIONS.ADMIN_SYSTEM, description: 'จัดการระบบ' },
+        { name: DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS, description: 'เข้าถึงระบบแอดมินทั้งหมด' },
+        { name: DOCFLOW_PERMISSIONS.SETTINGS_MANAGE, description: 'จัดการการตั้งค่าระบบ' },
+        { name: DOCFLOW_PERMISSIONS.DASHBOARD_ACCESS, description: 'เข้าถึงแดชบอร์ด' },
+        { name: DOCFLOW_PERMISSIONS.REPORTS_READ, description: 'อ่านรายงาน' },
+        { name: DOCFLOW_PERMISSIONS.USERS_READ, description: 'อ่านข้อมูลผู้ใช้' }
       ];
 
       // Insert roles (ignore if already exists)
@@ -311,6 +316,8 @@ export class DocFlowAuth {
     const db = await getDb();
 
     try {
+      console.log('getUserRolesAndPermissions - Looking up for userId:', userId);
+      
       // Get user roles
       const userRolesData = await db.query.userRoles.findMany({
         where: eq(userRoles.userId, userId),
@@ -319,18 +326,23 @@ export class DocFlowAuth {
         }
       });
 
+      console.log('getUserRolesAndPermissions - Found user roles:', userRolesData.length);
       const rolesList = userRolesData.map(ur => ur.role.name);
+      console.log('getUserRolesAndPermissions - Role names:', rolesList);
 
       // Get permissions for these roles
       const permissionsList: string[] = [];
       
       for (const userRole of userRolesData) {
+        console.log('getUserRolesAndPermissions - Looking up permissions for role:', userRole.role.name, 'roleId:', userRole.roleId);
         const rolePerms = await db.query.rolePermissions.findMany({
           where: eq(rolePermissions.roleId, userRole.roleId),
           with: {
             permission: true
           }
         });
+        
+        console.log('getUserRolesAndPermissions - Found permissions for role', userRole.role.name, ':', rolePerms.length);
         
         for (const rp of rolePerms) {
           if (rp.permission?.name && !permissionsList.includes(rp.permission.name)) {
@@ -339,6 +351,7 @@ export class DocFlowAuth {
         }
       }
 
+      console.log('getUserRolesAndPermissions - Final permissions list:', permissionsList);
       return { roles: rolesList, permissions: permissionsList };
     } catch (error) {
       console.error('Error getting user roles and permissions:', error);

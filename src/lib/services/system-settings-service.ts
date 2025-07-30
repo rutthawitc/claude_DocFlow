@@ -189,7 +189,7 @@ export class SystemSettingsService {
             break;
           case 'cacheEnabled':
             type = 'boolean';
-            description = 'Enable/disable data caching';
+            description = 'Enable/disable data caching (Redis and in-memory)';
             break;
           case 'maintenanceMessage':
             type = 'string';

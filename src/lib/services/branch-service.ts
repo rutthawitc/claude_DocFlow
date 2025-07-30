@@ -2,28 +2,52 @@ import { eq, count, and, ne } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { branches, documents } from '@/db/schema';
 import { Branch, BranchWithDocumentCounts, PWAUserData, DocumentCounts, R6_BRANCHES } from '@/lib/types';
+import { CacheService } from '@/lib/cache/cache-service';
+import { CacheUtils } from '@/lib/cache/cache-middleware';
 
 export class BranchService {
+  private static cache = CacheService.getInstance();
+
   /**
    * Get all branches
    */
   static async getAllBranches(): Promise<Branch[]> {
-    const db = await getDb();
-    return await db.select().from(branches).where(eq(branches.isActive, true));
+    return this.cache.withCache(
+      'all_branches',
+      async () => {
+        const db = await getDb();
+        return await db.select().from(branches).where(eq(branches.isActive, true));
+      },
+      {
+        ttl: 3600, // 1 hour - branches don't change often
+        tags: CacheUtils.generateBranchTags(),
+        prefix: 'branches'
+      }
+    );
   }
 
   /**
    * Get branch by BA code
    */
   static async getBranchByBaCode(baCode: number): Promise<Branch | null> {
-    const db = await getDb();
-    const result = await db
-      .select()
-      .from(branches)
-      .where(and(eq(branches.baCode, baCode), eq(branches.isActive, true)))
-      .limit(1);
-    
-    return result[0] || null;
+    return this.cache.withCache(
+      CacheUtils.generateBranchKey(baCode),
+      async () => {
+        const db = await getDb();
+        const result = await db
+          .select()
+          .from(branches)
+          .where(and(eq(branches.baCode, baCode), eq(branches.isActive, true)))
+          .limit(1);
+        
+        return result[0] || null;
+      },
+      {
+        ttl: 3600, // 1 hour
+        tags: CacheUtils.generateBranchTags(),
+        prefix: 'branches'
+      }
+    );
   }
 
   /**
