@@ -42,6 +42,8 @@ This application manages document workflow across regional branches:
 - **Activity Logging**: Comprehensive audit trail for all document actions
 - **Telegram Notifications**: Real-time notifications for document workflow events
 - **Settings Management**: Persistent configuration system with file-based storage
+- **System Settings**: Database-persisted system configuration including maintenance mode
+- **Maintenance Mode**: System-wide maintenance toggle with admin controls and user redirection
 
 ### Authentication & Authorization
 - **External PWA API**: Authenticates against `PWA_AUTH_URL` endpoint
@@ -58,13 +60,13 @@ This application manages document workflow across regional branches:
 - **ORM**: Drizzle ORM with PostgreSQL 17.5
 - **Schema Location**: `src/db/schema.ts`
 - **Core Tables**: users, roles, permissions, user_roles, role_permissions
-- **DocFlow Tables**: branches, documents, comments, activity_logs, document_status_history
+- **DocFlow Tables**: branches, documents, comments, activity_logs, document_status_history, system_settings
 - **Relationships**: Complex many-to-many relationships with branch-level access control
 
 ### Project Structure Patterns
 - **App Router**: Next.js 15 App Router with parallel routes (`@authModal`)
 - **Component Organization**: Feature-based (`admin/`, `auth/`, `docflow/`, `ui/`)
-- **Service Layer**: `src/lib/services/` for business logic (document-service, activity-logger, branch-service, telegram-service, notification-service)
+- **Service Layer**: `src/lib/services/` for business logic (document-service, activity-logger, branch-service, telegram-service, notification-service, system-settings-service)
 - **API Architecture**: RESTful endpoints in `src/app/api/` with authentication middleware and rate limiting
 - **Validation Layer**: Comprehensive Zod schemas with middleware for request validation
 - **Type Safety**: Comprehensive TypeScript interfaces and Drizzle schema types
@@ -120,6 +122,13 @@ This application manages document workflow across regional branches:
 - Automatic logout with timeout-specific redirect messages
 - Optimized implementation preventing navigation interference
 - Thai language localization for all timeout-related messages
+
+#### System Settings Service (`src/lib/services/system-settings-service.ts`)
+- Complete CRUD operations for persistent system configuration
+- Type-safe settings management with validation and default values
+- Maintenance mode management with database persistence
+- Settings initialization and default configuration management
+- Support for multiple setting types (boolean, string, number, JSON)
 
 ## Environment Variables Required
 ```
@@ -187,6 +196,15 @@ This creates branches, roles, and permissions specific to the DocFlow system.
 - `GET /api/documents` - Search and filter documents
 - `GET /api/documents/branch/[branchBaCode]` - Get branch-specific documents
 
+#### System Settings API
+- `GET /api/system-settings` - Retrieve current system settings
+- `PUT /api/system-settings` - Update system settings (admin/district_manager only)
+- `POST /api/system-settings` - Initialize default system settings
+
+#### Maintenance Mode API
+- `GET /api/test-maintenance` - Check maintenance mode status (development)
+- `POST /api/test-maintenance` - Toggle maintenance mode (development)
+
 #### Rate Limiting
 - **Login**: 5 attempts per 15 minutes per IP
 - **Upload**: 10 uploads per hour per user
@@ -200,3 +218,13 @@ No test framework currently configured. When implementing tests:
 - Test branch-based access control logic
 - Test Telegram notification integration
 - Test rate limiting functionality
+- Test maintenance mode functionality and system settings management
+
+### Maintenance Mode System
+- **Configuration**: Available in `/settings` page for admin and district_manager roles
+- **Database Persistence**: System settings stored in `system_settings` table with type-safe management
+- **User Experience**: Professional maintenance page at `/maintenance` with Thai localization and real-time clock
+- **Admin Override**: Emergency access using `?admin=1` parameter for administrators
+- **API Protection**: Maintenance mode doesn't block API endpoints or critical system functions
+- **Middleware Integration**: Automatic user redirection when maintenance mode is enabled
+- **Error Handling**: Graceful fallback behavior when maintenance checks fail

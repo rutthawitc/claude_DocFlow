@@ -3,6 +3,7 @@ import { auth } from './auth';
 import { rateLimiters, addRateLimitHeaders } from '@/lib/rate-limit';
 import { applySecurityHeaders, applyAPISecurityHeaders } from '@/lib/security/headers';
 import { validateCSRFMiddleware } from '@/lib/security/csrf';
+import { SystemSettingsService } from '@/lib/services/system-settings-service';
 
 // กำหนดค่า config สำหรับ middleware
 
@@ -10,6 +11,26 @@ export async function middleware(request: NextRequest) {
   // Log to both console and server logs
   console.log('🔒 MIDDLEWARE EXECUTING:', request.method, request.nextUrl.pathname);
   console.error('🔒 MIDDLEWARE EXECUTING (ERROR LOG):', request.method, request.nextUrl.pathname);
+  
+  // Check for maintenance mode first (before other checks)
+  const isMaintenancePage = request.nextUrl.pathname === '/maintenance';
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
+  const isAdminOverride = request.nextUrl.searchParams.get('admin') === '1';
+  
+  if (!isMaintenancePage && !isApiRoute && !isAdminOverride) {
+    try {
+      const isMaintenanceMode = await SystemSettingsService.isMaintenanceModeEnabled();
+      
+      if (isMaintenanceMode) {
+        console.log('🚧 Maintenance mode is enabled, redirecting to maintenance page');
+        const maintenanceUrl = new URL('/maintenance', request.url);
+        return NextResponse.redirect(maintenanceUrl);
+      }
+    } catch (error) {
+      console.error('Error checking maintenance mode:', error);
+      // Continue without maintenance check if there's an error
+    }
+  }
   
   // Apply rate limiting to API routes first
   if (request.nextUrl.pathname.startsWith('/api/')) {

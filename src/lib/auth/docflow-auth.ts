@@ -43,6 +43,10 @@ export const DOCFLOW_PERMISSIONS = {
   ADMIN_USERS: 'admin:users',
   ADMIN_ROLES: 'admin:roles',
   ADMIN_SYSTEM: 'admin:system',
+  ADMIN_FULL_ACCESS: 'admin:full_access',
+  
+  // Settings permissions
+  SETTINGS_MANAGE: 'settings:manage',
   
   // Legacy permissions (from existing system)
   DASHBOARD_ACCESS: 'dashboard:access',

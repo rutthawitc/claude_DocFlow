@@ -241,3 +241,22 @@ export const documentStatusHistoryRelations = relations(documentStatusHistory, (
     references: [users.id],
   }),
 }));
+
+// System Settings Table
+export const systemSettings = pgTable('system_settings', {
+  id: serial('id').primaryKey(),
+  settingKey: varchar('setting_key', { length: 100 }).notNull().unique(),
+  settingValue: text('setting_value').notNull(),
+  settingType: varchar('setting_type', { length: 20 }).notNull().default('string'), // 'string', 'boolean', 'number', 'json'
+  description: text('description'),
+  updatedBy: integer('updated_by').references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const systemSettingsRelations = relations(systemSettings, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [systemSettings.updatedBy],
+    references: [users.id],
+  }),
+}));

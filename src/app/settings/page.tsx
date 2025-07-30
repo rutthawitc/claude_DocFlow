@@ -26,12 +26,15 @@ import {
 } from "lucide-react";
 
 export default function SettingsPage() {
-  // Mock state for settings
+  // System settings state
   const [systemSettings, setSystemSettings] = useState({
     autoBackup: true,
     maintenanceMode: false,
     debugMode: false,
     cacheEnabled: true,
+    maintenanceMessage: 'ระบบอยู่ระหว่างการบำรุงรักษา กรุณากลับมาอีกครั้งในภายหลัง',
+    maintenanceStartTime: '',
+    maintenanceEndTime: '',
   });
 
   const [telegramSettings, setTelegramSettings] = useState({
@@ -67,16 +70,28 @@ export default function SettingsPage() {
       setLoading(prev => ({ ...prev, loading: true }));
       
       try {
-        const response = await fetch('/api/telegram/settings');
-        const result = await response.json();
+        // Load Telegram settings
+        const telegramResponse = await fetch('/api/telegram/settings');
+        const telegramResult = await telegramResponse.json();
         
-        if (result.success && result.data) {
-          setTelegramSettings(result.data);
-          console.log('Settings loaded:', result.data);
-        } else if (response.status === 403) {
+        if (telegramResult.success && telegramResult.data) {
+          setTelegramSettings(telegramResult.data);
+          console.log('Telegram settings loaded:', telegramResult.data);
+        } else if (telegramResponse.status === 403) {
           toast.error("❌ ไม่มีสิทธิ์ในการเข้าถึงการตั้งค่า Telegram");
         } else {
-          console.log('No saved settings found, using defaults');
+          console.log('No saved Telegram settings found, using defaults');
+        }
+
+        // Load System settings
+        const systemResponse = await fetch('/api/system-settings');
+        const systemResult = await systemResponse.json();
+        
+        if (systemResult.success && systemResult.data) {
+          setSystemSettings(prev => ({ ...prev, ...systemResult.data }));
+          console.log('System settings loaded:', systemResult.data);
+        } else {
+          console.log('No saved system settings found, using defaults');
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -199,6 +214,39 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Save settings error:', error);
       toast.error("❌ เกิดข้อผิดพลาดในการบันทึกการตั้งค่า");
+    } finally {
+      setLoading(prev => ({ ...prev, saving: false }));
+    }
+  };
+
+  // Save system settings
+  const handleSaveSystemSettings = async () => {
+    setLoading(prev => ({ ...prev, saving: true }));
+
+    try {
+      const response = await fetch('/api/system-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(systemSettings),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("✅ บันทึกการตั้งค่าระบบสำเร็จ!");
+        
+        // Update local state with server response
+        if (result.data) {
+          setSystemSettings(prev => ({ ...prev, ...result.data }));
+        }
+      } else {
+        toast.error(`❌ บันทึกล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Save system settings error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการบันทึกการตั้งค่าระบบ");
     } finally {
       setLoading(prev => ({ ...prev, saving: false }));
     }
@@ -759,15 +807,36 @@ export default function SettingsPage() {
                     <p className="text-sm text-muted-foreground">
                       ปิดระบบชั่วคราวเพื่อการบำรุงรักษา
                     </p>
+                    {systemSettings.maintenanceMode && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="destructive" className="text-xs">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          ระบบถูกปิดใช้งาน
+                        </Badge>
+                        <p className="text-xs text-destructive">
+                          Admin สามารถเข้าถึงด้วย ?admin=1
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <Switch
                     checked={systemSettings.maintenanceMode}
-                    onCheckedChange={(checked) =>
-                      setSystemSettings((prev) => ({
-                        ...prev,
-                        maintenanceMode: checked,
-                      }))
-                    }
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        // Show confirmation for enabling maintenance mode
+                        if (window.confirm('⚠️ ต้องการเปิดโหมดการบำรุงรักษาหรือไม่?\n\nเมื่อเปิดใช้งาน ผู้ใช้ทั่วไปจะไม่สามารถเข้าถึงระบบได้\nAdmin สามารถเข้าถึงด้วย URL พารามิเตอร์ ?admin=1')) {
+                          setSystemSettings((prev) => ({
+                            ...prev,
+                            maintenanceMode: checked,
+                          }));
+                        }
+                      } else {
+                        setSystemSettings((prev) => ({
+                          ...prev,
+                          maintenanceMode: checked,
+                        }));
+                      }
+                    }}
                   />
                 </div>
 
@@ -811,6 +880,27 @@ export default function SettingsPage() {
                       }
                     />
                   </div>
+                </div>
+
+                {/* Save System Settings Button */}
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={handleSaveSystemSettings}
+                    disabled={loading.saving}
+                    className="w-full"
+                  >
+                    {loading.saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        กำลังบันทึก...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        บันทึกการตั้งค่าระบบ
+                      </>
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

@@ -361,3 +361,13 @@ The DocFlow system is now fully functional:
 - **Optimized implementation** that doesn't interfere with navigation or user experience
 - **Thai language support** for all timeout messages and warnings
 - **Server-side validation** in middleware for enhanced security
+
+#### Maintenance Mode System Features:
+- **System-wide maintenance toggle** accessible via settings page (admin/district_manager only)
+- **Automatic user redirection** to professional maintenance page when enabled
+- **Admin bypass mechanism** using `?admin=1` parameter for emergency access
+- **Database persistence** of maintenance settings with comprehensive system configuration
+- **API exclusions** ensuring maintenance mode doesn't block critical API endpoints
+- **Professional maintenance page** with Thai localization and real-time clock display
+- **Permission-based access control** for maintenance mode configuration
+- **Graceful error handling** with fallback behavior when maintenance checks fail
