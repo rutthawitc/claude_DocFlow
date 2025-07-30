@@ -724,20 +724,20 @@ export default function SettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
+                  <SettingsIcon className="h-5 w-5" />
                   การตั้งค่าระบบ
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>การสำรองข้อมูลอัตโนมัติ</Label>
+                    <Label className="text-base font-medium">การสำรองข้อมูลอัตโนมัติ</Label>
                     <p className="text-sm text-muted-foreground">
                       สำรองข้อมูลทุกวันเวลา 02:00 น.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
                       <CheckCircle className="h-3 w-3 mr-1" />
                       เปิดใช้งาน
                     </Badge>
@@ -752,36 +752,28 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
-                <Separator />
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>โหมดการบำรุงรักษา</Label>
+                    <Label className="text-base font-medium">โหมดการบำรุงรักษา</Label>
                     <p className="text-sm text-muted-foreground">
                       ปิดระบบชั่วคราวเพื่อการบำรุงรักษา
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {systemSettings.maintenanceMode && (
-                      <Badge variant="destructive">
-                        <AlertTriangle className="h-3 w-3 mr-1" />
-                        ใช้งานด้วยความระมัดระวัง
-                      </Badge>
-                    )}
-                    <Switch
-                      checked={systemSettings.maintenanceMode}
-                      onCheckedChange={(checked) =>
-                        setSystemSettings((prev) => ({
-                          ...prev,
-                          maintenanceMode: checked,
-                        }))
-                      }
-                    />
-                  </div>
+                  <Switch
+                    checked={systemSettings.maintenanceMode}
+                    onCheckedChange={(checked) =>
+                      setSystemSettings((prev) => ({
+                        ...prev,
+                        maintenanceMode: checked,
+                      }))
+                    }
+                  />
                 </div>
-                <Separator />
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>โหมดดีบัก</Label>
+                    <Label className="text-base font-medium">โหมดดีบัก</Label>
                     <p className="text-sm text-muted-foreground">
                       แสดงข้อมูลการดีบักในคอนโซล
                     </p>
@@ -796,23 +788,29 @@ export default function SettingsPage() {
                     }
                   />
                 </div>
-                <Separator />
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>การแคชข้อมูล</Label>
+                    <Label className="text-base font-medium">การแคชข้อมูล</Label>
                     <p className="text-sm text-muted-foreground">
                       เก็บข้อมูลชั่วคราวเพื่อเพิ่มความเร็ว
                     </p>
                   </div>
-                  <Switch
-                    checked={systemSettings.cacheEnabled}
-                    onCheckedChange={(checked) =>
-                      setSystemSettings((prev) => ({
-                        ...prev,
-                        cacheEnabled: checked,
-                      }))
-                    }
-                  />
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      เปิดใช้งาน
+                    </Badge>
+                    <Switch
+                      checked={systemSettings.cacheEnabled}
+                      onCheckedChange={(checked) =>
+                        setSystemSettings((prev) => ({
+                          ...prev,
+                          cacheEnabled: checked,
+                        }))
+                      }
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>

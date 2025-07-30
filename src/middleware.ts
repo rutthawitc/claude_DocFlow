@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from './auth';
 import { rateLimiters, addRateLimitHeaders } from '@/lib/rate-limit';
+import { applySecurityHeaders, applyAPISecurityHeaders } from '@/lib/security/headers';
+import { validateCSRFMiddleware } from '@/lib/security/csrf';
 
 // กำหนดค่า config สำหรับ middleware
 
 export async function middleware(request: NextRequest) {
-  console.log('Middleware executing for path:', request.nextUrl.pathname);
+  // Log to both console and server logs
+  console.log('🔒 MIDDLEWARE EXECUTING:', request.method, request.nextUrl.pathname);
+  console.error('🔒 MIDDLEWARE EXECUTING (ERROR LOG):', request.method, request.nextUrl.pathname);
   
   // Apply rate limiting to API routes first
   if (request.nextUrl.pathname.startsWith('/api/')) {
@@ -36,14 +40,25 @@ export async function middleware(request: NextRequest) {
           { status: 429 }
         );
         addRateLimitHeaders(response, result);
-        return response;
+        return applyAPISecurityHeaders(response);
+      }
+      
+      // Apply CSRF protection to state-changing API requests
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+        console.log('Applying CSRF protection to:', request.method, request.nextUrl.pathname);
+        const csrfValidation = validateCSRFMiddleware(request);
+        console.log('CSRF validation result:', csrfValidation.valid);
+        if (!csrfValidation.valid && csrfValidation.response) {
+          console.log('CSRF validation failed, returning 403');
+          return applyAPISecurityHeaders(csrfValidation.response);
+        }
       }
       
       // If this is an API route, we don't need to continue with auth checks
       // The API routes handle their own authentication
       const response = NextResponse.next();
       addRateLimitHeaders(response, result);
-      return response;
+      return applyAPISecurityHeaders(response);
     } catch (error) {
       console.error('Rate limiting error:', error);
       // Continue without rate limiting if there's an error
@@ -54,17 +69,40 @@ export async function middleware(request: NextRequest) {
   // เพื่อป้องกัน redirect loop ในกรณีที่มีปัญหากับการตรวจสอบสิทธิ์
   if (request.nextUrl.pathname === '/login' && request.nextUrl.searchParams.get('debug') === '1') {
     console.log('Debugging login page, skipping middleware checks');
-    return NextResponse.next();
+    const response = NextResponse.next();
+    return applySecurityHeaders(response);
   }
   
   // ถ้าเป็นหน้า dashboard ให้ดำเนินการต่อโดยไม่มีการตรวจสอบเพื่อแก้ปัญหา redirect loop ชั่วคราว
   if (request.nextUrl.pathname === '/dashboard') {
     console.log('Dashboard access granted without permission check');
-    return NextResponse.next();
+    const response = NextResponse.next();
+    return applySecurityHeaders(response);
   }
   
   const session = await auth();
   console.log('Session exists:', !!session);
+  
+  // Session timeout validation for authenticated routes
+  if (session) {
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    const sessionExp = session.expires ? Math.floor(new Date(session.expires).getTime() / 1000) : null;
+    
+    // Check if session has expired (absolute timeout)
+    if (sessionExp && now > sessionExp) {
+      console.log('Session expired (absolute timeout), redirecting to login');
+      const redirectUrl = new URL('/login', request.url);
+      redirectUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
+      redirectUrl.searchParams.set('expired', '1');
+      return NextResponse.redirect(redirectUrl);
+    }
+    
+    // Log session timing info
+    if (sessionExp) {
+      const timeLeft = sessionExp - now;
+      console.log(`Session valid for ${Math.floor(timeLeft / 60)} more minutes`);
+    }
+  }
   
   // Define protected routes and their required roles/permissions
   const protectedRoutes = [
@@ -91,10 +129,11 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  // If the route is not protected, continue
+  // If the route is not protected, continue with security headers
   if (!matchedRoute) {
     console.log('Route not protected, proceeding');
-    return NextResponse.next();
+    const response = NextResponse.next();
+    return applySecurityHeaders(response);
   }
   
   // If user is not authenticated, redirect to login
@@ -156,19 +195,11 @@ export async function middleware(request: NextRequest) {
   }
   
   console.log('All checks passed, allowing access to protected route');
-  return NextResponse.next();
-  
-  return NextResponse.next();
+  const response = NextResponse.next();
+  return applySecurityHeaders(response);
 }
 
 // กำหนดค่า config สำหรับ middleware
 export const config = {
-  // กำหนดเส้นทางที่ต้องการให้ middleware ทำงาน
-  matcher: [
-    '/api/:path*',     // API routes for rate limiting
-    '/dashboard/:path*',
-    '/admin/:path*',
-    '/reports/:path*',
-    '/users/:path*',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
 };

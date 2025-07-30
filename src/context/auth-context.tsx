@@ -5,6 +5,7 @@
 
 import { createContext, useContext, ReactNode } from "react";
 import { useSession, SessionProvider } from "next-auth/react";
+import { SessionTimeoutWarning } from "@/components/auth/SessionTimeoutWarning";
 
 // ปรับโครงสร้าง User type ให้ตรงกับที่กำหนดใน auth.ts
 type PWAUserData = {
@@ -110,7 +111,12 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
     hasPermission,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <SessionTimeoutWarning />
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => useContext(AuthContext);

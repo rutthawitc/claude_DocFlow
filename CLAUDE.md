@@ -48,7 +48,11 @@ This application manages document workflow across regional branches:
 - **User Synchronization**: PWA user data synced to local PostgreSQL database
 - **DocFlow RBAC**: Specialized roles (uploader, branch_user, branch_manager, district_manager)
 - **Permission System**: Granular permissions (documents:upload, documents:view, branches:manage)
-- **Session Management**: JWT-based sessions with 30-day expiration
+- **Session Management**: Enhanced JWT-based sessions with dual timeout system
+  - **Idle Timeout**: 30 minutes of inactivity triggers automatic logout
+  - **Absolute Timeout**: 4 hours maximum session duration regardless of activity
+  - **Session Warning**: Users notified 5 minutes before expiration with option to extend
+  - **Activity Tracking**: Optimized session monitoring without navigation interference
 
 ### Database Architecture
 - **ORM**: Drizzle ORM with PostgreSQL 17.5
@@ -71,7 +75,8 @@ This application manages document workflow across regional branches:
 - NextAuth.js v5 configuration with Credentials provider
 - External PWA API integration for login validation
 - Automatic user creation/update with organizational data sync
-- Session extension with PWA user data and branch assignments
+- Enhanced session management with dual timeout system (30min idle, 4hr absolute)
+- JWT-based session tracking with activity monitoring and timeout validation
 
 #### Document Management (`src/lib/services/document-service.ts`)
 - PDF upload validation and secure storage
@@ -107,6 +112,14 @@ This application manages document workflow across regional branches:
 - Comprehensive error handling with standardized responses
 - Form data, query parameters, and JSON body validation
 - Type-safe parameter extraction and validation
+
+#### Session Timeout Management (`src/hooks/useSessionTimeoutSimple.ts`, `src/components/auth/SessionTimeoutWarning.tsx`)
+- Client-side session timeout monitoring with 30-second check intervals
+- User warning dialog displayed 5 minutes before session expiration
+- Manual session extension capability through warning interface
+- Automatic logout with timeout-specific redirect messages
+- Optimized implementation preventing navigation interference
+- Thai language localization for all timeout-related messages
 
 ## Environment Variables Required
 ```

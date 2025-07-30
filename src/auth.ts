@@ -58,6 +58,8 @@ declare module 'next-auth/jwt' {
     email?: string | null;
     picture?: string | null;
     pwa?: PWAUserData;
+    iat?: number; // Token creation time
+    lastActivity?: number; // Last activity time for idle timeout
   }
 }
 
@@ -114,7 +116,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: process.env.NODE_ENV === 'development',
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 4 * 60 * 60, // 4 hours absolute timeout
+    updateAge: 30 * 60, // 30 minutes idle timeout - session updates every 30 minutes
   },
   pages: {
     signIn: '/login',
@@ -405,15 +408,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      const now = Math.floor(Date.now() / 1000);
+      
       if (user) {
-        // ใช้ nullish coalescing operator (??) เพื่อกำหนดค่าเริ่มต้นสำหรับตัวแปรที่อาจเป็น undefined หรือ null
+        // New login - set creation time and last activity
         token.sub = user.id ?? '';
-        token.name = user.name ?? null; // สามารถเป็น null ได้ตาม interface JWT
-        token.email = user.email ?? null; // สามารถเป็น null ได้ตาม interface JWT
-        token.picture = user.image ?? null; // สามารถเป็น null ได้ตาม interface JWT
+        token.name = user.name ?? null;
+        token.email = user.email ?? null;
+        token.picture = user.image ?? null;
         token.pwa = user.pwa;
+        token.iat = now; // Set creation time
+        token.lastActivity = now; // Set initial activity time
+      } else if (trigger === 'update' || !token.lastActivity) {
+        // Update activity time on token refresh/update
+        token.lastActivity = now;
       }
+      
+      // Check idle timeout (30 minutes = 1800 seconds)
+      if (token.lastActivity && now - (token.lastActivity as number) > 30 * 60) {
+        console.log('Session idle timeout exceeded');
+        return null; // Force re-authentication
+      }
+      
+      // Check absolute timeout (4 hours = 14400 seconds)
+      if (token.iat && now - (token.iat as number) > 4 * 60 * 60) {
+        console.log('Session absolute timeout exceeded');
+        return null; // Force re-authentication
+      }
+      
       return token;
     },
     async session({ session, token }) {

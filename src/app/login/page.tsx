@@ -4,14 +4,20 @@
 import { useState, useEffect } from "react";
 import { LoginFormServer } from "@/components/auth/login-form-server";
 import { useSession } from "next-auth/react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { AlertCircle, Clock } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
   const [redirectAttempted, setRedirectAttempted] = useState(false);
+  
+  // Check for timeout-related query parameters
+  const expired = searchParams.get('expired');
+  const idle = searchParams.get('idle');
 
   useEffect(() => {
     // เพิ่ม log เพื่อตรวจสอบสถานะและค่า session
@@ -55,6 +61,32 @@ export default function LoginPage() {
             PWA Authentication System
           </h1>
         </div>
+        
+        {/* Session timeout messages */}
+        {expired && (
+          <div className="rounded-md bg-amber-50 p-4 border border-amber-200">
+            <div className="flex items-center">
+              <Clock className="h-5 w-5 text-amber-400 mr-2" />
+              <div className="text-sm text-amber-800">
+                <p className="font-medium">เซสชันหมดอายุแล้ว</p>
+                <p>กรุณาเข้าสู่ระบบอีกครั้ง</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {idle && (
+          <div className="rounded-md bg-blue-50 p-4 border border-blue-200">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-blue-400 mr-2" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium">เซสชันหมดอายุเนื่องจากไม่มีการใช้งาน</p>
+                <p>กรุณาเข้าสู่ระบบอีกครั้ง</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <LoginFormServer />
       </div>
     </div>

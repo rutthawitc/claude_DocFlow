@@ -343,6 +343,7 @@ The DocFlow system is now fully functional:
 6. ✅ **Comprehensive security** with rate limiting and request validation
 7. ✅ **Production-ready deployment** with Docker support
 8. ✅ **Complete documentation** with API reference and user guides
+9. ✅ **Enhanced session management** with dual timeout system and user warnings
 
 #### Notification System Features:
 - **Real-time alerts** for document uploads and status changes
@@ -351,3 +352,12 @@ The DocFlow system is now fully functional:
 - **Admin interface** for settings management
 - **Graceful error handling** that doesn't break document operations
 - **File-based persistence** for settings across server restarts
+
+#### Session Timeout System Features:
+- **Dual timeout system** with 30-minute idle and 4-hour absolute timeouts
+- **User warning dialog** displayed 5 minutes before session expiration
+- **Manual session extension** through intuitive warning interface
+- **Automatic logout** with appropriate redirect messages for different timeout types
+- **Optimized implementation** that doesn't interfere with navigation or user experience
+- **Thai language support** for all timeout messages and warnings
+- **Server-side validation** in middleware for enhanced security
