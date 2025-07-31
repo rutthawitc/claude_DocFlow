@@ -353,6 +353,47 @@ Settings are stored in `./tmp/telegram-settings.json` with the following structu
 5. **Input Validation**: All inputs are validated using Zod schemas
 6. **File Permissions**: Settings file should have restricted read/write permissions
 
+## Settings Workflow and Best Practices
+
+### Save-Then-Test Workflow ⭐ IMPORTANT
+
+The Telegram notification system uses a **save-then-test** workflow to ensure reliability:
+
+1. **Modify Settings in UI**: Change notification preferences, bot token, chat ID, etc.
+2. **Save Settings**: Click "บันทึกการตั้งค่า Telegram" to persist changes to backend
+3. **Test Functionality**: Use test buttons to verify notifications work with saved settings
+
+#### Why This Workflow?
+
+- **Settings Persistence**: Test functions use saved settings from `tmp/telegram-settings.json`, not UI state
+- **Reliability**: Prevents accidental notifications from unsaved changes
+- **Consistency**: All notification operations use the same committed settings
+- **Error Prevention**: Ensures UI state matches backend configuration
+
+#### Common Issue and Resolution
+
+**Problem**: Test shows "200 OK" but no message sent
+```
+POST /api/telegram/system-alert 200 in 3927ms, has no message sent to telegram.
+```
+
+**Cause**: UI shows system alerts enabled but settings file has `"systemAlerts": false`
+
+**Solution**:
+1. ✅ Verify toggle states in UI
+2. ❌ **Click "บันทึกการตั้งค่า Telegram"** (this step is often missed)
+3. ✅ Test system alert functionality
+
+#### Settings UI Organization
+
+The settings page now has improved organization:
+- **Section-Specific Saves**: Each settings section has its own save button
+- **Clear Labeling**: "บันทึกการตั้งค่า Telegram" vs "บันทึกการตั้งค่าระบบ"
+- **Consistent Design**: Full-width buttons with proper loading states
+- **Better UX**: No confusion about which settings are being saved
+
+---
+
 ## Usage Examples
 
 ### Setting up Telegram Notifications

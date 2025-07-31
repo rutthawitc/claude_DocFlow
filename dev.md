@@ -271,6 +271,25 @@ The DocFlow system is now fully functional:
 
 ### 🆕 Latest Updates (2025-07-31)
 
+#### ✅ **Telegram Settings UI Enhancement and Testing Confirmation**
+1. **UI/UX Improvement**
+   - Moved Telegram-specific save button from global header into Telegram section ✅ **IMPROVED UX**
+   - Added dedicated "บันทึกการตั้งค่า Telegram" button at bottom of Telegram settings ✅
+   - Improved settings section organization with clear section-specific actions ✅
+   - Enhanced user understanding of which button saves which settings ✅
+
+2. **Telegram System Testing**
+   - Confirmed Telegram system alerts working correctly after proper save workflow ✅ **FULLY FUNCTIONAL**
+   - Validated save-then-test workflow for system notifications ✅
+   - Verified settings persistence and synchronization between UI and backend ✅
+   - Tested system alert notifications with proper message delivery ✅
+
+3. **Settings Workflow Optimization**
+   - Clear separation between Telegram settings and System settings saves ✅
+   - Consistent full-width button styling across all settings sections ✅
+   - Proper loading states and user feedback for all save operations ✅
+   - Enhanced Thai language labeling for better user experience ✅
+
 #### ✅ **CacheUtils Error Resolution and Document Display Fix**
 1. **Critical Bug Fix**
    - Fixed "CacheUtils is not defined" reference errors preventing document display ✅ **FULLY RESOLVED**

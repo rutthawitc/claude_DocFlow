@@ -295,18 +295,6 @@ export default function SettingsPage() {
               <RefreshCw className="h-4 w-4 mr-2" />
               รีเซ็ตการตั้งค่า
             </Button>
-            <Button 
-              size="sm" 
-              onClick={handleSaveSettings}
-              disabled={loading.saving}
-            >
-              {loading.saving ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              {loading.saving ? "กำลังบันทึก..." : "บันทึก"}
-            </Button>
           </div>
         </div>
 
@@ -765,6 +753,27 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Save Telegram Settings Button */}
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={handleSaveSettings}
+                    disabled={loading.saving}
+                    className="w-full"
+                  >
+                    {loading.saving ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        กำลังบันทึก...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        บันทึกการตั้งค่า Telegram
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
             )}
