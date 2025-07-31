@@ -24,7 +24,12 @@ import {
   Send,
   Bot,
   TestTube,
+  HardDrive,
+  Trash2,
+  Archive,
 } from "lucide-react";
+import { FileCleanupModal } from "@/components/ui/file-cleanup-modal";
+import { FileBackupModal } from "@/components/ui/file-backup-modal";
 
 export default function SettingsPage() {
   // System settings state
@@ -57,12 +62,40 @@ export default function SettingsPage() {
     },
   });
 
+  const [fileSettings, setFileSettings] = useState({
+    maxFileSize: 10,
+    retentionPeriod: 365,
+    uploadDirectory: './uploads',
+    maxStorageSize: 10,
+    cleanupEnabled: true,
+    backupEnabled: false,
+  });
+
+  const [fileStats, setFileStats] = useState({
+    totalFiles: 0,
+    totalSize: 0,
+    usedSpace: '0 B',
+    availableSpace: '10 GB',
+    totalSpace: '10 GB',
+    usagePercentage: 0,
+    oldestFile: null,
+    largestFile: null,
+  });
+
   const [loading, setLoading] = useState({
     testConnection: false,
     testMessage: false,
     saving: false,
     loading: true, // Start with loading true
     systemAlert: false,
+    fileManagement: false,
+    cleanup: false,
+    backup: false,
+  });
+
+  const [modalState, setModalState] = useState({
+    cleanupModal: false,
+    backupModal: false,
   });
 
   // Load settings when component mounts
@@ -93,6 +126,28 @@ export default function SettingsPage() {
           console.log('System settings loaded:', systemResult.data);
         } else {
           console.log('No saved system settings found, using defaults');
+        }
+
+        // Load File management settings and stats
+        try {
+          const fileResponse = await fetch('/api/files/management');
+          const fileResult = await fileResponse.json();
+          
+          if (fileResult.success && fileResult.data) {
+            if (fileResult.data.settings) {
+              setFileSettings(fileResult.data.settings);
+            }
+            if (fileResult.data.stats) {
+              setFileStats(fileResult.data.stats);
+            }
+            console.log('File management data loaded:', fileResult.data);
+          } else if (fileResponse.status === 403) {
+            console.log('No permission to access file management settings');
+          } else {
+            console.log('No file management data found, using defaults');
+          }
+        } catch (fileError) {
+          console.error('Error loading file management data:', fileError);
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -283,6 +338,149 @@ export default function SettingsPage() {
     } finally {
       setLoading(prev => ({ ...prev, systemAlert: false }));
     }
+  };
+
+  // Save file management settings
+  const handleSaveFileSettings = async () => {
+    setLoading(prev => ({ ...prev, fileManagement: true }));
+
+    try {
+      const response = await fetch('/api/files/management', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fileSettings),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("✅ บันทึกการตั้งค่าการจัดการไฟล์สำเร็จ!");
+        
+        // Update local state with server response
+        if (result.data) {
+          setFileSettings(result.data);
+        }
+
+        // Refresh stats after settings update
+        await refreshFileStats();
+      } else {
+        toast.error(`❌ บันทึกล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Save file settings error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการบันทึกการตั้งค่าการจัดการไฟล์");
+    } finally {
+      setLoading(prev => ({ ...prev, fileManagement: false }));
+    }
+  };
+
+  // Refresh file statistics
+  const refreshFileStats = async () => {
+    try {
+      const response = await fetch('/api/files/management');
+      const result = await response.json();
+      
+      if (result.success && result.data?.stats) {
+        setFileStats(result.data.stats);
+      }
+    } catch (error) {
+      console.error('Error refreshing file stats:', error);
+    }
+  };
+
+  // Handle file cleanup
+  const handleFileCleanup = () => {
+    setModalState(prev => ({ ...prev, cleanupModal: true }));
+  };
+
+  const confirmFileCleanup = async () => {
+    setLoading(prev => ({ ...prev, cleanup: true }));
+
+    try {
+      const response = await fetch('/api/files/management', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'cleanup',
+          confirm: true,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        const { filesRemoved, spaceFreed, errors } = result.data;
+        let message = `✅ ทำความสะอาดเสร็จสิ้น!\n- ลบไฟล์: ${filesRemoved} ไฟล์\n- พื้นที่ที่ว่าง: ${formatBytes(spaceFreed)}`;
+        
+        if (errors.length > 0) {
+          message += `\n- ข้อผิดพลาด: ${errors.length} รายการ`;
+        }
+        
+        toast.success(message);
+        
+        // Refresh stats after cleanup
+        await refreshFileStats();
+      } else {
+        toast.error(`❌ ทำความสะอาดล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('File cleanup error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการทำความสะอาดไฟล์");
+    } finally {
+      setLoading(prev => ({ ...prev, cleanup: false }));
+    }
+  };
+
+  // Handle file backup
+  const handleFileBackup = () => {
+    if (!fileSettings.backupEnabled) {
+      toast.error("❌ การสำรองข้อมูลถูกปิดใช้งาน กรุณาเปิดใช้งานในการตั้งค่าก่อน");
+      return;
+    }
+    setModalState(prev => ({ ...prev, backupModal: true }));
+  };
+
+  const confirmFileBackup = async () => {
+    setLoading(prev => ({ ...prev, backup: true }));
+
+    try {
+      const response = await fetch('/api/files/management', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'backup',
+          confirm: true,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`✅ สำรองข้อมูลสำเร็จ!\nตำแหน่ง: ${result.data.backupPath}`);
+      } else {
+        toast.error(`❌ สำรองข้อมูลล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('File backup error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการสำรองข้อมูล");
+    } finally {
+      setLoading(prev => ({ ...prev, backup: false }));
+    }
+  };
+
+  // Format bytes helper function
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
   return (
@@ -933,37 +1131,259 @@ export default function SettingsPage() {
                   การจัดการไฟล์
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>ขนาดไฟล์สูงสุด (MB)</Label>
-                    <Input type="number" defaultValue="10" min="1" max="50" />
+              <CardContent className="space-y-6">
+                {/* Storage Statistics */}
+                <div className="space-y-4">
+                  <Label className="text-lg font-medium">สถิติการใช้งาน</Label>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2">
+                        <HardDrive className="h-5 w-5 text-blue-500" />
+                        <Label className="font-medium">จำนวนไฟล์</Label>
+                      </div>
+                      <p className="text-2xl font-bold text-blue-600 mt-1">
+                        {fileStats.totalFiles.toLocaleString()}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2">
+                        <Archive className="h-5 w-5 text-green-500" />
+                        <Label className="font-medium">พื้นที่ใช้งาน</Label>
+                      </div>
+                      <p className="text-2xl font-bold text-green-600 mt-1">
+                        {fileStats.usedSpace}
+                      </p>
+                    </div>
+                    
+                    <div className={`p-4 rounded-lg border ${
+                      fileStats.usagePercentage > 80 
+                        ? 'bg-red-50 border-red-200' 
+                        : fileStats.usagePercentage > 60 
+                          ? 'bg-yellow-50 border-yellow-200'
+                          : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <Database className={`h-5 w-5 ${
+                          fileStats.usagePercentage > 80 
+                            ? 'text-red-500' 
+                            : fileStats.usagePercentage > 60 
+                              ? 'text-yellow-500'
+                              : 'text-gray-500'
+                        }`} />
+                        <Label className="font-medium">การใช้งาน</Label>
+                      </div>
+                      <p className={`text-2xl font-bold mt-1 ${
+                        fileStats.usagePercentage > 80 
+                          ? 'text-red-600' 
+                          : fileStats.usagePercentage > 60 
+                            ? 'text-yellow-600'
+                            : 'text-gray-600'
+                      }`}>
+                        {fileStats.usagePercentage}%
+                      </p>
+                    </div>
                   </div>
+
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-muted-foreground">พื้นที่ใช้งาน</span>
+                      <span className="text-sm font-medium">{fileStats.usedSpace} / {fileStats.totalSpace}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          fileStats.usagePercentage > 80 
+                            ? 'bg-red-500' 
+                            : fileStats.usagePercentage > 60 
+                              ? 'bg-yellow-500'
+                              : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(fileStats.usagePercentage, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {(fileStats.oldestFile || fileStats.largestFile) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {fileStats.oldestFile && (
+                        <div className="text-sm text-muted-foreground">
+                          <strong>ไฟล์เก่าที่สุด:</strong> {fileStats.oldestFile.name} ({fileStats.oldestFile.age} วัน)
+                        </div>
+                      )}
+                      {fileStats.largestFile && (
+                        <div className="text-sm text-muted-foreground">
+                          <strong>ไฟล์ใหญ่ที่สุด:</strong> {fileStats.largestFile.name} ({formatBytes(fileStats.largestFile.size)})
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* File Settings */}
+                <div className="space-y-4">
+                  <Label className="text-lg font-medium">การตั้งค่า</Label>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>ขนาดไฟล์สูงสุด (MB)</Label>
+                      <Input 
+                        type="number" 
+                        value={fileSettings.maxFileSize}
+                        onChange={(e) => setFileSettings(prev => ({ 
+                          ...prev, 
+                          maxFileSize: parseInt(e.target.value) || 10 
+                        }))}
+                        min="1" 
+                        max="100" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>ระยะเวลาเก็บไฟล์ (วัน)</Label>
+                      <Input
+                        type="number"
+                        value={fileSettings.retentionPeriod}
+                        onChange={(e) => setFileSettings(prev => ({ 
+                          ...prev, 
+                          retentionPeriod: parseInt(e.target.value) || 365 
+                        }))}
+                        min="1"
+                        max="3650"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label>ระยะเวลาเก็บไฟล์ (วัน)</Label>
-                    <Input
-                      type="number"
-                      defaultValue="365"
-                      min="30"
-                      max="3650"
+                    <Label>ขนาดพื้นที่เก็บข้อมูลสูงสุด (GB)</Label>
+                    <Input 
+                      type="number" 
+                      value={fileSettings.maxStorageSize}
+                      onChange={(e) => setFileSettings(prev => ({ 
+                        ...prev, 
+                        maxStorageSize: parseInt(e.target.value) || 10 
+                      }))}
+                      min="1" 
+                      max="1000" 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>ไดเรกทอรีเก็บไฟล์</Label>
+                    <Input 
+                      value={fileSettings.uploadDirectory} 
+                      onChange={(e) => setFileSettings(prev => ({ 
+                        ...prev, 
+                        uploadDirectory: e.target.value 
+                      }))}
+                      placeholder="./uploads" 
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-medium">เปิดใช้งานการทำความสะอาดอัตโนมัติ</Label>
+                      <p className="text-sm text-muted-foreground">
+                        ลบไฟล์เก่าตามระยะเวลาที่กำหนด
+                      </p>
+                    </div>
+                    <Switch
+                      checked={fileSettings.cleanupEnabled}
+                      onCheckedChange={(checked) =>
+                        setFileSettings((prev) => ({
+                          ...prev,
+                          cleanupEnabled: checked,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-medium">เปิดใช้งานการสำรองข้อมูล</Label>
+                      <p className="text-sm text-muted-foreground">
+                        อนุญาตให้สร้างสำเนาสำรองไฟล์
+                      </p>
+                    </div>
+                    <Switch
+                      checked={fileSettings.backupEnabled}
+                      onCheckedChange={(checked) =>
+                        setFileSettings((prev) => ({
+                          ...prev,
+                          backupEnabled: checked,
+                        }))
+                      }
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>ไดเรกทอรีเก็บไฟล์</Label>
-                  <Input defaultValue="/var/www/docflow/uploads" disabled />
-                  <p className="text-xs text-muted-foreground">
-                    พื้นที่ใช้งาน: 2.3 GB / 10 GB (23%)
-                  </p>
+
+                <Separator />
+
+                {/* Actions */}
+                <div className="space-y-4">
+                  <Label className="text-lg font-medium">การดำเนินการ</Label>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleFileCleanup}
+                      disabled={!fileSettings.cleanupEnabled || loading.cleanup}
+                    >
+                      {loading.cleanup ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 mr-2" />
+                      )}
+                      {loading.cleanup ? "กำลังทำความสะอาด..." : "ทำความสะอาดไฟล์"}
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleFileBackup}
+                      disabled={!fileSettings.backupEnabled || loading.backup}
+                    >
+                      {loading.backup ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Archive className="h-4 w-4 mr-2" />
+                      )}
+                      {loading.backup ? "กำลังสำรอง..." : "สำรองข้อมูล"}
+                    </Button>
+
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={refreshFileStats}
+                      disabled={loading.fileManagement}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      รีเฟรชข้อมูล
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    ทำความสะอาดไฟล์
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Database className="h-4 w-4 mr-2" />
-                    สำรองข้อมูล
+
+                {/* Save File Settings Button */}
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={handleSaveFileSettings}
+                    disabled={loading.fileManagement}
+                    className="w-full"
+                  >
+                    {loading.fileManagement ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        กำลังบันทึก...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        บันทึกการตั้งค่าการจัดการไฟล์
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -971,6 +1391,31 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+      
+      {/* File Cleanup Modal */}
+      <FileCleanupModal
+        open={modalState.cleanupModal}
+        onOpenChange={(open) => setModalState(prev => ({ ...prev, cleanupModal: open }))}
+        onConfirm={confirmFileCleanup}
+        fileStats={{
+          totalFiles: fileStats.totalFiles,
+          oldFiles: Math.floor(fileStats.totalFiles * 0.2), // Estimate
+          retentionDays: fileSettings.retentionPeriod,
+          spaceToFree: formatBytes(Math.floor(fileStats.totalSize * 0.15)) // Estimate
+        }}
+      />
+      
+      {/* File Backup Modal */}
+      <FileBackupModal
+        open={modalState.backupModal}
+        onOpenChange={(open) => setModalState(prev => ({ ...prev, backupModal: open }))}
+        onConfirm={confirmFileBackup}
+        fileStats={{
+          totalFiles: fileStats.totalFiles,
+          totalSize: fileStats.usedSpace,
+          estimatedTime: fileStats.totalFiles > 100 ? '5-10 นาที' : '1-2 นาที'
+        }}
+      />
     </DashboardLayout>
   );
 }
