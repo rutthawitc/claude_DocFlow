@@ -103,7 +103,7 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=your-redis-password
 REDIS_DB=0
-REDIS_KEY_PREFIX=docflow:
+REDIS_KEY_PREFIX=docflow
 ```
 
 ### 🔧 **System Settings**
@@ -282,6 +282,70 @@ curl -H "Range: bytes=0-65535" "http://localhost:3000/api/documents/1/stream"
 - **Memory Limits**: Configured to prevent DoS attacks
 - **Key Prefixing**: Namespace isolation
 
+## Recent Improvements (2025-07-31)
+
+### ✅ **CacheUtils Error Resolution**
+
+**Issue**: CacheUtils reference errors preventing document display functionality
+- Branch overview showing documents but branch pages showing "no documents found"
+- Console errors: `ReferenceError: CacheUtils is not defined`
+- JSON parsing errors in frontend components
+
+**Resolution**:
+1. **Simplified Cache Implementation**:
+   ```typescript
+   // Before (CacheUtils dependency):
+   tags: CacheUtils.generateDocumentTags(id, document.branchBaCode)
+   
+   // After (direct implementation):
+   tags: ['documents', `document:${id}`, `branch:${document.branchBaCode}`]
+   ```
+
+2. **Enhanced Error Handling**:
+   ```typescript
+   // Robust JSON parsing with detailed error logging
+   const responseText = await response.text();
+   if (!responseText) {
+     throw new Error('Empty response from server');
+   }
+   
+   try {
+     result = JSON.parse(responseText);
+   } catch (parseError) {
+     console.error('JSON parse error:', parseError, 'Response text:', responseText);
+     throw new Error('Invalid JSON response from server');
+   }
+   ```
+
+3. **Cache Middleware Improvements**:
+   ```typescript
+   // Fixed response body consumption with cloning
+   const responseClone = response.clone();
+   const responseBody = await responseClone.text();
+   
+   // Added context parameter support for dynamic routes
+   export function withCache(
+     handler: (req: NextRequest, context?: any) => Promise<NextResponse>,
+     options: CacheMiddlewareOptions = {}
+   )
+   ```
+
+**Files Modified**:
+- `src/lib/services/document-service.ts`: Removed CacheUtils dependencies
+- `src/lib/services/branch-service.ts`: Simplified cache key generation  
+- `src/components/docflow/lazy-document-list.tsx`: Enhanced error handling
+- `src/components/docflow/documents-list.tsx`: Improved JSON parsing
+- `src/lib/cache/cache-middleware.ts`: Fixed response handling
+- `docker-compose.yml`: Fixed Redis configuration
+
+**Impact**: 
+- ✅ Document display functionality fully restored
+- ✅ Cache system remains fully operational  
+- ✅ Enhanced error handling and logging
+- ✅ Simplified and more maintainable cache implementation
+
+---
+
 ## Troubleshooting
 
 ### 🔧 **Common Issues**
@@ -340,7 +404,7 @@ REDIS_HOST=redis-cluster.company.com
 REDIS_PORT=6379
 REDIS_PASSWORD=secure-production-password
 REDIS_DB=0
-REDIS_KEY_PREFIX=docflow:prod:
+REDIS_KEY_PREFIX=docflowprod:
 ```
 
 ### 🚀 **Monitoring Setup**
