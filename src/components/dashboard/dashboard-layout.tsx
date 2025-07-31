@@ -1,109 +1,118 @@
-"use client"
+"use client";
 
-import { ReactNode } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { 
-  Sidebar, 
-  SidebarHeader, 
-  SidebarContent, 
+import { ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
   SidebarFooter,
-  SidebarGroup 
-} from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { 
-  LayoutDashboard, 
-  User, 
-  Settings, 
-  BarChart3, 
+  SidebarGroup,
+} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import {
+  LayoutDashboard,
+  User,
+  Settings,
+  BarChart3,
   FileText,
   LogOut,
   Menu,
   X,
   Shield,
-  Upload
-} from "lucide-react"
-import { useState } from "react"
-import { signOut } from "next-auth/react"
-import { useSession } from "next-auth/react"
-import { LogoutModal } from "@/components/ui/logout-modal"
+  Upload,
+} from "lucide-react";
+import { useState } from "react";
+import { signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { LogoutModal } from "@/components/ui/logout-modal";
 
 interface DashboardLayoutProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const pathname = usePathname()
-  const { data: session } = useSession()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [isMinimal, setIsMinimal] = useState(false)
-  const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMinimal, setIsMinimal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen)
-  }
-  
+    setSidebarOpen(!sidebarOpen);
+  };
+
   const toggleMinimal = () => {
-    setIsMinimal(!isMinimal)
-  }
+    setIsMinimal(!isMinimal);
+  };
 
   const handleLogoutClick = () => {
-    setShowLogoutModal(true)
-  }
+    setShowLogoutModal(true);
+  };
 
   const handleLogoutConfirm = () => {
-    setShowLogoutModal(false)
-    signOut({ callbackUrl: "/" })
-  }
+    setShowLogoutModal(false);
+    signOut({ callbackUrl: "/" });
+  };
 
   const handleLogoutCancel = () => {
-    setShowLogoutModal(false)
-  }
+    setShowLogoutModal(false);
+  };
 
   // Check if user has admin or district_manager role
-  const userRoles = session?.user?.pwa?.roles || []
-  const isAdmin = userRoles.includes('admin')
-  const isDistrictManager = userRoles.includes('district_manager')
-  const canAccessAdmin = isAdmin || isDistrictManager
-  
+  const userRoles = session?.user?.pwa?.roles || [];
+  const isAdmin = userRoles.includes("admin");
+  const isDistrictManager = userRoles.includes("district_manager");
+  const canAccessAdmin = isAdmin || isDistrictManager;
+
   // Check if user can upload documents
-  const canUpload = userRoles.includes('uploader') || 
-                   userRoles.includes('admin') ||
-                   userRoles.includes('district_manager') ||
-                   userRoles.includes('user')
+  const canUpload =
+    userRoles.includes("uploader") ||
+    userRoles.includes("admin") ||
+    userRoles.includes("district_manager") ||
+    userRoles.includes("user");
 
   const navItems = [
     {
       title: "เอกสาร",
       href: "/documents",
-      icon: <FileText className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
+      icon: <FileText className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
     },
-    ...(canUpload ? [{
-      title: "อัปโหลดเอกสาร",
-      href: "/documents/upload",
-      icon: <Upload className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
-    }] : []),
+    ...(canUpload
+      ? [
+          {
+            title: "อัปโหลดเอกสาร",
+            href: "/documents/upload",
+            icon: <Upload className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
+          },
+        ]
+      : []),
     {
-      title: "โปรไฟล์", 
+      title: "โปรไฟล์",
       href: "/profile",
-      icon: <User className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
+      icon: <User className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
     },
     {
       title: "รายงาน",
-      href: "/reports", 
-      icon: <BarChart3 className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
+      href: "/reports",
+      icon: <BarChart3 className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
     },
-    ...(canAccessAdmin ? [{
-      title: "จัดการระบบ",
-      href: "/admin",
-      icon: <Shield className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
-    }] : []),
+    ...(canAccessAdmin
+      ? [
+          {
+            title: "จัดการระบบ",
+            href: "/admin",
+            icon: <Shield className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
+          },
+        ]
+      : []),
     {
       title: "ตั้งค่า",
       href: "/settings",
-      icon: <Settings className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />
-    }
-  ]
+      icon: <Settings className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
+    },
+  ];
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -124,29 +133,53 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+      <div
+        className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
         lg:translate-x-0 transition-all duration-300 fixed lg:relative 
-        z-40 ${isMinimal ? "w-20" : "w-64"} h-screen`}>
+        z-40 ${isMinimal ? "w-20" : "w-64"} h-screen`}
+      >
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center space-x-2">
                 <div className="bg-primary h-10 w-10 rounded-md flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-lg">A</span>
+                  <span className="text-primary-foreground font-bold text-lg">
+                    PWA
+                  </span>
                 </div>
-                {!isMinimal && <div className="font-bold text-xl">PWA DocFlow</div>}
+                {!isMinimal && <div className="font-bold text-xl">DocFlow</div>}
               </div>
-              <button 
+              <button
                 onClick={toggleMinimal}
                 className="hidden lg:flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
                 aria-label={isMinimal ? "Expand sidebar" : "Collapse sidebar"}
               >
                 {isMinimal ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <polyline points="15 6 9 12 15 18"></polyline>
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <polyline points="9 6 15 12 9 18"></polyline>
                   </svg>
                 )}
@@ -164,10 +197,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center ${isMinimal ? "justify-center" : "gap-3"} rounded-md ${isMinimal ? "px-0 py-3" : "px-3 py-2"} text-sm transition-colors
-                    ${pathname === item.href 
-                      ? "bg-muted font-medium text-foreground" 
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className={`flex items-center ${
+                    isMinimal ? "justify-center" : "gap-3"
+                  } rounded-md ${
+                    isMinimal ? "px-0 py-3" : "px-3 py-2"
+                  } text-sm transition-colors
+                    ${
+                      pathname === item.href
+                        ? "bg-muted font-medium text-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
                   title={isMinimal ? item.title : ""}
                 >
@@ -176,12 +214,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               ))}
             </SidebarGroup>
-            
+
             {/* Logout Button */}
             <div className="mt-4 px-3">
-              <Button 
-                variant="outline" 
-                className={`w-full ${isMinimal ? "justify-center" : "justify-start gap-2"}`}
+              <Button
+                variant="outline"
+                className={`w-full ${
+                  isMinimal ? "justify-center" : "justify-start gap-2"
+                }`}
                 title={isMinimal ? "ออกจากระบบ" : ""}
                 onClick={handleLogoutClick}
               >
@@ -197,9 +237,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto p-6 lg:p-8">
-        {children}
-      </div>
+      <div className="flex-1 overflow-auto p-6 lg:p-8">{children}</div>
 
       {/* Logout Modal */}
       <LogoutModal
@@ -208,5 +246,5 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         onConfirm={handleLogoutConfirm}
       />
     </div>
-  )
+  );
 }
