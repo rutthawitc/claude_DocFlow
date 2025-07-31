@@ -27,9 +27,11 @@ import {
   HardDrive,
   Trash2,
   Archive,
+  Clock,
 } from "lucide-react";
 import { FileCleanupModal } from "@/components/ui/file-cleanup-modal";
 import { FileBackupModal } from "@/components/ui/file-backup-modal";
+import { BackupInitializer } from "@/components/backup/backup-initializer";
 
 export default function SettingsPage() {
   // System settings state
@@ -41,6 +43,8 @@ export default function SettingsPage() {
     maintenanceMessage: 'ระบบอยู่ระหว่างการบำรุงรักษา กรุณากลับมาอีกครั้งในภายหลัง',
     maintenanceStartTime: '',
     maintenanceEndTime: '',
+    autoBackupTime: '02:00',
+    backupRetentionDays: 30,
   });
 
   const [telegramSettings, setTelegramSettings] = useState({
@@ -297,6 +301,18 @@ export default function SettingsPage() {
         if (result.data) {
           setSystemSettings(prev => ({ ...prev, ...result.data }));
         }
+
+        // If backup settings were changed, reinitialize the scheduler
+        if (systemSettings.autoBackup !== result.data?.autoBackup || 
+            systemSettings.autoBackupTime !== result.data?.autoBackupTime ||
+            systemSettings.backupRetentionDays !== result.data?.backupRetentionDays) {
+          try {
+            await fetch('/api/backup/init', { method: 'POST' });
+            console.log('Backup scheduler reinitialized after settings change');
+          } catch (error) {
+            console.error('Error reinitializing backup scheduler:', error);
+          }
+        }
       } else {
         toast.error(`❌ บันทึกล้มเหลว: ${result.error}`);
       }
@@ -529,6 +545,9 @@ export default function SettingsPage() {
 
           {/* Settings Content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Backup Scheduler Status */}
+            {!loading.loading && <BackupInitializer />}
+            
             {/* Loading indicator */}
             {loading.loading && (
               <Card>
@@ -985,28 +1004,95 @@ export default function SettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base font-medium">การสำรองข้อมูลอัตโนมัติ</Label>
-                    <p className="text-sm text-muted-foreground">
-                      สำรองข้อมูลทุกวันเวลา 02:00 น.
-                    </p>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-medium">การสำรองข้อมูลอัตโนมัติ</Label>
+                      <p className="text-sm text-muted-foreground">
+                        สำรองข้อมูลทุกวันตามเวลาที่กำหนด
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge 
+                        variant="secondary" 
+                        className={systemSettings.autoBackup 
+                          ? "bg-green-100 text-green-700 border-green-200" 
+                          : "bg-gray-100 text-gray-700 border-gray-200"
+                        }
+                      >
+                        {systemSettings.autoBackup ? (
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                        ) : (
+                          <XCircle className="h-3 w-3 mr-1" />
+                        )}
+                        {systemSettings.autoBackup ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+                      </Badge>
+                      <Switch
+                        checked={systemSettings.autoBackup}
+                        onCheckedChange={(checked) =>
+                          setSystemSettings((prev) => ({
+                            ...prev,
+                            autoBackup: checked,
+                          }))
+                        }
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      เปิดใช้งาน
-                    </Badge>
-                    <Switch
-                      checked={systemSettings.autoBackup}
-                      onCheckedChange={(checked) =>
-                        setSystemSettings((prev) => ({
-                          ...prev,
-                          autoBackup: checked,
-                        }))
-                      }
-                    />
-                  </div>
+
+                  {systemSettings.autoBackup && (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            เวลาสำรองข้อมูล
+                          </Label>
+                          <Input
+                            type="time"
+                            value={systemSettings.autoBackupTime || '02:00'}
+                            onChange={(e) =>
+                              setSystemSettings((prev) => ({
+                                ...prev,
+                                autoBackupTime: e.target.value,
+                              }))
+                            }
+                            className="w-full"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            เวลาในการสำรองข้อมูลรายวัน (24 ชั่วโมง)
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <Archive className="h-4 w-4" />
+                            ระยะเวลาเก็บสำรอง
+                          </Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={systemSettings.backupRetentionDays || 30}
+                            onChange={(e) =>
+                              setSystemSettings((prev) => ({
+                                ...prev,
+                                backupRetentionDays: parseInt(e.target.value) || 30,
+                              }))
+                            }
+                            className="w-full"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            จำนวนวันที่เก็บไฟล์สำรอง (1-365 วัน)
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-blue-700 bg-blue-100 p-2 rounded">
+                        <strong>หมายเหตุ:</strong> การสำรองข้อมูลจะทำงานอัตโนมัติทุกวันตามเวลาที่กำหนด 
+                        และจะแจ้งเตือนผลการดำเนินการผ่าน Telegram (หากเปิดใช้งาน)
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">

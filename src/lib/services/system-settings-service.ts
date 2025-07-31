@@ -21,6 +21,8 @@ export interface SystemSettingsData {
   maintenanceMessage?: string;
   maintenanceStartTime?: string;
   maintenanceEndTime?: string;
+  autoBackupTime?: string;
+  backupRetentionDays?: number;
 }
 
 export class SystemSettingsService {
@@ -200,6 +202,14 @@ export class SystemSettingsService {
             type = 'string';
             description = 'Maintenance schedule time';
             break;
+          case 'autoBackupTime':
+            type = 'string';
+            description = 'Daily automatic backup time in HH:MM format';
+            break;
+          case 'backupRetentionDays':
+            type = 'number';
+            description = 'Number of days to keep backup files';
+            break;
         }
 
         return this.setSetting(key, value, type, description, updatedBy);
@@ -238,6 +248,8 @@ export class SystemSettingsService {
       maintenanceMessage: 'ระบบอยู่ระหว่างการบำรุงรักษา กรุณากลับมาอีกครั้งในภายหลัง',
       maintenanceStartTime: '',
       maintenanceEndTime: '',
+      autoBackupTime: '02:00',
+      backupRetentionDays: 30,
     };
   }
 
