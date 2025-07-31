@@ -73,6 +73,24 @@ This application manages document workflow across regional branches:
 
 ### Key Components
 
+#### File Management Service (`src/lib/services/file-management-service.ts`)
+- Comprehensive file statistics tracking and reporting
+- Automated file cleanup and backup functionality
+- Advanced file system health monitoring
+- Configurable retention policies via system settings
+- Integration with database settings for persistent configuration
+- Professional Thai-localized user interface for file management
+
+#### Custom Modal Components
+- `FileCleanupModal`: Professional modal for initiating file cleanup
+  - Real-time file size and count statistics
+  - Configurable cleanup thresholds
+  - Thai-localized user interface
+- `FileBackupModal`: Secure file backup management interface
+  - Backup destination configuration
+  - Backup job scheduling
+  - Comprehensive backup status reporting
+
 #### Authentication (`src/auth.ts`)
 - NextAuth.js v5 configuration with Credentials provider
 - External PWA API integration for login validation
@@ -184,11 +202,23 @@ This creates branches, roles, and permissions specific to the DocFlow system.
 - **File Validation**: PDF mime type and size validation on upload
 - **Access Control**: Branch-level document access based on user assignments
 - **Audit Trail**: All document actions logged with user and timestamp information
+- **File Management Security**:
+  - Secure file cleanup with role-based access control
+  - Encrypted file backup mechanisms
+  - Configurable file retention policies
+  - Comprehensive file system monitoring and reporting
+  - Protection against unauthorized file system modifications
 - **Rate Limiting**: API endpoints protected with rate limiting (login, upload, general API)
 - **Request Validation**: All API requests validated with Zod schemas
 - **Bot Token Security**: Telegram bot tokens stored securely and validated on input
 
 ### API Endpoints
+
+#### File Management API
+- `GET /api/files/management` - Retrieve current file system statistics
+- `POST /api/files/management/cleanup` - Initiate file cleanup process
+- `POST /api/files/management/backup` - Trigger manual file backup
+- `PUT /api/files/management/settings` - Update file management configuration
 
 #### Telegram API
 - `POST /api/telegram/test-connection` - Test bot token validity
