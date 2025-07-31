@@ -119,9 +119,25 @@ export function DocumentsList({
         credentials: 'include'
       });
 
-      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      if (response.ok && result.success) {
+      const responseText = await response.text();
+      
+      if (!responseText) {
+        throw new Error('Empty response from server');
+      }
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError, 'Response text:', responseText);
+        throw new Error('Invalid JSON response from server');
+      }
+
+      if (result.success) {
         setDocuments(result.data.data || []);
         setTotalPages(result.data.totalPages || 0);
         setTotalDocuments(result.data.total || 0);

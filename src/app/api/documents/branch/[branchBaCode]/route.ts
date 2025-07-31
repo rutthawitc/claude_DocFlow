@@ -139,13 +139,23 @@ async function getHandler(request: NextRequest, { params: paramsPromise }: Route
 
   } catch (error) {
     console.error('Error fetching branch documents:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace available');
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      branchBaCode: params.branchBaCode
+    });
     
     if (error instanceof ValidationError) {
       return handleValidationError(error);
     }
     
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { 
+        success: false, 
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined
+      },
       { status: 500 }
     );
   }

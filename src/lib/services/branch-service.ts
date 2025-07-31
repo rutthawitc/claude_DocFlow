@@ -3,7 +3,6 @@ import { getDb } from '@/db';
 import { branches, documents } from '@/db/schema';
 import { Branch, BranchWithDocumentCounts, PWAUserData, DocumentCounts, R6_BRANCHES } from '@/lib/types';
 import { CacheService } from '@/lib/cache/cache-service';
-import { CacheUtils } from '@/lib/cache/cache-middleware';
 
 export class BranchService {
   private static cache = CacheService.getInstance();
@@ -20,7 +19,7 @@ export class BranchService {
       },
       {
         ttl: 3600, // 1 hour - branches don't change often
-        tags: CacheUtils.generateBranchTags(),
+        tags: ['branches'],
         prefix: 'branches'
       }
     );
@@ -31,7 +30,7 @@ export class BranchService {
    */
   static async getBranchByBaCode(baCode: number): Promise<Branch | null> {
     return this.cache.withCache(
-      CacheUtils.generateBranchKey(baCode),
+      `branch:${baCode}`,
       async () => {
         const db = await getDb();
         const result = await db
@@ -44,7 +43,7 @@ export class BranchService {
       },
       {
         ttl: 3600, // 1 hour
-        tags: CacheUtils.generateBranchTags(),
+        tags: ['branches'],
         prefix: 'branches'
       }
     );

@@ -14,15 +14,15 @@ export interface CacheMiddlewareOptions {
  * Caches GET requests based on URL and query parameters
  */
 export function withCache(
-  handler: (req: NextRequest) => Promise<NextResponse>,
+  handler: (req: NextRequest, context?: any) => Promise<NextResponse>,
   options: CacheMiddlewareOptions = {}
 ) {
-  return async (req: NextRequest): Promise<NextResponse> => {
+  return async (req: NextRequest, context?: any): Promise<NextResponse> => {
     const cache = CacheService.getInstance();
     
     // Only cache GET requests by default
     if (req.method !== 'GET') {
-      return handler(req);
+      return handler(req, context);
     }
 
     // Generate cache key
@@ -57,7 +57,7 @@ export function withCache(
       console.log(`❌ Cache MISS for ${cacheKey}`);
       
       // Execute the handler
-      const response = await handler(req);
+      const response = await handler(req, context);
       
       // Check if we should cache this response
       const shouldCache = options.shouldCache ? 
@@ -65,8 +65,9 @@ export function withCache(
         response.status === 200; // Only cache successful responses by default
 
       if (shouldCache && response.status < 400) {
-        // Extract response data for caching
-        const responseBody = await response.text();
+        // Clone the response to avoid consuming the body
+        const responseClone = response.clone();
+        const responseBody = await responseClone.text();
         let parsedBody;
         
         try {
@@ -89,8 +90,8 @@ export function withCache(
 
         console.log(`💾 Cached response for ${cacheKey}`);
 
-        // Return response with cache headers
-        return new NextResponse(responseBody, {
+        // Return original response with cache headers
+        return new NextResponse(response.body, {
           status: response.status,
           headers: {
             ...Object.fromEntries(response.headers.entries()),
@@ -100,11 +101,18 @@ export function withCache(
         });
       }
 
-      return response;
+      // Return response with cache headers for non-cacheable responses
+      return new NextResponse(response.body, {
+        status: response.status,
+        headers: {
+          ...Object.fromEntries(response.headers.entries()),
+          'X-Cache': 'SKIP',
+        },
+      });
     } catch (error) {
       console.error('❌ Cache middleware error:', error);
       // If caching fails, still return the original response
-      return handler(req);
+      return handler(req, context);
     }
   };
 }

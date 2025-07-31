@@ -14,7 +14,6 @@ import {
 import { FileValidationService, FileStorageService } from './file-service';
 import { BranchService } from './branch-service';
 import { CacheService } from '@/lib/cache/cache-service';
-import { CacheUtils } from '@/lib/cache/cache-middleware';
 
 export class DocumentService {
   private static cache = CacheService.getInstance();
@@ -69,7 +68,7 @@ export class DocumentService {
         .returning();
 
       // Invalidate cache for documents in this branch
-      await CacheUtils.invalidateDocuments(undefined, metadata.branchBaCode);
+      await this.cache.invalidateByTag(`branch:${metadata.branchBaCode}`);
 
       return updatedDocument;
     } catch (error) {
@@ -184,7 +183,7 @@ export class DocumentService {
         documentWithRelations,
         {
           ttl: 600, // 10 minutes
-          tags: CacheUtils.generateDocumentTags(id, document.branchBaCode),
+          tags: ['documents', `document:${id}`, `branch:${document.branchBaCode}`],
         },
         'documents'
       );
@@ -204,12 +203,7 @@ export class DocumentService {
     filters: DocumentFilters
   ): Promise<PaginatedResponse<DocumentWithRelations>> {
     // Generate cache key based on branch and filters
-    const cacheKey = CacheUtils.generateDocumentKey({
-      branchBaCode,
-      status: filters.status,
-      page: filters.page,
-      limit: filters.limit,
-    });
+    const cacheKey = `branch_docs:${branchBaCode}:${filters.status || 'all'}:${filters.page}:${filters.limit}`;
 
     // Try to get from cache first
     const cached = await this.cache.get<PaginatedResponse<DocumentWithRelations>>(
@@ -301,7 +295,7 @@ export class DocumentService {
         response,
         {
           ttl: 300, // 5 minutes
-          tags: CacheUtils.generateDocumentTags(undefined, branchBaCode),
+          tags: ['documents', `branch:${branchBaCode}`],
         },
         'documents'
       );

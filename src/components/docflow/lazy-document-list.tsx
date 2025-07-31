@@ -19,7 +19,6 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
-import { CacheUtils } from '@/lib/cache/cache-middleware';
 
 interface LazyDocumentListProps {
   branchBaCode: number;
@@ -118,8 +117,19 @@ export default function LazyDocumentList({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result: { success: boolean; data: PaginatedResponse<DocumentWithRelations> } = 
-        await response.json();
+      const responseText = await response.text();
+      
+      if (!responseText) {
+        throw new Error('Empty response from server');
+      }
+
+      let result: { success: boolean; data: PaginatedResponse<DocumentWithRelations> };
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError, 'Response text:', responseText);
+        throw new Error('Invalid JSON response from server');
+      }
 
       if (!result.success) {
         throw new Error('Failed to fetch documents');
@@ -203,9 +213,6 @@ export default function LazyDocumentList({
 
   // Refresh handler
   const handleRefresh = useCallback(async () => {
-    // Clear cache for this branch
-    await CacheUtils.invalidateDocuments(undefined, branchBaCode);
-    
     const refreshFilters = {
       ...filters,
       page: 1,
@@ -214,7 +221,7 @@ export default function LazyDocumentList({
     
     setFilters(refreshFilters);
     fetchDocuments(refreshFilters, false);
-  }, [filters, fetchDocuments, branchBaCode]);
+  }, [filters, fetchDocuments]);
 
   // Initial load and intersection observer effect
   useEffect(() => {
