@@ -8,6 +8,8 @@ export const users = pgTable('users', {
   firstName: varchar('first_name', { length: 255 }),
   lastName: varchar('last_name', { length: 255 }),
   email: varchar('email', { length: 255 }),
+  password: text('password'), // For local admin users
+  isLocalAdmin: boolean('is_local_admin').default(false), // Flag for local admin users
   costCenter: varchar('cost_center', { length: 255 }),
   ba: varchar('ba', { length: 255 }),
   part: varchar('part', { length: 255 }),
