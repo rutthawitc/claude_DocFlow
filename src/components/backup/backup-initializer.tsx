@@ -211,7 +211,7 @@ export function BackupInitializer() {
 
         <div className="text-xs text-muted-foreground">
           <strong>Note:</strong> The backup scheduler runs server-side and needs to be initialized 
-          when the application starts. If it's not running, use the "Initialize Scheduler" button.
+          when the application starts. If it&apos;s not running, use the &quot;Initialize Scheduler&quot; button.
         </div>
       </CardContent>
     </Card>

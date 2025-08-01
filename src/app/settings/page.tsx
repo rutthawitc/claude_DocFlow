@@ -32,6 +32,7 @@ import {
 import { FileCleanupModal } from "@/components/ui/file-cleanup-modal";
 import { FileBackupModal } from "@/components/ui/file-backup-modal";
 import { BackupInitializer } from "@/components/backup/backup-initializer";
+import { ManualBackupTrigger } from "@/components/backup/manual-backup-trigger";
 
 export default function SettingsPage() {
   // System settings state
@@ -545,8 +546,21 @@ export default function SettingsPage() {
 
           {/* Settings Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Backup Scheduler Status */}
+            {/* Backup Management Section */}
             {!loading.loading && <BackupInitializer />}
+            {!loading.loading && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Archive className="h-5 w-5" />
+                    Backup Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ManualBackupTrigger />
+                </CardContent>
+              </Card>
+            )}
             
             {/* Loading indicator */}
             {loading.loading && (

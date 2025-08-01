@@ -7,7 +7,7 @@
     "documentSent": true,
     "documentAcknowledged": true,
     "documentSentBack": true,
-    "systemAlerts": false,
+    "systemAlerts": true,
     "dailyReports": true
   },
   "messageFormat": {

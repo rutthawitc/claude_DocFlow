@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/auth';
-import { BackupSchedulerService, BackupScheduleConfig } from '@/lib/services/backup-scheduler-service';
+import { auth } from '@/auth';
+import { BackupSchedulerService } from '@/lib/services/backup-scheduler-service';
 import { z } from 'zod';
 
 // Validation schemas
@@ -14,7 +13,7 @@ const updateScheduleSchema = z.object({
 // GET - Get current backup schedule configuration
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session?.user) {
       return NextResponse.json(
@@ -57,7 +56,7 @@ export async function GET() {
 // PUT - Update backup schedule configuration
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session?.user) {
       return NextResponse.json(
@@ -129,7 +128,7 @@ export async function PUT(request: NextRequest) {
 // POST - Trigger manual backup
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session?.user) {
       return NextResponse.json(
