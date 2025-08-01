@@ -113,22 +113,19 @@ export class BranchService {
   }
 
   /**
-   * Get document counts for a branch (excluding draft documents)
+   * Get document counts for a branch (including all document statuses)
    */
   static async getBranchDocumentCounts(branchBaCode: number): Promise<DocumentCounts> {
     const db = await getDb();
     
-    // Get counts by status, excluding draft documents
+    // Get counts by status, including ALL documents
     const statusCounts = await db
       .select({
         status: documents.status,
         count: count()
       })
       .from(documents)
-      .where(and(
-        eq(documents.branchBaCode, branchBaCode),
-        ne(documents.status, 'draft')
-      ))
+      .where(eq(documents.branchBaCode, branchBaCode))
       .groupBy(documents.status);
 
     // Initialize counts
