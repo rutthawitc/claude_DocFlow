@@ -518,6 +518,14 @@ export class DocumentService {
         return allBranches.map(branch => branch.baCode);
       }
 
+      // District manager can access all R6 branches (same as admin for R6 region)
+      if (userRoles.includes('district_manager')) {
+        const allBranches = await BranchService.getAllBranches();
+        return allBranches
+          .filter(branch => branch.regionCode === 'R6')
+          .map(branch => branch.baCode);
+      }
+
       // Branch manager can access all R6 branches
       if (userRoles.includes('branch_manager')) {
         const allBranches = await BranchService.getAllBranches();
@@ -526,8 +534,27 @@ export class DocumentService {
           .map(branch => branch.baCode);
       }
 
-      // For branch users and uploaders, need to implement user-branch mapping
-      // This should be based on the user's PWA data
+      // For branch users and uploaders, get user's assigned branches from PWA data
+      if (userRoles.includes('branch_user') || userRoles.includes('uploader') || userRoles.includes('user')) {
+        // Get user's PWA data to determine branch assignments
+        const { getDb } = await import('@/db');
+        const { users } = await import('@/db/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        const db = await getDb();
+        const user = await db.query.users.findFirst({
+          where: eq(users.id, userId)
+        });
+        
+        if (user?.ba) {
+          // User has a specific BA assignment, return that branch
+          return [parseInt(user.ba, 10)];
+        }
+        
+        // If no specific branch assignment, return empty array
+        return [];
+      }
+
       return [];
     } catch (error) {
       console.error('Error getting user accessible branches:', error);
