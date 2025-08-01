@@ -108,7 +108,7 @@ export default function LazyDocumentList({
         `/api/documents/branch/${branchBaCode}?${queryParams.toString()}`,
         {
           headers: {
-            'Cache-Control': 'max-age=300', // 5 minutes client-side cache
+            'Cache-Control': 'no-cache', // Disable cache for immediate updates
           },
         }
       );

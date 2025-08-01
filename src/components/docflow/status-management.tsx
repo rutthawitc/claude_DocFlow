@@ -181,17 +181,21 @@ export function StatusManagement({
         throw new Error('Failed to update status');
       }
 
-      toast.success('อัปเดตสถานะสำเร็จ');
+      // Update local state immediately for instant UI feedback
       onStatusUpdate?.(newStatus);
       
-      // Refresh the router to ensure all data is updated
-      router.refresh();
+      toast.success('อัปเดตสถานะสำเร็จ');
       
       if (showCommentDialog) {
         setShowCommentDialog(false);
         setComment('');
         setPendingStatus(null);
       }
+      
+      // Refresh the router in the background to sync with server (reduced delay)
+      setTimeout(() => {
+        router.refresh();
+      }, 50);
 
     } catch (error) {
       console.error('Error updating status:', error);
