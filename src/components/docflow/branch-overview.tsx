@@ -88,7 +88,7 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
     let filtered = branches;
 
     // Filter by user role and branch access
-    if (!userRoles.includes('admin') && !userRoles.includes('branch_manager')) {
+    if (!userRoles.includes('admin') && !userRoles.includes('branch_manager') && !userRoles.includes('district_manager')) {
       // Regular users only see their own branch
       filtered = branches.filter(branch => 
         userBranchBaCode ? branch.baCode === userBranchBaCode : true
