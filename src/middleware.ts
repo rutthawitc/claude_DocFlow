@@ -94,12 +94,7 @@ export async function middleware(request: NextRequest) {
     return applySecurityHeaders(response);
   }
   
-  // ถ้าเป็นหน้า dashboard ให้ดำเนินการต่อโดยไม่มีการตรวจสอบเพื่อแก้ปัญหา redirect loop ชั่วคราว
-  if (request.nextUrl.pathname === '/dashboard') {
-    console.log('Dashboard access granted without permission check');
-    const response = NextResponse.next();
-    return applySecurityHeaders(response);
-  }
+  // Remove dashboard bypass - all routes should be properly authenticated
   
   const session = await auth();
   console.log('Session exists:', !!session);
@@ -125,8 +120,18 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  // Define protected routes and their required roles/permissions
-  const protectedRoutes = [
+  // Define public routes that don't require authentication
+  const publicRoutes = [
+    '/login',
+    '/error',
+    '/unauthorized',
+    '/maintenance',
+    '/',
+    '/favicon.ico'
+  ];
+
+  // Define routes that require specific roles/permissions
+  const roleProtectedRoutes = [
     { 
       path: '/admin', 
       requiredRoles: ['admin', 'district_manager'] 
@@ -141,23 +146,19 @@ export async function middleware(request: NextRequest) {
     },
   ];
   
-  // Check if the route is protected
-  let matchedRoute = null;
-  for (const route of protectedRoutes) {
-    if (request.nextUrl.pathname.startsWith(route.path)) {
-      matchedRoute = route;
-      break;
-    }
-  }
+  // Check if this is a public route
+  const isPublicRoute = publicRoutes.some(route => 
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
+  );
   
-  // If the route is not protected, continue with security headers
-  if (!matchedRoute) {
-    console.log('Route not protected, proceeding');
+  // If it's a public route, allow access
+  if (isPublicRoute) {
+    console.log('Public route, allowing access');
     const response = NextResponse.next();
     return applySecurityHeaders(response);
   }
   
-  // If user is not authenticated, redirect to login
+  // All non-public routes require authentication
   if (!session) {
     console.log('No session found, redirecting to login');
     const redirectUrl = new URL('/login', request.url);
@@ -165,12 +166,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
   
+  // Check if the route requires specific roles/permissions
+  let matchedRoleRoute = null;
+  for (const route of roleProtectedRoutes) {
+    if (request.nextUrl.pathname.startsWith(route.path)) {
+      matchedRoleRoute = route;
+      break;
+    }
+  }
+  
+  // If no specific role requirements, allow authenticated access
+  if (!matchedRoleRoute) {
+    console.log('Authenticated route, allowing access');
+    const response = NextResponse.next();
+    return applySecurityHeaders(response);
+  }
+  
   console.log('Checking user roles and permissions for protected route');
   
   // Check role-based access
-  if (matchedRoute.requiredRoles && Array.isArray(matchedRoute.requiredRoles)) {
+  if (matchedRoleRoute.requiredRoles && Array.isArray(matchedRoleRoute.requiredRoles)) {
     console.log('User roles:', session?.user?.pwa?.roles || 'none');
-    console.log('Required roles:', matchedRoute.requiredRoles);
+    console.log('Required roles:', matchedRoleRoute.requiredRoles);
     
     // ตรวจสอบว่า session.user.pwa และ session.user.pwa.roles มีค่าหรือไม่
     if (!session?.user?.pwa?.roles) {
@@ -179,7 +196,7 @@ export async function middleware(request: NextRequest) {
     }
     
     const userRoles = session.user.pwa.roles;
-    const hasRequiredRole = matchedRoute.requiredRoles.some(
+    const hasRequiredRole = matchedRoleRoute.requiredRoles.some(
       role => userRoles.includes(role)
     );
     
@@ -192,9 +209,9 @@ export async function middleware(request: NextRequest) {
   }
   
   // Check permission-based access
-  if (matchedRoute.requiredPermissions && Array.isArray(matchedRoute.requiredPermissions)) {
+  if (matchedRoleRoute.requiredPermissions && Array.isArray(matchedRoleRoute.requiredPermissions)) {
     console.log('User permissions:', session?.user?.pwa?.permissions || 'none');
-    console.log('Required permissions:', matchedRoute.requiredPermissions);
+    console.log('Required permissions:', matchedRoleRoute.requiredPermissions);
     
     // ตรวจสอบว่า session.user.pwa และ session.user.pwa.permissions มีค่าหรือไม่
     if (!session?.user?.pwa?.permissions) {
@@ -203,7 +220,7 @@ export async function middleware(request: NextRequest) {
     }
     
     const userPermissions = session.user.pwa.permissions;
-    const hasRequiredPermissions = matchedRoute.requiredPermissions.every(
+    const hasRequiredPermissions = matchedRoleRoute.requiredPermissions.every(
       permission => userPermissions.includes(permission)
     );
     

@@ -52,9 +52,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setShowLogoutModal(true);
   };
 
-  const handleLogoutConfirm = () => {
+  const handleLogoutConfirm = async () => {
     setShowLogoutModal(false);
-    signOut({ callbackUrl: "/" });
+    
+    // Clear any client-side storage
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (error) {
+      console.error('Error clearing storage:', error);
+    }
+    
+    // Sign out with redirect to login
+    await signOut({ 
+      callbackUrl: "/login",
+      redirect: true 
+    });
   };
 
   const handleLogoutCancel = () => {
