@@ -7,6 +7,7 @@ import { getDb } from '@/db';
 import { users, roles, userRoles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { DocFlowAuth } from '@/lib/auth/docflow-auth';
+import { LocalAdminService } from '@/lib/auth/local-admin';
 
 // ประเภทข้อมูลสำหรับผู้ใช้งาน PWA
 interface PWAUserData {
@@ -147,7 +148,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         try {
-          // เรียก API เพื่อตรวจสอบการเข้าสู่ระบบ
+          // First try PWA API authentication
+          console.log('🔄 Attempting PWA API authentication...');
           const response = await fetch(process.env.PWA_AUTH_URL, {
             method: 'POST',
             headers: {
@@ -159,17 +161,65 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }),
           });
 
-          if (!response.ok) {
-            console.error('API error, status:', response.status);
-            return null;
+          let pwaAuthSuccess = false;
+          let data = null;
+
+          if (response.ok) {
+            data = await response.json();
+            console.log('PWA API response:', JSON.stringify(data, null, 2));
+            
+            if (data && data.status === 'success') {
+              pwaAuthSuccess = true;
+              console.log('✅ PWA API authentication successful');
+            } else {
+              console.log('❌ PWA API authentication failed');
+            }
+          } else {
+            console.error('PWA API error, status:', response.status);
           }
 
-          const data = await response.json();
-          console.log('PWA API response:', JSON.stringify(data, null, 2));
-          
-          // ตรวจสอบผลตอบกลับจาก API
-          if (!data || data.status !== 'success') {
-            console.error('Login failed or no user data returned from API');
+          // If PWA API fails, try local admin authentication
+          if (!pwaAuthSuccess) {
+            console.log('🔄 Attempting local admin authentication...');
+            const localAdmin = await LocalAdminService.authenticateLocalAdmin(username, password);
+            
+            if (localAdmin) {
+              console.log('✅ Local admin authentication successful');
+              
+              // Return local admin user data in the expected format
+              return {
+                id: localAdmin.username,
+                name: `${localAdmin.firstName} ${localAdmin.lastName}`.trim(),
+                email: localAdmin.email,
+                image: null,
+                pwa: {
+                  username: localAdmin.username,
+                  firstName: localAdmin.firstName,
+                  lastName: localAdmin.lastName,
+                  email: localAdmin.email,
+                  costCenter: 'LOCAL_ADMIN',
+                  ba: 'ADMIN',
+                  part: 'ADMIN',
+                  area: 'ADMIN',
+                  jobName: 'System Administrator',
+                  level: 'ADMIN',
+                  divName: 'IT',
+                  depName: 'System Administration',
+                  orgName: 'DocFlow System',
+                  position: 'Local Administrator',
+                  roles: localAdmin.roles,
+                  permissions: localAdmin.permissions,
+                }
+              };
+            } else {
+              console.log('❌ Local admin authentication failed');
+              return null;
+            }
+          }
+
+          // Continue with PWA API success flow
+          if (!pwaAuthSuccess || !data) {
+            console.error('Both PWA API and local admin authentication failed');
             return null;
           }
 
