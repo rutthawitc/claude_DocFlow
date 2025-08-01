@@ -2,6 +2,9 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { DocumentsList } from '@/components/docflow/documents-list';
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface BranchDocumentsPageProps {
   params: Promise<{
@@ -74,11 +77,24 @@ export default async function BranchDocumentsPage({
 
   return (
     <DashboardLayout>
-      <DocumentsList 
-        branchBaCode={branchBaCode}
-        title={branchName}
-        showBranchFilter={false}
-      />
+      <div className="space-y-6">
+        {/* Back navigation */}
+        <div className="flex items-center gap-4">
+          <Link href="/documents">
+            <Button variant="ghost" size="sm" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              กลับ
+            </Button>
+          </Link>
+        </div>
+        
+        {/* Documents list */}
+        <DocumentsList 
+          branchBaCode={branchBaCode}
+          title={branchName}
+          showBranchFilter={false}
+        />
+      </div>
     </DashboardLayout>
   );
 }
