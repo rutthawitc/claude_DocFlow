@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -35,9 +35,10 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start closed on mobile
   const [isMinimal, setIsMinimal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -59,6 +60,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleLogoutCancel = () => {
     setShowLogoutModal(false);
   };
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const isMobileScreen = window.innerWidth < 1024; // lg breakpoint
+      setIsMobile(isMobileScreen);
+      
+      // On mobile, close sidebar by default
+      if (isMobileScreen) {
+        setSidebarOpen(false);
+      } else {
+        // On desktop, open sidebar by default
+        setSidebarOpen(true);
+      }
+    };
+
+    // Check initial screen size
+    checkScreenSize();
+
+    // Add resize listener
+    window.addEventListener('resize', checkScreenSize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Check if user has admin or district_manager role
   const userRoles = session?.user?.pwa?.roles || [];
@@ -122,6 +148,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           variant="outline"
           size="icon"
           onClick={toggleSidebar}
+          className="bg-white shadow-lg"
           aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
         >
           {sidebarOpen ? (
@@ -132,11 +159,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </Button>
       </div>
 
+      {/* Mobile sidebar overlay */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
         lg:translate-x-0 transition-all duration-300 fixed lg:relative 
-        z-40 ${isMinimal ? "w-20" : "w-64"} h-screen`}
+        z-40 ${isMinimal ? "w-20" : "w-64"} h-screen bg-white shadow-lg lg:shadow-none`}
       >
         <Sidebar>
           <SidebarHeader>
@@ -237,7 +273,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto p-6 lg:p-8">{children}</div>
+      <div className="flex-1 overflow-auto p-4 pt-16 lg:pt-6 lg:p-8">{children}</div>
 
       {/* Logout Modal */}
       <LogoutModal
