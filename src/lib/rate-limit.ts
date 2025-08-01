@@ -172,7 +172,7 @@ export const rateLimiters = {
   // Login attempt rate limiting
   login: new RateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 5, // 5 login attempts per 15 minutes
+    maxRequests: 20, // 20 login attempts per 15 minutes (increased for user switching)
     keyGenerator: (request) => {
       const forwarded = request.headers.get('x-forwarded-for');
       const realIp = request.headers.get('x-real-ip');

@@ -41,7 +41,8 @@ export function LoginFormServer() {
       signIn('credentials', {
         username: state.credentials.username,
         pwd: state.credentials.pwd,
-        redirect: false, // ไม่ใช้การ redirect อัตโนมัติ
+        callbackUrl: '/documents',
+        redirect: true, // Use automatic redirect
       }).then((result) => {
         if (result?.error) {
           console.log('Login error from client signIn:', result.error);
@@ -50,6 +51,9 @@ export function LoginFormServer() {
           console.log('Login successful from client signIn');
           // การ redirect จะถูกจัดการโดย login/page.tsx ใน useEffect ที่ตรวจสอบ session
         }
+      }).catch((error) => {
+        console.error('SignIn error:', error);
+        setSignInError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง');
       });
     }
   }, [state]);
