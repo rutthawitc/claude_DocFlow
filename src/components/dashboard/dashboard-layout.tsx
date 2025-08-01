@@ -251,8 +251,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               ))}
             </SidebarGroup>
 
-            {/* Logout Button */}
-            <div className="mt-4 px-3">
+            {/* User Info & Logout Button */}
+            <div className="mt-4 px-3 space-y-2">
+              {/* User Name */}
+              {!isMinimal && session?.user?.pwa?.firstName && (
+                <div className="text-sm text-muted-foreground">
+                  <div className="truncate">
+                    {session.user.pwa.firstName}
+                  </div>
+                </div>
+              )}
+              
+              {/* Logout Button */}
               <Button
                 variant="outline"
                 className={`w-full ${
