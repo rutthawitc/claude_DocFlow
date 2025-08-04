@@ -51,7 +51,7 @@ export default async function EditUserPage({
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">
-          แก้ไขผู้ใช้งาน: {user.firstName} {user.lastName}
+          แก้ไขผู้ใช้งาน: <span className="text-right">{user.firstName} {user.lastName}</span>
         </h1>
         <Link href="/admin/users">
           <Button variant="outline">กลับ</Button>
@@ -67,7 +67,7 @@ export default async function EditUserPage({
             </p>
             <p>
               ชื่อ-นามสกุล:{" "}
-              <span className="font-medium">
+              <span className="font-medium text-right">
                 {user.firstName} {user.lastName}
               </span>
             </p>

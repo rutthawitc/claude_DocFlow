@@ -30,7 +30,7 @@ export function UserProfile() {
               </div>
               <div>
                 <h3 className="font-semibold">ชื่อ-นามสกุล</h3>
-                <p>
+                <p className="text-right">
                   {session.user.pwa.firstName} {session.user.pwa.lastName}
                 </p>
               </div>

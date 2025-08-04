@@ -362,7 +362,7 @@ export function DocumentsList({
                         ประจำ: {doc.monthYear}
                       </div>
                       {doc.uploader && (
-                        <div>
+                        <div className="text-right">
                           โดย: {doc.uploader.firstName} {doc.uploader.lastName}
                         </div>
                       )}

@@ -268,7 +268,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="mt-4 px-3 space-y-2">
               {/* User Name */}
               {!isMinimal && session?.user?.pwa?.firstName && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground text-right">
                   <div className="truncate">
                     {session.user.pwa.firstName}
                   </div>

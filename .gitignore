@@ -44,3 +44,4 @@ next-env.d.ts
 /uploads/*.pdf
 tmp/
 .claude/
+.claude/settings.local.json

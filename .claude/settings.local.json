@@ -42,7 +42,8 @@
       "Bash(pnpm lint:*)",
       "Bash(pnpm list:*)",
       "Bash(pnpm why:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(pnpm start:*)"
     ],
     "deny": []
   }

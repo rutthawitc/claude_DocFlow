@@ -376,10 +376,10 @@ export function UserManagement() {
                     <div className="flex items-center gap-2">
                       {user.isLocalAdmin && <Shield className="h-4 w-4 text-blue-600" />}
                       <div>
-                        <div className="font-medium">
+                        <div className="font-medium text-right">
                           {user.firstName} {user.lastName}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground text-right">
                           @{user.username} • {user.email}
                         </div>
                       </div>

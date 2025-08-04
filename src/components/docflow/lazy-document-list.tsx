@@ -362,7 +362,7 @@ export default function LazyDocumentList({
                       {document.mtDate}
                     </div>
                     {document.uploader && (
-                      <div className="flex items-center">
+                      <div className="flex items-center justify-end">
                         <User className="h-4 w-4 mr-1" />
                         {document.uploader.firstName} {document.uploader.lastName}
                       </div>

@@ -401,7 +401,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
               {document.uploader && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">ผู้อัปโหลด</h4>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-end">
                     <User className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
                       {document.uploader.firstName} {document.uploader.lastName}
@@ -473,7 +473,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
                           {format(new Date(history.createdAt), 'dd/MM/yyyy HH:mm', { locale: th })}
                         </p>
                         {history.changedByUser && (
-                          <p className="text-xs font-medium text-gray-700">
+                          <p className="text-xs font-medium text-gray-700 text-right">
                             โดย {history.changedByUser.firstName} {history.changedByUser.lastName}
                           </p>
                         )}

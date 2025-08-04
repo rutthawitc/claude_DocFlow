@@ -296,7 +296,7 @@ export function CommentSystem({
                       <User className="h-4 w-4 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">
+                      <p className="text-sm font-medium text-right">
                         {getCommentUser(comment).firstName} {getCommentUser(comment).lastName}
                       </p>
                       <p className="text-xs text-gray-500">
