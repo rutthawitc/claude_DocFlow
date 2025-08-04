@@ -344,6 +344,11 @@ export class DocumentService {
         comment: comment || null
       });
 
+      // Invalidate cache for this specific document and related data
+      await this.cache.delete(`document:${documentId}`, 'documents');
+      await this.cache.invalidateByTag('documents');
+      console.log(`🗑️ Invalidated cache for document ${documentId} after status update`);
+
       return updatedDocument;
     } catch (error) {
       console.error('Error updating document status:', error);

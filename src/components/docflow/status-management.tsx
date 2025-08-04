@@ -191,11 +191,6 @@ export function StatusManagement({
         setComment('');
         setPendingStatus(null);
       }
-      
-      // Refresh the router in the background to sync with server (reduced delay)
-      setTimeout(() => {
-        router.refresh();
-      }, 50);
 
     } catch (error) {
       console.error('Error updating status:', error);

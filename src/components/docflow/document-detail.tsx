@@ -24,11 +24,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { 
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
 import { toast } from 'sonner';
 import { StatusManagement } from './status-management';
 import { CommentSystem } from './comment-system';
 import { PDFViewer } from './pdf-viewer';
 import { DocumentStatus } from '@/lib/types';
+import Link from 'next/link';
 
 interface Document {
   id: number;
@@ -199,9 +208,6 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
       if (response.ok && result.success) {
         setDocument(prev => prev ? { ...prev, status: newStatus } : null);
         toast.success('อัปเดทสถานะเรียบร้อย');
-        
-        // Refresh document to get updated status history
-        window.location.reload();
       } else {
         throw new Error(result.error || 'Status update failed');
       }
@@ -296,6 +302,33 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/documents">เอกสาร</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          {document?.branch && (
+            <>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href={`/documents/branch/${document.branch.baCode}`}>
+                    {document.branch.name} (BA {document.branch.baCode})
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+            </>
+          )}
+          <BreadcrumbItem>
+            <BreadcrumbPage>{document?.mtNumber || 'กำลังโหลด...'}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => router.back()}>
