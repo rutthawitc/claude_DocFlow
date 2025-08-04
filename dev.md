@@ -271,6 +271,37 @@ The DocFlow system is now fully functional:
 
 ### 🆕 Latest Updates (2025-08-04)
 
+#### ✅ **Username Alignment Enhancement**
+1. **Dashboard and Sidebar**
+   - Sidebar username display now uses `text-right` alignment
+   - Enhanced visual hierarchy for Thai language names
+   - Professional and consistent text presentation
+
+2. **User Profile and Management**
+   - Full names and usernames aligned to the right
+   - Improved readability for Thai character names
+   - Consistent styling across user-related components
+
+3. **Document and Comment Components**
+   - Uploader names and comment authors aligned to the right
+   - Maintained responsive design for various name lengths
+   - Preserved existing component functionality
+
+4. **Technical Implementation**
+   - Used Tailwind CSS classes: `text-right`, `justify-end`
+   - No performance overhead or layout shifts
+   - Compatible with existing mobile and desktop designs
+
+5. **Affected Components**
+   - `dashboard-layout.tsx`
+   - `user-profile.tsx`
+   - `admin/user-management.tsx`
+   - `docflow/document-detail.tsx`
+   - `docflow/documents-list.tsx`
+   - `docflow/lazy-document-list.tsx`
+   - `docflow/comment-system.tsx`
+   - `admin/users/[id]/page.tsx`
+
 #### ✅ **Cache Invalidation and UI Performance Improvements**
 1. **Intelligent Cache Management**
    - Fixed document status update caching issue in `document-service.ts`
