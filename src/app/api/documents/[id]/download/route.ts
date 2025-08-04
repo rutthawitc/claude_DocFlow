@@ -91,11 +91,15 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
       // Continue with download even if logging fails
     }
 
+    // Encode filename to handle Thai characters properly
+    const encodedFilename = encodeURIComponent(filename);
+    const asciiFilename = filename.replace(/[^\x00-\x7F]/g, ""); // Fallback ASCII name
+    
     // Return file as response
     return new Response(buffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename="${asciiFilename || 'document.pdf'}"; filename*=UTF-8''${encodedFilename}`,
         'Content-Length': buffer.length.toString(),
         'Cache-Control': 'private, max-age=3600'
       }

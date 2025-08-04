@@ -96,8 +96,8 @@ export function StatusManagement({
       requiresComment?: boolean;
     }> = [];
 
-    const isUploader = userRoles.includes('uploader') || userRoles.includes('admin');
-    const isBranchUser = userRoles.includes('branch_user') || userRoles.includes('branch_manager');
+    const isUploader = userRoles.includes('uploader') || userRoles.includes('admin') || userRoles.includes('district_manager');
+    const isBranchUser = userRoles.includes('branch_user') || userRoles.includes('branch_manager') || userRoles.includes('admin') || userRoles.includes('district_manager');
 
     switch (currentStatus) {
       case DocumentStatus.DRAFT:

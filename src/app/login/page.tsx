@@ -1,13 +1,13 @@
 // src/app/login/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { LoginFormServer } from "@/components/auth/login-form-server";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { AlertCircle, Clock } from "lucide-react";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -90,5 +90,19 @@ export default function LoginPage() {
         <LoginFormServer />
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md space-y-8 text-center">
+          <p>กำลังโหลด...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

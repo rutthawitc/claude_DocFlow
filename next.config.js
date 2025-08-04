@@ -6,6 +6,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  serverExternalPackages: ['bcryptjs'],
   headers: async () => [
     {
       source: '/(.*)',

@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
       // For regular branch users, try to show their own branch
       const userWithData = await DocFlowAuth.getUserWithDocFlowData(actualUserId);
       if (userWithData?.branch) {
-        branches = branches.filter((branch: any) => 
+        branches = branches.filter((branch: { baCode: string; id: number }) => 
           branch.baCode === userWithData.branch!.baCode || branch.id === userWithData.branch!.id
         );
       } else {
