@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { signOut } from 'next-auth/react';
 
 interface SessionTimeoutHook {
@@ -23,7 +23,7 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
     setIsMounted(true);
   }, []);
 
-  const extendSession = async () => {
+  const extendSession = useCallback(async () => {
     try {
       await update(); // This will update the lastActivity time
       setShowWarning(false);
@@ -32,7 +32,7 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
     } catch (error) {
       console.error('Failed to extend session:', error);
     }
-  };
+  }, [update]);
 
   useEffect(() => {
     if (!session || !isMounted) {
@@ -41,6 +41,10 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
       }
       return;
     }
+
+    // Reset warning when session changes
+    warningShownRef.current = false;
+    setShowWarning(false);
 
     // Only check session expiration, don't track activity automatically
     intervalRef.current = setInterval(() => {
@@ -70,7 +74,7 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
         clearInterval(intervalRef.current);
       }
     };
-  }, [session, update, isMounted]);
+  }, [session?.expires, isMounted]); // Only depend on session expiration time, not the entire session object
 
   return {
     timeLeft,
