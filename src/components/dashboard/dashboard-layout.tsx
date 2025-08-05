@@ -55,19 +55,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogoutConfirm = async () => {
     setShowLogoutModal(false);
-    
+
     // Clear any client-side storage
     try {
       localStorage.clear();
       sessionStorage.clear();
     } catch (error) {
-      console.error('Error clearing storage:', error);
+      console.error("Error clearing storage:", error);
     }
-    
+
     // Sign out with redirect to login
-    await signOut({ 
+    await signOut({
       callbackUrl: "/login",
-      redirect: true 
+      redirect: true,
     });
   };
 
@@ -87,7 +87,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const checkScreenSize = () => {
       const isMobileScreen = window.innerWidth < 1024; // lg breakpoint
       setIsMobile(isMobileScreen);
-      
+
       // On mobile, close sidebar by default
       if (isMobileScreen) {
         setSidebarOpen(false);
@@ -101,10 +101,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     checkScreenSize();
 
     // Add resize listener
-    window.addEventListener('resize', checkScreenSize);
+    window.addEventListener("resize", checkScreenSize);
 
     // Cleanup
-    return () => window.removeEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
   }, [isClient]);
 
   // Check if user has admin or district_manager role
@@ -193,7 +193,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div
         className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
         lg:translate-x-0 transition-all duration-300 fixed lg:relative 
-        z-40 ${isMinimal ? "w-20" : "w-64"} h-screen bg-white shadow-lg lg:shadow-none`}
+        z-40 ${
+          isMinimal ? "w-20" : "w-64"
+        } h-screen bg-white shadow-lg lg:shadow-none`}
       >
         <Sidebar>
           <SidebarHeader>
@@ -276,13 +278,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="mt-4 px-3 space-y-2">
               {/* User Name */}
               {!isMinimal && session?.user?.pwa?.firstName && (
-                <div className="text-sm text-muted-foreground text-right">
+                <div className="text-sm text-muted-foreground text-right pr-2 pb-2">
                   <div className="truncate">
-                    {session.user.pwa.firstName}
+                    ชื่อผู้ใช้ระบบ : {session.user.pwa.firstName}
                   </div>
                 </div>
               )}
-              
+
               {/* Logout Button */}
               <Button
                 variant="outline"
@@ -304,7 +306,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto p-4 pt-16 lg:pt-6 lg:p-8">{children}</div>
+      <div className="flex-1 overflow-auto p-4 pt-16 lg:pt-6 lg:p-8">
+        {children}
+      </div>
 
       {/* Logout Modal */}
       <LogoutModal
