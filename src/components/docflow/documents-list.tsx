@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
@@ -14,12 +15,25 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  CheckCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/context/auth-context';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 interface Document {
   id: number;
@@ -82,11 +96,16 @@ export function DocumentsList({
   title = 'เอกสารทั้งหมด',
   showBranchFilter = true 
 }: DocumentsListProps) {
+  const { hasRole, hasPermission, user } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(0);
   const [totalDocuments, setTotalDocuments] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<{ [key: number]: boolean }>({});
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [deletedDocumentInfo, setDeletedDocumentInfo] = useState<{ mtNumber: string; subject: string } | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
     search: '',
@@ -111,12 +130,23 @@ export function DocumentsList({
       queryParams.append('page', filters.page.toString());
       queryParams.append('limit', filters.limit.toString());
 
+      // Add timestamp to prevent caching issues, especially for branch views
+      queryParams.append('_t', Date.now().toString());
+      // Add random parameter to defeat any client-side caching
+      queryParams.append('_r', Math.random().toString(36).substring(7));
+      
       const endpoint = branchBaCode 
         ? `/api/documents/branch/${branchBaCode}?${queryParams}`
         : `/api/documents?${queryParams}`;
 
       const response = await fetch(endpoint, {
-        credentials: 'include'
+        credentials: 'include',
+        cache: 'no-store', // Ensure fresh data, especially important for branch views
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
 
       if (!response.ok) {
@@ -200,6 +230,98 @@ export function DocumentsList({
     } catch (error) {
       console.error('Download error:', error);
     }
+  };
+
+  // Delete document
+  const handleDelete = async (documentId: number) => {
+    setDeletingId(documentId);
+    
+    // Find the document info for the success message
+    const docToDelete = documents.find(doc => doc.id === documentId);
+    
+    try {
+      const response = await fetch(`/api/documents/${documentId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        console.log('Delete API successful, updating UI...');
+        
+        // Use flushSync to force immediate synchronous updates
+        flushSync(() => {
+          // Remove document from local state immediately
+          setDocuments(prev => {
+            const newDocs = prev.filter(doc => doc.id !== documentId);
+            console.log('Documents updated:', prev.length, '->', newDocs.length);
+            return newDocs;
+          });
+          
+          setTotalDocuments(prev => {
+            const newTotal = prev - 1;
+            console.log('Total documents updated:', prev, '->', newTotal);
+            return newTotal;
+          });
+          
+          // Close the delete confirmation dialog
+          setDeleteDialogOpen(prev => ({ ...prev, [documentId]: false }));
+        });
+        
+        // Set document info and show success dialog
+        if (docToDelete) {
+          setDeletedDocumentInfo({
+            mtNumber: docToDelete.mtNumber,
+            subject: docToDelete.subject
+          });
+        }
+        setSuccessDialogOpen(true);
+        
+        // Force refresh the data from server to ensure consistency
+        // This is especially important for branch-specific views
+        // Multiple refreshes to handle any backend delays and cache clearing
+        setTimeout(() => {
+          fetchDocuments();
+        }, 100);
+        setTimeout(() => {
+          fetchDocuments();
+        }, 500);
+        setTimeout(() => {
+          fetchDocuments();
+        }, 1500);
+        
+        // Also trigger a page refresh for branch views to clear any lingering cache
+        if (branchBaCode) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+        
+        console.log('Document deleted successfully, UI should update now');
+      } else {
+        const error = await response.json();
+        console.error('Delete failed:', error.error);
+        alert(`ลบเอกสารไม่สำเร็จ: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('เกิดข้อผิดพลาดในการลบเอกสาร');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Check if user can delete document
+  const canDeleteDocument = (doc: Document): boolean => {
+    // Admin can delete any document
+    if (hasRole('admin')) return true;
+    
+    // Users with delete permission can delete any document
+    if (hasPermission('documents:delete')) return true;
+    
+    // Document owner can delete their own draft documents
+    if (user?.id === doc.uploaderId.toString() && doc.status === 'draft') return true;
+    
+    return false;
   };
 
   // Format file size
@@ -319,8 +441,9 @@ export function DocumentsList({
         </Card>
       ) : (
         <div className="space-y-4">
+          {console.log('Rendering documents:', documents.length)}
           {documents.map((doc) => (
-            <Card key={doc.id} className="hover:shadow-md transition-shadow">
+            <Card key={`doc-${doc.id}-${doc.updatedAt}`} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   {/* Document Info */}
@@ -386,6 +509,62 @@ export function DocumentsList({
                       <Download className="h-4 w-4 mr-1" />
                       ดาวน์โหลด
                     </Button>
+
+                    {canDeleteDocument(doc) && (
+                      <Dialog 
+                        open={deleteDialogOpen[doc.id] || false}
+                        onOpenChange={(open) => setDeleteDialogOpen(prev => ({ ...prev, [doc.id]: open }))}
+                      >
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            disabled={deletingId === doc.id}
+                            onClick={() => setDeleteDialogOpen(prev => ({ ...prev, [doc.id]: true }))}
+                          >
+                            {deletingId === doc.id ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4 mr-1" />
+                            )}
+                            ลบ
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>ยืนยันการลบเอกสาร</DialogTitle>
+                            <DialogDescription>
+                              คุณแน่ใจหรือไม่ที่จะลบเอกสาร &quot;{doc.mtNumber}&quot; - {doc.subject}?
+                              <br />
+                              <strong className="text-red-600">การดำเนินการนี้ไม่สามารถยกเลิกได้</strong>
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button 
+                              variant="outline"
+                              onClick={() => setDeleteDialogOpen(prev => ({ ...prev, [doc.id]: false }))}
+                            >
+                              ยกเลิก
+                            </Button>
+                            <Button
+                              className="bg-red-600 hover:bg-red-700"
+                              onClick={() => handleDelete(doc.id)}
+                              disabled={deletingId === doc.id}
+                            >
+                              {deletingId === doc.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                  กำลังลบ...
+                                </>
+                              ) : (
+                                'ลบเอกสาร'
+                              )}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -440,6 +619,49 @@ export function DocumentsList({
           </div>
         </div>
       )}
+
+      {/* Success Dialog */}
+      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+              <div>
+                <DialogTitle className="text-green-800">ลบเอกสารสำเร็จ</DialogTitle>
+                <DialogDescription className="text-gray-600">
+                  เอกสารถูกลบออกจากระบบเรียบร้อยแล้ว
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="py-4">
+            {deletedDocumentInfo && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-2">เอกสารที่ถูกลบ:</h4>
+                <div className="space-y-1 text-sm">
+                  <p><span className="font-medium">เลขที่:</span> {deletedDocumentInfo.mtNumber}</p>
+                  <p><span className="font-medium">เรื่อง:</span> {deletedDocumentInfo.subject}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={() => {
+                setSuccessDialogOpen(false);
+                setDeletedDocumentInfo(null);
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              ตกลง
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

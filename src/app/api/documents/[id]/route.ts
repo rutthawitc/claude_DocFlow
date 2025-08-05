@@ -190,6 +190,12 @@ export async function DELETE(request: NextRequest, { params: paramsPromise }: Ro
       );
     }
 
+    // Additional cache invalidation for immediate API cache clearing
+    const { CacheService } = await import('@/lib/cache/cache-service');
+    const apiCache = CacheService.getInstance();
+    await apiCache.invalidateByTag('documents', 'api');
+    console.log(`🗑️ API cache invalidated after document ${documentId} deletion`);
+
     return NextResponse.json({
       success: true,
       message: 'Document deleted successfully'

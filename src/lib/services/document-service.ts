@@ -460,6 +460,16 @@ export class DocumentService {
         await FileStorageService.deleteFile(document.filePath);
       }
 
+      // Invalidate all related cache entries
+      await this.cache.delete(`document:${documentId}`, 'documents');
+      await this.cache.invalidateByTag('documents');
+      await this.cache.invalidateByTag(`branch:${document.branchBaCode}`);
+      
+      // Also invalidate the API cache specifically for branch endpoint
+      const apiCache = CacheService.getInstance();
+      await apiCache.invalidateByTag('documents', 'api');
+      console.log(`🗑️ Invalidated all caches for deleted document ${documentId} in branch ${document.branchBaCode}`);
+
       return result.length > 0;
     } catch (error) {
       console.error('Error deleting document:', error);
