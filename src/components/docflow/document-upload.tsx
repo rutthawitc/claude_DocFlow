@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { ThaiDatePicker } from '@/components/ui/thai-date-picker';
 import { 
   Upload, 
   FileText, 
@@ -26,6 +27,7 @@ import {
   type ValidationResult,
   type ClientDocumentUploadInput
 } from '@/lib/validation/client';
+import { generateMonthYearOptions, getCurrentMonthYear } from '@/lib/utils/month-year-generator';
 
 interface Branch {
   id: number;
@@ -68,7 +70,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     mtNumber: editDocument?.mtNumber || '',
     mtDate: editDocument?.mtDate || '',
     subject: editDocument?.subject || '',
-    monthYear: editDocument?.monthYear || ''
+    monthYear: editDocument?.monthYear || getCurrentMonthYear()
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -92,6 +94,14 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
       }
     } else {
       setIsEditMode(false);
+      // Reset form data to defaults when not in edit mode
+      setFormData({
+        branchBaCode: '',
+        mtNumber: '',
+        mtDate: '',
+        subject: '',
+        monthYear: getCurrentMonthYear()
+      });
     }
   }, [editDocument]);
 
@@ -224,25 +234,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     return validation;
   }, [formData, selectedFile, validateFileSelection]);
 
-  // Generate month/year options
-  const generateMonthYearOptions = () => {
-    const months = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-    ];
-    
-    const currentYear = new Date().getFullYear();
-    const buddhistYear = currentYear + 543;
-    const options = [];
-
-    for (let year = buddhistYear; year >= buddhistYear - 2; year--) {
-      months.forEach(month => {
-        options.push(`${month} ${year}`);
-      });
-    }
-
-    return options;
-  };
+  // Get month/year options using the utility function
+  const monthYearOptions = generateMonthYearOptions();
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent, action: 'save' | 'send') => {
@@ -548,11 +541,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
 
             <div className="space-y-2">
               <Label htmlFor="mtDate">วันที่ลงเลขที่ มท *</Label>
-              <Input
-                id="mtDate"
-                type="date"
+              <ThaiDatePicker
                 value={formData.mtDate}
-                onChange={(e) => handleInputChange('mtDate', e.target.value)}
+                onChange={(value) => handleInputChange('mtDate', value)}
+                placeholder="เลือกวันที่"
                 className={fieldErrors.mtDate || (errors.mtDate && errors.mtDate[0]) ? 'border-red-300' : ''}
               />
               {(fieldErrors.mtDate || (errors.mtDate && errors.mtDate[0])) && (
@@ -587,7 +579,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">เลือกเดือน/ปี</option>
-              {generateMonthYearOptions().map((option) => (
+              {monthYearOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>

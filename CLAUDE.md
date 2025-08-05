@@ -166,6 +166,10 @@ REDIS_PORT=6379
 REDIS_PASSWORD=your-redis-password
 REDIS_DB=0
 REDIS_KEY_PREFIX=docflow:
+
+# Optional: Document Upload Configuration
+NEXT_PUBLIC_MONTH_YEAR_FUTURE_YEARS=1
+NEXT_PUBLIC_MONTH_YEAR_PAST_YEARS=1
 ```
 
 ## Development Notes
@@ -176,6 +180,18 @@ After database setup, initialize DocFlow data:
 pnpm docflow:init
 ```
 This creates branches, roles, and permissions specific to the DocFlow system.
+
+### Document Upload Configuration
+The month/year dropdown in document upload forms is dynamically generated based on the current date. You can customize the year range using environment variables:
+
+- `NEXT_PUBLIC_MONTH_YEAR_FUTURE_YEARS`: Number of years to show in the future (default: 1)
+- `NEXT_PUBLIC_MONTH_YEAR_PAST_YEARS`: Number of years to show in the past (default: 1)
+
+For example, if it's 2025 (2568 Buddhist era) and you set:
+- `NEXT_PUBLIC_MONTH_YEAR_FUTURE_YEARS=3` 
+- `NEXT_PUBLIC_MONTH_YEAR_PAST_YEARS=1`
+
+The dropdown will show months from 2567 to 2571 (Buddhist era).
 
 ### External PWA Integration
 - Login credentials validated against external PWA API
