@@ -5,10 +5,11 @@ import { Toaster } from "sonner";
 import { useState, useEffect } from "react";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
+  // Two-pass rendering strategy to prevent hydration mismatch
   useEffect(() => {
-    setMounted(true);
+    setIsClient(true);
   }, []);
 
   return (
@@ -19,7 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
       suppressHydrationWarning
     >
-      {mounted && <Toaster position="top-right" richColors closeButton />}
+      {isClient && <Toaster position="top-right" richColors closeButton />}
       {children}
     </ThemeProvider>
   );

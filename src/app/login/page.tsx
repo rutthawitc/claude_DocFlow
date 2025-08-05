@@ -14,18 +14,20 @@ function LoginContent() {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
   const [redirectAttempted, setRedirectAttempted] = useState(false);
-  const [clientMounted, setClientMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   
-  // Use client-side mounting to prevent hydration mismatch
+  // Two-pass rendering strategy to prevent hydration mismatch
   useEffect(() => {
-    setClientMounted(true);
+    setIsClient(true);
   }, []);
   
   // Check for timeout-related query parameters only after client mount
-  const expired = clientMounted ? searchParams.get('expired') : null;
-  const idle = clientMounted ? searchParams.get('idle') : null;
+  const expired = isClient ? searchParams.get('expired') : null;
+  const idle = isClient ? searchParams.get('idle') : null;
 
   useEffect(() => {
+    if (!isClient) return; // Only run on client side
+    
     // เพิ่ม log เพื่อตรวจสอบสถานะและค่า session
     console.log('Current auth status:', status, 'Path:', pathname);
     console.log('Session data:', JSON.stringify(session));
@@ -46,10 +48,10 @@ function LoginContent() {
     } else if (status === 'unauthenticated') {
       console.log('User is not authenticated');
     }
-  }, [session, status, router, pathname, redirectAttempted]);
+  }, [session, status, router, pathname, redirectAttempted, isClient]);
 
-  // แสดงข้อความกำลังโหลดในขณะที่กำลังตรวจสอบสถานะ session
-  if (loading) {
+  // แสดงข้อความกำลังโหลดในขณะที่กำลังตรวจสอบสถานะ session หรือรอ client mount
+  if (loading || !isClient) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8 text-center">
@@ -101,16 +103,14 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <div suppressHydrationWarning>
-      <Suspense fallback={
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-          <div className="w-full max-w-md space-y-8 text-center">
-            <p>กำลังโหลด...</p>
-          </div>
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md space-y-8 text-center">
+          <p>กำลังโหลด...</p>
         </div>
-      }>
-        <LoginContent />
-      </Suspense>
-    </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -8,16 +8,16 @@ import { Clock, AlertTriangle } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 export function SessionTimeoutWarning() {
-  const [isMounted, setIsMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { timeLeft, showWarning, extendSession } = useSessionTimeoutSimple();
 
-  // Prevent hydration mismatch by only rendering after client mount
+  // Two-pass rendering strategy to prevent hydration mismatch
   useEffect(() => {
-    setIsMounted(true);
+    setIsClient(true);
   }, []);
 
-  // Don't render anything on server side
-  if (!isMounted) {
+  // Don't render anything on server side - two-pass rendering
+  if (!isClient) {
     return null;
   }
 

@@ -14,13 +14,13 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
   const { data: session, update } = useSession();
   const [timeLeft, setTimeLeft] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout>();
   const warningShownRef = useRef(false);
 
-  // Prevent hydration mismatch by tracking mount state
+  // Two-pass rendering strategy to prevent hydration mismatch
   useEffect(() => {
-    setIsMounted(true);
+    setIsClient(true);
   }, []);
 
   const extendSession = useCallback(async () => {
@@ -35,7 +35,7 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
   }, [update]);
 
   useEffect(() => {
-    if (!session || !isMounted) {
+    if (!session || !isClient) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
@@ -74,7 +74,7 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
         clearInterval(intervalRef.current);
       }
     };
-  }, [session?.expires, isMounted]); // Only depend on session expiration time, not the entire session object
+  }, [session?.expires, isClient]); // Only depend on session expiration time, not the entire session object
 
   return {
     timeLeft,

@@ -39,7 +39,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isMinimal, setIsMinimal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -75,14 +75,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setShowLogoutModal(false);
   };
 
-  // Handle client mounting first
+  // Two-pass rendering strategy to prevent hydration mismatch
   useEffect(() => {
-    setIsMounted(true);
+    setIsClient(true);
   }, []);
 
-  // Handle responsive behavior only after mounting
+  // Handle responsive behavior only after client mounting
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isClient) return;
 
     const checkScreenSize = () => {
       const isMobileScreen = window.innerWidth < 1024; // lg breakpoint
@@ -105,7 +105,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     // Cleanup
     return () => window.removeEventListener('resize', checkScreenSize);
-  }, [isMounted]);
+  }, [isClient]);
 
   // Check if user has admin or district_manager role
   const userRoles = session?.user?.pwa?.roles || [];
@@ -181,7 +181,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Mobile sidebar overlay - only render after client mount */}
-      {isMounted && isMobile && sidebarOpen && (
+      {isClient && isMobile && sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
