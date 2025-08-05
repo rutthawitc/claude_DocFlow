@@ -13,6 +13,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+// Thai month names
+const THAI_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+]
+
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+]
+
 interface ThaiDatePickerProps {
   value?: string
   onChange?: (value: string) => void
@@ -53,9 +64,10 @@ export function ThaiDatePicker({
 
   const formatDisplayDate = (date: Date) => {
     const day = date.getDate()
-    const month = date.getMonth() + 1
-    const year = date.getFullYear()
-    return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`
+    const month = date.getMonth()
+    const year = date.getFullYear() + 543 // Convert to Buddhist Era
+    const thaiMonth = THAI_MONTHS_SHORT[month]
+    return `${day} ${thaiMonth} ${year}`
   }
 
   return (
@@ -80,6 +92,10 @@ export function ThaiDatePicker({
           selected={date}
           onSelect={handleDateSelect}
           initialFocus
+          formatters={{
+            formatMonthDropdown: (date) => THAI_MONTHS_SHORT[date.getMonth()],
+            formatCaption: (date) => `${THAI_MONTHS[date.getMonth()]} ${date.getFullYear() + 543}`,
+          }}
         />
         <div className="flex items-center justify-between p-3 border-t">
           <Button
