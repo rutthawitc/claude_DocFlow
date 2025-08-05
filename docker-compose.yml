@@ -54,9 +54,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts:/scripts:ro
-    # Remove external port exposure for security
-    # ports:
-    #   - "5432:5432"
+    # Expose port for development
+    ports:
+      - "5432:5432"
     networks:
       - app-network
     healthcheck:
@@ -101,9 +101,9 @@ services:
     image: redis:7.4-alpine
     container_name: pwa-next15-authjs-redis
     restart: unless-stopped
-    # Remove external port exposure for security
-    # ports:
-    #   - "6379:6379"
+    # Expose port for development
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
