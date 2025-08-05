@@ -1,0 +1,7 @@
+# Disable interactive prompts during Docker build
+auto-install-peers=true
+prefer-offline=true
+resolution-mode=highest
+
+# For Next.js builds
+next-build-env-output=true

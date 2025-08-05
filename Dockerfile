@@ -9,7 +9,7 @@ RUN npm install -g pnpm
 
 # Install dependencies
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prefer-offline
 
 # Copy application code
 COPY . .
@@ -28,7 +28,7 @@ RUN npm install -g pnpm
 
 # Copy production dependencies and built application
 COPY --from=builder /app/package.json /app/pnpm-lock.yaml* ./
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile --prefer-offline
 
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public

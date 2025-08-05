@@ -30,8 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-#.env*
+# Environment files - NEVER commit secrets!
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*.local
+!.env.example
 
 # vercel
 .vercel
@@ -40,8 +46,80 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# file uploads
+# Docker & Container files
+docker-compose.override.yml
+.dockerignore.bak
+*.tar
+*.tar.gz
+docker-volumes/
+
+# SSL Certificates & Security
+certs/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Redis & Cache
+redis-data/
+*.rdb
+dump.rdb
+
+# File uploads & temporary files
 /uploads/*.pdf
+/uploads/*.doc
+/uploads/*.docx
 tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+backups/
+*.backup
+*.bak
+*.old
+*.orig
+
+# Log files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# Claude AI & Development tools
 .claude/
 .claude/settings.local.json
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.history/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Telegram settings (contains sensitive data)
+tmp/telegram-settings.json
+
+# System monitoring & metrics
+.monitoring/
+metrics/

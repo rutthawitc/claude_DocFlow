@@ -43,7 +43,8 @@
       "Bash(pnpm list:*)",
       "Bash(pnpm why:*)",
       "Bash(psql:*)",
-      "Bash(pnpm start:*)"
+      "Bash(pnpm start:*)",
+      "Bash(docker compose exec:*)"
     ],
     "deny": []
   }

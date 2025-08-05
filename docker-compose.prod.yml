@@ -1,15 +1,39 @@
 services:
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: docflow-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certs:/etc/nginx/certs:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # Next.js application
   app:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: pwa-next15-authjs
+      dockerfile: Dockerfile.prod
+    container_name: docflow-app
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
+      - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - AUTH_TRUST_HOST=${AUTH_TRUST_HOST}
@@ -40,11 +64,19 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
   # PostgreSQL database
   db:
     image: postgres:17.5-alpine3.20
-    container_name: pwa-next15-authjs-db
+    container_name: docflow-db
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -54,9 +86,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts:/scripts:ro
-    # Remove external port exposure for security
-    # ports:
-    #   - "5432:5432"
+      - ./backups:/backups
     networks:
       - app-network
     healthcheck:
@@ -66,46 +96,27 @@ services:
       retries: 5
       start_period: 30s
     logging:
-      driver: "json-file"
+      driver: "json-file" 
       options:
         max-size: "10m"
         max-file: "3"
-
-  # pgAdmin web interface
-  pgadmin:
-    image: elestio/pgadmin:latest
-    container_name: pwa-next15-authjs-pgadmin
-    restart: unless-stopped
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
-      - PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION=True
-      - PGADMIN_CONFIG_LOGIN_BANNER="Authorized Personnel Only"
-    ports:
-      - "5050:80"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - app-network
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
 
   # Redis cache
   redis:
     image: redis:7.4-alpine
-    container_name: pwa-next15-authjs-redis
+    container_name: docflow-redis
     restart: unless-stopped
-    # Remove external port exposure for security
-    # ports:
-    #   - "6379:6379"
     volumes:
       - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - app-network
     healthcheck:
@@ -114,23 +125,45 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    command: >
-      redis-server
-      --appendonly yes
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      --requirepass ${REDIS_PASSWORD}
-      --bind 0.0.0.0
-      --protected-mode yes
+    command: redis-server /usr/local/etc/redis/redis.conf
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+  # pgAdmin (disabled in production by default)
+  # pgadmin:
+  #   image: elestio/pgadmin:latest
+  #   container_name: docflow-pgadmin
+  #   restart: unless-stopped
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+  #     - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+  #   ports:
+  #     - "127.0.0.1:5050:80"
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   networks:
+  #     - app-network
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
 
 networks:
   app-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
 volumes:
   postgres_data:
@@ -138,4 +171,6 @@ volumes:
   redis_data:
     driver: local
   pgadmin_data:
+    driver: local
+  nginx_cache:
     driver: local
