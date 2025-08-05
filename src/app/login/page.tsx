@@ -14,10 +14,16 @@ function LoginContent() {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
   const [redirectAttempted, setRedirectAttempted] = useState(false);
+  const [clientMounted, setClientMounted] = useState(false);
   
-  // Check for timeout-related query parameters
-  const expired = searchParams.get('expired');
-  const idle = searchParams.get('idle');
+  // Use client-side mounting to prevent hydration mismatch
+  useEffect(() => {
+    setClientMounted(true);
+  }, []);
+  
+  // Check for timeout-related query parameters only after client mount
+  const expired = clientMounted ? searchParams.get('expired') : null;
+  const idle = clientMounted ? searchParams.get('idle') : null;
 
   useEffect(() => {
     // เพิ่ม log เพื่อตรวจสอบสถานะและค่า session

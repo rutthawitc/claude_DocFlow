@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useSessionTimeoutSimple } from '@/hooks/useSessionTimeoutSimple';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -7,7 +8,18 @@ import { Clock, AlertTriangle } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 export function SessionTimeoutWarning() {
+  const [isMounted, setIsMounted] = useState(false);
   const { timeLeft, showWarning, extendSession } = useSessionTimeoutSimple();
+
+  // Prevent hydration mismatch by only rendering after client mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Don't render anything on server side
+  if (!isMounted) {
+    return null;
+  }
 
   const formatTimeLeft = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);

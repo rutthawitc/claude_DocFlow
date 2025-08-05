@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { useEffect, useState, useId } from "react";
+import { useEffect, useState } from "react";
 
 // ไม่ต้องใช้ csrfToken อีกต่อไปเพราะเราจะไม่ใช้การตรวจสอบ CSRF ในการล็อกอิน
 
@@ -28,9 +28,9 @@ export function LoginFormServer() {
   // ใช้สถานะสำหรับแสดงข้อความข้อผิดพลาดของ signIn
   const [signInError, setSignInError] = useState("");
   
-  // สร้าง unique ID สำหรับ form inputs
-  const usernameId = useId();
-  const passwordId = useId();
+  // ใช้ static ID เพื่อหลีกเลี่ยง hydration mismatch
+  const usernameId = "login-username";
+  const passwordId = "login-password";
   
   // ใช้ useEffect เพื่อตรวจสอบและใช้ข้อมูล credentials จาก server action
   useEffect(() => {

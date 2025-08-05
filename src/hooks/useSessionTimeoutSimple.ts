@@ -14,8 +14,14 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
   const { data: session, update } = useSession();
   const [timeLeft, setTimeLeft] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout>();
   const warningShownRef = useRef(false);
+
+  // Prevent hydration mismatch by tracking mount state
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const extendSession = async () => {
     try {
@@ -29,7 +35,7 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
   };
 
   useEffect(() => {
-    if (!session) {
+    if (!session || !isMounted) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
@@ -64,7 +70,7 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
         clearInterval(intervalRef.current);
       }
     };
-  }, [session, update]);
+  }, [session, update, isMounted]);
 
   return {
     timeLeft,
