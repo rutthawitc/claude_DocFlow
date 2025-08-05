@@ -114,7 +114,9 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={value}>
       {children}
-      <SessionTimeoutWarning />
+      <div suppressHydrationWarning>
+        <SessionTimeoutWarning />
+      </div>
     </AuthContext.Provider>
   );
 }

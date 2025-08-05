@@ -2,17 +2,24 @@
 
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
+import { useState, useEffect } from "react";
+
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <ThemeProvider
       attribute="class"
       defaultTheme="light"
       enableSystem={false}
       disableTransitionOnChange
-      // จำเป็นต้องใช้ suppressHydrationWarning เพื่อแก้ไขปัญหา Hydration error
-      // เนื่องจาก ThemeProvider พยายามเปลี่ยนแปลง HTML attributes ในระหว่าง hydration
+      suppressHydrationWarning
     >
-      <Toaster position="top-right" richColors closeButton />
+      {mounted && <Toaster position="top-right" richColors closeButton />}
       {children}
     </ThemeProvider>
   );
