@@ -33,4 +33,11 @@
 - [ ] Implement advanced name truncation for very long names
 - [ ] Create custom Thai language name display components
 
-## 🕒 Last Updated: 2025-08-04
+## 🕒 Last Updated: 2025-08-05
+
+### ✅ Thai Date Picker Enhancements
+1. [x] Added Thai month names (full and abbreviated)
+2. [x] Implemented Buddhist Era (BE) year display
+3. [x] Updated date display format to Thai style (D MMM YYYY)
+4. [x] Localized calendar header and month dropdown
+5. [x] Integrated with existing month/year dropdown configuration
