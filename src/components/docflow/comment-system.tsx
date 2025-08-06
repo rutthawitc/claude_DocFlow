@@ -19,6 +19,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Support both nested and flat comment structures
 interface Comment {
@@ -87,6 +97,8 @@ export function CommentSystem({
   const [isLoading, setIsLoading] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
@@ -225,12 +237,18 @@ export function CommentSystem({
     }
   };
 
+  // Handle comment delete dialog
+  const openDeleteDialog = (commentId: number) => {
+    setCommentToDelete(commentId);
+    setDeleteDialogOpen(true);
+  };
+
   // Handle comment delete
-  const deleteComment = async (commentId: number) => {
-    if (!confirm('คุณต้องการลบความคิดเห็นนี้หรือไม่?')) return;
+  const deleteComment = async () => {
+    if (!commentToDelete) return;
 
     try {
-      const response = await fetch(`/api/documents/${documentId}/comments/${commentId}`, {
+      const response = await fetch(`/api/documents/${documentId}/comments/${commentToDelete}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -238,8 +256,10 @@ export function CommentSystem({
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setComments(prev => prev.filter(comment => comment.id !== commentId));
+        setComments(prev => prev.filter(comment => getCommentId(comment) !== commentToDelete));
         toast.success('ลบความคิดเห็นเรียบร้อย');
+        setDeleteDialogOpen(false);
+        setCommentToDelete(null);
       } else {
         throw new Error(result.error || 'Failed to delete comment');
       }
@@ -250,7 +270,9 @@ export function CommentSystem({
   };
 
   const canModifyComment = (comment: Comment) => {
-    return currentUserId === comment.userId || userRoles.includes('admin');
+    const commentUserId = comment.comment?.userId || comment.userId;
+    const userObject = comment.user || comment;
+    return currentUserId === commentUserId || userRoles.includes('admin');
   };
 
   const canAddComments = () => {
@@ -285,9 +307,8 @@ export function CommentSystem({
           ) : comments.length > 0 ? (
             comments.map((comment, index) => {
               // Debug: Log comment structure
-              if (index === 0) {
-                console.log('Comment structure:', comment);
-              }
+              console.log(`💬 Frontend - Comment ${index + 1}:`, comment);
+              console.log(`💬 Frontend - Comment ID: ${getCommentId(comment)}, Content: "${getCommentContent(comment)}"`);
               return (
               <div key={getCommentId(comment) || `comment-${index}`} className="space-y-2 group">
                 <div className="flex items-start justify-between">
@@ -343,7 +364,7 @@ export function CommentSystem({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => deleteComment(getCommentId(comment))}
+                        onClick={() => openDeleteDialog(getCommentId(comment))}
                         className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -429,6 +450,30 @@ export function CommentSystem({
           </form>
         )}
       </CardContent>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันการลบความคิดเห็น</AlertDialogTitle>
+            <AlertDialogDescription>
+              คุณแน่ใจหรือไม่ที่จะลบความคิดเห็นนี้? การกระทำนี้ไม่สามารถยกเลิกได้
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
+              ยกเลิก
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteComment}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              ลบความคิดเห็น
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

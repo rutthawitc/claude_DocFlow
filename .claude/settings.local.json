@@ -44,7 +44,14 @@
       "Bash(pnpm why:*)",
       "Bash(psql:*)",
       "Bash(pnpm start:*)",
-      "Bash(docker compose exec:*)"
+      "Bash(docker compose exec:*)",
+      "Bash(redis-cli:*)",
+      "Bash(npx tsc:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "WebFetch(domain:ui.shadcn.com)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

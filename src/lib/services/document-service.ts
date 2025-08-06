@@ -413,6 +413,11 @@ export class DocumentService {
         }
       }
 
+      // Invalidate document cache since comments have changed
+      await this.cache.delete(`document:${documentId}`, 'documents');
+      await this.cache.invalidateByTag('documents');
+      console.log('🔄 Cache invalidated for document:', documentId);
+
       return commentResult;
     } catch (error) {
       console.error('Error adding comment:', error);

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { withAuth } from '@/lib/middleware/api-auth';
+import { ApiResponseHandler } from '@/lib/middleware/api-responses';
 import { DocumentService } from '@/lib/services/document-service';
 import { ActivityLogger } from '@/lib/services/activity-logger';
-import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
-import { ApiResponse } from '@/lib/types';
+import { DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 import { 
   commentCreateSchema, 
   documentIdSchema
@@ -24,6 +24,11 @@ interface RouteParams {
 export async function POST(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
   try {
+    // Authenticate user
+    const { user } = await withAuth(request, {
+      requiredPermissions: [DOCFLOW_PERMISSIONS.COMMENTS_CREATE]
+    });
+
     // Validate path parameters
     let validatedParams;
     try {
@@ -36,36 +41,6 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
     }
 
     const documentId = validatedParams.id;
-
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const username = session.user.id; // This is actually the username (11008)
-
-    // Get user from database by username to get the actual numeric ID
-    const { getDb } = await import('@/db');
-    const { users } = await import('@/db/schema');
-    const { eq } = await import('drizzle-orm');
-    
-    const db = await getDb();
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username)
-    });
-    
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 401 }
-      );
-    }
-    
-    const userId = user.id; // This is the numeric database ID
 
     // Validate request body
     let validatedBody;
@@ -80,43 +55,29 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
 
     const { content } = validatedBody;
 
-    // Check comment creation permission
-    const hasCommentPermission = await DocFlowAuth.hasPermission(userId, DOCFLOW_PERMISSIONS.COMMENTS_CREATE);
-    if (!hasCommentPermission) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions to add comments' },
-        { status: 403 }
-      );
-    }
-
     // Get document to check access and get branch info
     const document = await DocumentService.getDocumentById(documentId);
     if (!document) {
-      return NextResponse.json(
-        { success: false, error: 'Document not found' },
-        { status: 404 }
-      );
+      return ApiResponseHandler.notFound('Document not found');
     }
 
     // Get user roles for access check
-    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(userId);
+    const { DocFlowAuth } = await import('@/lib/auth/docflow-auth');
+    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(user.databaseId);
 
     // Check if user can access this document
-    const canAccess = await DocumentService.canUserAccessDocument(userId, documentId, roles);
+    const canAccess = await DocumentService.canUserAccessDocument(user.databaseId, documentId, roles);
     if (!canAccess) {
-      return NextResponse.json(
-        { success: false, error: 'Access denied to this document' },
-        { status: 403 }
-      );
+      return ApiResponseHandler.forbidden('Access denied to this document');
     }
 
     // Add comment (content is already trimmed by validation)
-    const comment = await DocumentService.addComment(documentId, userId, content);
+    const comment = await DocumentService.addComment(documentId, user.databaseId, content);
 
     // Log comment addition
     const { ipAddress, userAgent } = ActivityLogger.extractRequestMetadata(request);
     await ActivityLogger.logCommentAdded(
-      userId,
+      user.databaseId,
       documentId,
       document.branchBaCode,
       comment.comment.id,
@@ -124,31 +85,23 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
       userAgent
     );
 
-    const response: ApiResponse<typeof comment> = {
-      success: true,
-      data: comment,
-      message: 'Comment added successfully'
-    };
-
-    return NextResponse.json(response, { status: 201 });
+    return ApiResponseHandler.success(comment, 'Comment added successfully', 201);
 
   } catch (error) {
     console.error('Error adding comment:', error);
-    
-    if (error instanceof ValidationError) {
-      return handleValidationError(error);
-    }
-    
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return ApiResponseHandler.fromError(error);
   }
 }
 
 export async function GET(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
+  
   try {
+    // Authenticate user
+    const { user } = await withAuth(request, {
+      requiredPermissions: [DOCFLOW_PERMISSIONS.COMMENTS_READ]
+    });
+
     // Validate path parameters
     let validatedParams;
     try {
@@ -161,84 +114,36 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
     }
 
     const documentId = validatedParams.id;
-
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const username = session.user.id;
-
-    // Get user from database by username to get the actual numeric ID
-    const { getDb } = await import('@/db');
-    const { users } = await import('@/db/schema');
-    const { eq } = await import('drizzle-orm');
-    
-    const db = await getDb();
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username)
-    });
-    
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 401 }
-      );
-    }
-    
-    const actualUserId = user.id;
-
-    // Check comment read permission
-    const hasReadPermission = await DocFlowAuth.hasPermission(actualUserId, DOCFLOW_PERMISSIONS.COMMENTS_READ);
-    if (!hasReadPermission) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions to read comments' },
-        { status: 403 }
-      );
-    }
+    console.log('📄 Comments API - Document ID:', documentId);
+    console.log('👤 Comments API - User ID:', user.databaseId);
 
     // Get user roles for access check
-    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(actualUserId);
+    const { DocFlowAuth } = await import('@/lib/auth/docflow-auth');
+    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(user.databaseId);
 
     // Check if user can access this document
-    const canAccess = await DocumentService.canUserAccessDocument(actualUserId, documentId, roles);
+    const canAccess = await DocumentService.canUserAccessDocument(user.databaseId, documentId, roles);
     if (!canAccess) {
-      return NextResponse.json(
-        { success: false, error: 'Access denied to this document' },
-        { status: 403 }
-      );
+      return ApiResponseHandler.forbidden('Access denied to this document');
     }
 
     // Get document with comments
     const document = await DocumentService.getDocumentById(documentId);
     if (!document) {
-      return NextResponse.json(
-        { success: false, error: 'Document not found' },
-        { status: 404 }
-      );
+      return ApiResponseHandler.notFound('Document not found');
     }
 
-    const response: ApiResponse<typeof document.comments> = {
-      success: true,
-      data: document.comments || []
-    };
+    console.log('💬 Comments API - Found comments:', document.comments?.length || 0);
+    console.log('💬 Comments API - Sample comment structure:', document.comments?.[0]);
+    
+    // Ensure we return the comments array
+    const comments = document.comments || [];
+    console.log('💬 Comments API - Returning comments:', comments);
 
-    return NextResponse.json(response);
+    return ApiResponseHandler.success(comments);
 
   } catch (error) {
     console.error('Error fetching comments:', error);
-    
-    if (error instanceof ValidationError) {
-      return handleValidationError(error);
-    }
-    
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return ApiResponseHandler.fromError(error);
   }
 }

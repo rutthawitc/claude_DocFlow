@@ -10,13 +10,32 @@ interface SessionTimeoutHook {
   extendSession: () => void;
 }
 
-export function useSessionTimeoutSimple(): SessionTimeoutHook {
+interface SessionTimeoutOptions {
+  warningTime?: number; // Seconds before expiration to show warning (default: 300 = 5 minutes)
+  checkInterval?: number; // How often to check session in milliseconds (default: 30000 = 30 seconds)
+  enableActivityTracking?: boolean; // Enable automatic activity tracking (default: false)
+  activityUpdateThrottle?: number; // Throttle activity updates in milliseconds (default: 300000 = 5 minutes)
+}
+
+/**
+ * Unified session timeout hook
+ * Consolidates useSessionTimeout and useSessionTimeoutSimple with configurable options
+ */
+export function useSessionTimeout(options: SessionTimeoutOptions = {}): SessionTimeoutHook {
+  const {
+    warningTime = 300, // 5 minutes
+    checkInterval = 30000, // 30 seconds
+    enableActivityTracking = false,
+    activityUpdateThrottle = 300000 // 5 minutes
+  } = options;
+
   const { data: session, update } = useSession();
   const [timeLeft, setTimeLeft] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout>();
   const warningShownRef = useRef(false);
+  const lastUpdateRef = useRef<number>(0);
 
   // Two-pass rendering strategy to prevent hydration mismatch
   useEffect(() => {
@@ -34,6 +53,37 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
     }
   }, [update]);
 
+  // Activity tracking setup (only if enabled)
+  useEffect(() => {
+    if (!enableActivityTracking || !session || !isClient) {
+      return;
+    }
+
+    const updateActivity = () => {
+      if (session) {
+        const now = Date.now();
+        // Only update session if enough time has passed since last update
+        if (now - lastUpdateRef.current > activityUpdateThrottle) {
+          lastUpdateRef.current = now;
+          update(); // Update lastActivity time
+        }
+      }
+    };
+
+    // Add event listeners for user activity
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(event => {
+      document.addEventListener(event, updateActivity, { passive: true });
+    });
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, updateActivity);
+      });
+    };
+  }, [session, update, enableActivityTracking, activityUpdateThrottle, isClient]);
+
+  // Main session timeout checking
   useEffect(() => {
     if (!session || !isClient) {
       if (intervalRef.current) {
@@ -46,7 +96,7 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
     warningShownRef.current = false;
     setShowWarning(false);
 
-    // Only check session expiration, don't track activity automatically
+    // Set up timeout checking interval
     intervalRef.current = setInterval(() => {
       const now = Math.floor(Date.now() / 1000);
       const sessionExp = session.expires ? Math.floor(new Date(session.expires).getTime() / 1000) : null;
@@ -55,8 +105,8 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
         const remaining = sessionExp - now;
         setTimeLeft(remaining);
         
-        // Show warning 5 minutes before expiration
-        if (remaining <= 300 && remaining > 0 && !warningShownRef.current) {
+        // Show warning before expiration
+        if (remaining <= warningTime && remaining > 0 && !warningShownRef.current) {
           setShowWarning(true);
           warningShownRef.current = true;
         }
@@ -67,14 +117,14 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
           signOut({ callbackUrl: '/login?expired=1' });
         }
       }
-    }, 30000); // Check every 30 seconds instead of every second
+    }, checkInterval);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [session?.expires, isClient]); // Only depend on session expiration time, not the entire session object
+  }, [session?.expires, isClient, warningTime, checkInterval]);
 
   return {
     timeLeft,
@@ -82,3 +132,31 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
     extendSession
   };
 }
+
+/**
+ * Simple session timeout hook (optimized for performance)
+ * This is the recommended version for most use cases
+ */
+export function useSessionTimeoutSimple(): SessionTimeoutHook {
+  return useSessionTimeout({
+    warningTime: 300, // 5 minutes warning
+    checkInterval: 30000, // Check every 30 seconds
+    enableActivityTracking: false // No automatic activity tracking
+  });
+}
+
+/**
+ * Legacy hook with activity tracking for compatibility
+ * Use this if you need the old useSessionTimeout behavior
+ */
+export function useSessionTimeoutWithActivity(): SessionTimeoutHook {
+  return useSessionTimeout({
+    warningTime: 300, // 5 minutes warning
+    checkInterval: 1000, // Check every second (like the old hook)
+    enableActivityTracking: true, // Enable activity tracking
+    activityUpdateThrottle: 300000 // Update every 5 minutes
+  });
+}
+
+// Export the main hook as default
+export default useSessionTimeout;

@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { NextRequest } from 'next/server';
+import { withAuth } from '@/lib/middleware/api-auth';
+import { ApiResponseHandler } from '@/lib/middleware/api-responses';
 import { getDb } from '@/db';
-import { comments, users } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
+import { comments, documents } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 import { ActivityLogger } from '@/lib/services/activity-logger';
-import { ApiResponse } from '@/lib/types';
 
 interface RouteParams {
   params: Promise<{
@@ -16,36 +16,30 @@ interface RouteParams {
 
 export async function PATCH(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
+  
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Authenticate user
+    const { user } = await withAuth(request, {
+      requiredPermissions: [DOCFLOW_PERMISSIONS.COMMENTS_UPDATE]
+    });
 
-    const userId = parseInt(session.user.id);
     const documentId = parseInt(params.id);
     const commentId = parseInt(params.commentId);
 
     if (isNaN(documentId) || isNaN(commentId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid document ID or comment ID' },
-        { status: 400 }
-      );
+      return ApiResponseHandler.badRequest('Invalid document ID or comment ID');
     }
 
     const { content } = await request.json();
 
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Comment content is required' },
-        { status: 400 }
-      );
+      return ApiResponseHandler.badRequest('Comment content is required');
     }
 
-    const db = getDb();
+    const db = await getDb();
+    if (!db) {
+      return ApiResponseHandler.error('Database connection failed');
+    }
 
     // Get current comment
     const [currentComment] = await db
@@ -54,29 +48,26 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       .where(eq(comments.id, commentId));
 
     if (!currentComment) {
-      return NextResponse.json(
-        { success: false, error: 'Comment not found' },
-        { status: 404 }
-      );
+      return ApiResponseHandler.notFound('Comment not found');
     }
 
-    // Check if document matches
-    if (currentComment.documentId !== documentId) {
-      return NextResponse.json(
-        { success: false, error: 'Comment does not belong to this document' },
-        { status: 400 }
-      );
+    // Get document for branchBaCode
+    const [document] = await db
+      .select({ branchBaCode: documents.branchBaCode })
+      .from(documents)
+      .where(eq(documents.id, documentId));
+
+    if (!document) {
+      return ApiResponseHandler.notFound('Document not found');
     }
 
-    // Check permission - user can edit their own comment or admin can edit any
-    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(userId);
-    const canEdit = currentComment.userId === userId || roles.includes('admin');
+    // Check if user can edit this comment (own comment or admin)
+    const { DocFlowAuth } = await import('@/lib/auth/docflow-auth');
+    const isAdmin = await DocFlowAuth.hasPermission(user.databaseId, DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS);
+    const canEdit = currentComment.userId === user.databaseId || isAdmin;
 
     if (!canEdit) {
-      return NextResponse.json(
-        { success: false, error: 'Permission denied to edit this comment' },
-        { status: 403 }
-      );
+      return ApiResponseHandler.forbidden('Permission denied to edit this comment');
     }
 
     // Update comment
@@ -91,13 +82,13 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
 
     // Log comment edit
     const { ipAddress, userAgent } = ActivityLogger.extractRequestMetadata(request);
-    await ActivityLogger.log({
-      userId,
+    await ActivityLogger.logActivity({
+      userId: user.databaseId,
       action: 'comment_updated',
-      resourceType: 'comment',
-      resourceId: commentId.toString(),
-      metadata: {
-        documentId,
+      documentId,
+      branchBaCode: document.branchBaCode,
+      details: {
+        commentId,
         oldContent: currentComment.content,
         newContent: content.trim(),
       },
@@ -105,46 +96,41 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       userAgent,
     });
 
-    const response: ApiResponse<typeof updatedComment> = {
-      success: true,
-      data: updatedComment,
-      message: 'Comment updated successfully'
-    };
+    // Invalidate document cache since comment was updated
+    const { CacheService } = await import('@/lib/cache/cache-service');
+    const cache = CacheService.getInstance();
+    await cache.delete(`document:${documentId}`, 'documents');
+    await cache.invalidateByTag('documents');
+    console.log('🔄 Cache invalidated for document after comment update:', documentId);
 
-    return NextResponse.json(response);
+    return ApiResponseHandler.success(updatedComment, 'Comment updated successfully');
 
   } catch (error) {
     console.error('Error updating comment:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return ApiResponseHandler.fromError(error);
   }
 }
 
 export async function DELETE(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
+  
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Authenticate user
+    const { user } = await withAuth(request, {
+      requiredPermissions: [DOCFLOW_PERMISSIONS.COMMENTS_DELETE]
+    });
 
-    const userId = parseInt(session.user.id);
     const documentId = parseInt(params.id);
     const commentId = parseInt(params.commentId);
 
     if (isNaN(documentId) || isNaN(commentId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid document ID or comment ID' },
-        { status: 400 }
-      );
+      return ApiResponseHandler.badRequest('Invalid document ID or comment ID');
     }
 
-    const db = getDb();
+    const db = await getDb();
+    if (!db) {
+      return ApiResponseHandler.error('Database connection failed');
+    }
 
     // Get current comment
     const [currentComment] = await db
@@ -153,29 +139,26 @@ export async function DELETE(request: NextRequest, { params: paramsPromise }: Ro
       .where(eq(comments.id, commentId));
 
     if (!currentComment) {
-      return NextResponse.json(
-        { success: false, error: 'Comment not found' },
-        { status: 404 }
-      );
+      return ApiResponseHandler.notFound('Comment not found');
     }
 
-    // Check if document matches
-    if (currentComment.documentId !== documentId) {
-      return NextResponse.json(
-        { success: false, error: 'Comment does not belong to this document' },
-        { status: 400 }
-      );
+    // Get document for branchBaCode
+    const [document] = await db
+      .select({ branchBaCode: documents.branchBaCode })
+      .from(documents)
+      .where(eq(documents.id, documentId));
+
+    if (!document) {
+      return ApiResponseHandler.notFound('Document not found');
     }
 
     // Check permission - user can delete their own comment or admin can delete any
-    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(userId);
-    const canDelete = currentComment.userId === userId || roles.includes('admin');
+    const { DocFlowAuth } = await import('@/lib/auth/docflow-auth');
+    const isAdmin = await DocFlowAuth.hasPermission(user.databaseId, DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS);
+    const canDelete = currentComment.userId === user.databaseId || isAdmin;
 
     if (!canDelete) {
-      return NextResponse.json(
-        { success: false, error: 'Permission denied to delete this comment' },
-        { status: 403 }
-      );
+      return ApiResponseHandler.forbidden('Permission denied to delete this comment');
     }
 
     // Delete comment
@@ -185,32 +168,30 @@ export async function DELETE(request: NextRequest, { params: paramsPromise }: Ro
 
     // Log comment deletion
     const { ipAddress, userAgent } = ActivityLogger.extractRequestMetadata(request);
-    await ActivityLogger.log({
-      userId,
+    await ActivityLogger.logActivity({
+      userId: user.databaseId,
       action: 'comment_deleted',
-      resourceType: 'comment',
-      resourceId: commentId.toString(),
-      metadata: {
-        documentId,
+      documentId,
+      branchBaCode: document.branchBaCode,
+      details: {
+        commentId,
         deletedContent: currentComment.content,
       },
       ipAddress,
       userAgent,
     });
 
-    const response: ApiResponse<{}> = {
-      success: true,
-      data: {},
-      message: 'Comment deleted successfully'
-    };
+    // Invalidate document cache since comment was deleted
+    const { CacheService } = await import('@/lib/cache/cache-service');
+    const cache = CacheService.getInstance();
+    await cache.delete(`document:${documentId}`, 'documents');
+    await cache.invalidateByTag('documents');
+    console.log('🔄 Cache invalidated for document after comment deletion:', documentId);
 
-    return NextResponse.json(response);
+    return ApiResponseHandler.success({}, 'Comment deleted successfully');
 
   } catch (error) {
     console.error('Error deleting comment:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return ApiResponseHandler.fromError(error);
   }
 }

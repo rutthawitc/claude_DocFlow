@@ -3,7 +3,7 @@
   "botToken": "7517790480:AAH-rnC1xyVWg2N8Gucav4Zp7-rElADbxPM",
   "defaultChatId": "-1002473282118",
   "notifications": {
-    "documentUploaded": true,
+    "documentUploaded": false,
     "documentSent": true,
     "documentAcknowledged": true,
     "documentSentBack": true,
