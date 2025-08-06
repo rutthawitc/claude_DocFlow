@@ -5,18 +5,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Essential Commands
+
 - `pnpm dev` - Start development server with Turbopack
 - `pnpm build` - Build for production
 - `pnpm start` - Start production server
 - `pnpm lint` - Run ESLint
 
 ### Database Commands
+
 - `pnpm db:generate` - Generate Drizzle migrations
 - `pnpm db:push` - Push schema changes to database
 - `pnpm db:studio` - Open Drizzle Studio for database management
 - `pnpm docflow:init` - Initialize DocFlow data (branches, roles, permissions)
 
 ### Docker Commands
+
 - `docker-compose up -d` - Start all services (PostgreSQL, pgAdmin, app)
 - `docker-compose down` - Stop all services
 - `docker-compose logs app` - View application logs
@@ -26,6 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Claude DocFlow** is a Next.js 15 PWA for document management across R6 region branches (22 branches) with external authentication integration.
 
 ### Core Technologies
+
 - **Next.js 15.4.1** with App Router and React 19
 - **TypeScript 5.8.3** with strict configuration
 - **Tailwind CSS 4.1** with shadcn/ui component library
@@ -33,6 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **NextAuth.js v5** with external PWA integration
 
 ### DocFlow System Architecture
+
 This application manages document workflow across regional branches:
 
 - **Document Workflow**: `draft` → `sent_to_branch` → `acknowledged` → `sent_back_to_district`
@@ -46,6 +51,7 @@ This application manages document workflow across regional branches:
 - **Maintenance Mode**: System-wide maintenance toggle with admin controls and user redirection
 
 ### Authentication & Authorization
+
 - **External PWA API**: Authenticates against `PWA_AUTH_URL` endpoint
 - **User Synchronization**: PWA user data synced to local PostgreSQL database
 - **DocFlow RBAC**: Specialized roles (uploader, branch_user, branch_manager, district_manager)
@@ -57,6 +63,7 @@ This application manages document workflow across regional branches:
   - **Activity Tracking**: Optimized session monitoring without navigation interference
 
 ### Database Architecture
+
 - **ORM**: Drizzle ORM with PostgreSQL 17.5
 - **Schema Location**: `src/db/schema.ts`
 - **Core Tables**: users, roles, permissions, user_roles, role_permissions
@@ -64,16 +71,32 @@ This application manages document workflow across regional branches:
 - **Relationships**: Complex many-to-many relationships with branch-level access control
 
 ### Project Structure Patterns
+
 - **App Router**: Next.js 15 App Router with parallel routes (`@authModal`)
 - **Component Organization**: Feature-based (`admin/`, `auth/`, `docflow/`, `ui/`)
 - **Service Layer**: `src/lib/services/` for business logic (document-service, activity-logger, branch-service, telegram-service, notification-service, system-settings-service)
+- **Middleware Layer**: `src/lib/middleware/` with centralized utility functions
+  - `api-auth.ts`: Authentication middleware replacing 30+ duplicated auth patterns
+  - `api-responses.ts`: Standardized API response patterns
+  - `document-upload-handler.ts`: Reusable document upload processing middleware
 - **API Architecture**: RESTful endpoints in `src/app/api/` with authentication middleware and rate limiting
 - **Validation Layer**: Comprehensive Zod schemas with middleware for request validation
 - **Type Safety**: Comprehensive TypeScript interfaces and Drizzle schema types
 
+#### Middleware Architecture Benefits
+- **Code Consolidation**: Eliminated ~2,300+ lines of duplicated code
+- **Consistent Patterns**: Unified authentication, error handling, and upload processing
+- **Improved Maintainability**: Future changes require updates in single utility files
+- **Enhanced Security**: Centralized middleware with consistent error handling and validation
+
+### Reference Documentation
+
+- use MCP Context7 for fetches up-to-date code examples and documentation.
+
 ### Key Components
 
 #### File Management Service (`src/lib/services/file-management-service.ts`)
+
 - Comprehensive file statistics tracking and reporting
 - Automated file cleanup and backup functionality
 - Advanced file system health monitoring
@@ -82,6 +105,7 @@ This application manages document workflow across regional branches:
 - Professional Thai-localized user interface for file management
 
 #### Custom Modal Components
+
 - `FileCleanupModal`: Professional modal for initiating file cleanup
   - Real-time file size and count statistics
   - Configurable cleanup thresholds
@@ -92,6 +116,7 @@ This application manages document workflow across regional branches:
   - Comprehensive backup status reporting
 
 #### Authentication (`src/auth.ts`)
+
 - NextAuth.js v5 configuration with Credentials provider
 - External PWA API integration for login validation
 - Automatic user creation/update with organizational data sync
@@ -99,28 +124,33 @@ This application manages document workflow across regional branches:
 - JWT-based session tracking with activity monitoring and timeout validation
 
 #### Document Management (`src/lib/services/document-service.ts`)
+
 - PDF upload validation and secure storage
 - Document workflow state management
 - Branch-based access control enforcement
 - File metadata extraction and storage
 
 #### PDF Viewer (`src/components/docflow/pdf-viewer.tsx`)
+
 - CSP-compliant PDF.js integration with web workers
 - Client-side rendering with proper security headers
 - Comment overlay system for document annotations
 
 #### Activity Logger (`src/lib/services/activity-logger.ts`)
+
 - Comprehensive audit trail for all document actions
 - User activity tracking with IP and timestamp logging
 - Integration with document workflow state changes
 
 #### Telegram Integration (`src/lib/services/telegram-service.ts`)
+
 - Telegram Bot API integration with connection testing
 - Message formatting and delivery with error handling
 - Support for document notifications and system alerts
 - Bot token and chat ID validation
 
 #### Notification Service (`src/lib/services/notification-service.ts`)
+
 - Central notification management system
 - File-based settings persistence (`./tmp/telegram-settings.json`)
 - Real-time document workflow notifications
@@ -128,12 +158,14 @@ This application manages document workflow across regional branches:
 - Configurable message formatting and notification types
 
 #### Validation Middleware (`src/lib/validation/middleware.ts`)
+
 - Zod-based request validation for all API endpoints
 - Comprehensive error handling with standardized responses
 - Form data, query parameters, and JSON body validation
 - Type-safe parameter extraction and validation
 
 #### Session Timeout Management (`src/hooks/useSessionTimeoutSimple.ts`, `src/components/auth/SessionTimeoutWarning.tsx`)
+
 - Client-side session timeout monitoring with 30-second check intervals
 - User warning dialog displayed 5 minutes before session expiration
 - Manual session extension capability through warning interface
@@ -142,6 +174,7 @@ This application manages document workflow across regional branches:
 - Thai language localization for all timeout-related messages
 
 #### System Settings Service (`src/lib/services/system-settings-service.ts`)
+
 - Complete CRUD operations for persistent system configuration
 - Type-safe settings management with validation and default values
 - Maintenance mode management with database persistence
@@ -149,6 +182,7 @@ This application manages document workflow across regional branches:
 - Support for multiple setting types (boolean, string, number, JSON)
 
 ## Environment Variables Required
+
 ```
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pwausers_db
 PWA_AUTH_URL=https://your-pwa-auth-endpoint.com/api/login
@@ -175,37 +209,54 @@ NEXT_PUBLIC_MONTH_YEAR_PAST_YEARS=1
 ## Development Notes
 
 ### DocFlow Initialization
+
 After database setup, initialize DocFlow data:
+
 ```bash
 pnpm docflow:init
 ```
+
 This creates branches, roles, and permissions specific to the DocFlow system.
 
 ### Document Upload Configuration
+
 The month/year dropdown in document upload forms is dynamically generated based on the current date. You can customize the year range using environment variables:
 
 - `NEXT_PUBLIC_MONTH_YEAR_FUTURE_YEARS`: Number of years to show in the future (default: 1)
 - `NEXT_PUBLIC_MONTH_YEAR_PAST_YEARS`: Number of years to show in the past (default: 1)
 
 For example, if it's 2025 (2568 Buddhist era) and you set:
-- `NEXT_PUBLIC_MONTH_YEAR_FUTURE_YEARS=3` 
+
+- `NEXT_PUBLIC_MONTH_YEAR_FUTURE_YEARS=3`
 - `NEXT_PUBLIC_MONTH_YEAR_PAST_YEARS=1`
 
 The dropdown will show months from 2567 to 2571 (Buddhist era).
 
+### Shadcn UI components
+
+- Always use official CLI tools first when available
+- Don't try to create custom components when official ones exist
+- shadcn/ui provides reliable, tested components through their CLI
+- Custom implementations should be last resort, not first approach
+- Use official components as much as possible
+- Use shadcn/ui components as a starting point
+
 ### External PWA Integration
+
 - Login credentials validated against external PWA API
 - User data includes organizational structure (costCenter, ba, part, area, branch assignments)
 - Local database maintains complete user profile with DocFlow-specific roles
 - Branch assignments determine document access permissions
 
 ### DocFlow Roles and Permissions
+
 - **uploader**: Can create and upload documents
 - **branch_user**: Can view and comment on branch documents
 - **branch_manager**: Can manage branch documents and users
 - **district_manager**: Can oversee multiple branches and approve workflows
 
 ### Telegram Notification System
+
 - **Settings Configuration**: Available in `/settings` page for admin and district managers
 - **Notification Types**: Document uploads, status changes, system alerts, daily reports
 - **Message Formatting**: Customizable Thai language notifications with emojis
@@ -214,6 +265,7 @@ The dropdown will show months from 2567 to 2571 (Buddhist era).
 - **Error Handling**: Graceful degradation when notifications fail (doesn't break document operations)
 
 ### Security Considerations
+
 - **Content Security Policy**: Configured in `next.config.js` for PDF worker support
 - **File Validation**: PDF mime type and size validation on upload
 - **Access Control**: Branch-level document access based on user assignments
@@ -231,12 +283,14 @@ The dropdown will show months from 2567 to 2571 (Buddhist era).
 ### API Endpoints
 
 #### File Management API
+
 - `GET /api/files/management` - Retrieve current file system statistics
 - `POST /api/files/management/cleanup` - Initiate file cleanup process
 - `POST /api/files/management/backup` - Trigger manual file backup
 - `PUT /api/files/management/settings` - Update file management configuration
 
 #### Telegram API
+
 - `POST /api/telegram/test-connection` - Test bot token validity
 - `POST /api/telegram/test-message` - Send test message to verify chat configuration
 - `POST /api/telegram/system-alert` - Send system alert notifications
@@ -244,27 +298,33 @@ The dropdown will show months from 2567 to 2571 (Buddhist era).
 - `POST /api/telegram/settings` - Save Telegram notification settings
 
 #### Document API (Enhanced with Notifications)
+
 - `POST /api/documents` - Upload document (triggers upload notification)
 - `PATCH /api/documents/[id]/status` - Update document status (triggers status change notification)
 - `GET /api/documents` - Search and filter documents
 - `GET /api/documents/branch/[branchBaCode]` - Get branch-specific documents
 
 #### System Settings API
+
 - `GET /api/system-settings` - Retrieve current system settings
 - `PUT /api/system-settings` - Update system settings (admin/district_manager only)
 - `POST /api/system-settings` - Initialize default system settings
 
 #### Maintenance Mode API
+
 - `GET /api/test-maintenance` - Check maintenance mode status (development)
 - `POST /api/test-maintenance` - Toggle maintenance mode (development)
 
 #### Rate Limiting
+
 - **Login**: 5 attempts per 15 minutes per IP
 - **Upload**: 10 uploads per hour per user
 - **API**: 100 requests per 15 minutes per IP
 
 ### Testing Setup
+
 No test framework currently configured. When implementing tests:
+
 - Use Jest with Testing Library for React components
 - Test document workflow state transitions
 - Mock external PWA API calls for authentication tests
@@ -274,6 +334,7 @@ No test framework currently configured. When implementing tests:
 - Test maintenance mode functionality and system settings management
 
 ### Maintenance Mode System
+
 - **Configuration**: Available in `/settings` page for admin and district_manager roles
 - **Database Persistence**: System settings stored in `system_settings` table with type-safe management
 - **User Experience**: Professional maintenance page at `/maintenance` with Thai localization and real-time clock
