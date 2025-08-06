@@ -125,6 +125,6 @@ tmp/telegram-settings.json
 metrics/
 
 # Claude AI specific files
-.claude/settings.local.json # Contains local settings for Claude AI, should not be committed
-.claude/credentials.json # Contains sensitive credentials for Claude AI, should not be committed
-.claude/*
+#.claude/settings.local.json # Contains local settings for Claude AI, should not be committed
+#.claude/credentials.json # Contains sensitive credentials for Claude AI, should not be committed
+#.claude/*
