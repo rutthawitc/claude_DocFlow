@@ -213,7 +213,6 @@ generate_report() {
 DocFlow Backup Report
 Date: $(date)
 Hostname: $(hostname)
-Instance: $(curl -s http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || echo "Unknown")
 
 === Backup Files ===
 EOF
@@ -265,7 +264,7 @@ send_notification() {
         
 Date: $(date '+%Y-%m-%d %H:%M:%S')
 Status: $status
-Instance: $(curl -s http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || hostname)
+Hostname: $(hostname)
 
 $(cat "$report_file" | grep -E "(Database:|Files:|Volumes:)" | head -3)"
         

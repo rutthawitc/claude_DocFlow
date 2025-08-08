@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # DocFlow Monitoring Script
-# System health monitoring for c7i-flex.large EC2 instance
+# System health monitoring for Docker deployment
 
 set -e
 
@@ -115,7 +115,7 @@ check_database() {
 
 # Check SSL certificate expiry
 check_ssl_expiry() {
-    local domain="ec2-43-209-177-163.ap-southeast-7.compute.amazonaws.com"
+    local domain="${SSL_DOMAIN:-localhost}"
     local cert_file="/etc/letsencrypt/live/$domain/fullchain.pem"
     
     if [ -f "$cert_file" ]; then
@@ -197,7 +197,7 @@ send_alert() {
         
 Type: $alert_type
 Severity: $severity
-Instance: $(curl -s http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || hostname)
+Hostname: $(hostname)
 Time: $(date)
 
 $message"
@@ -283,7 +283,7 @@ generate_daily_report() {
     cat > "$report_file" <<EOF
 DocFlow Daily System Report
 Date: $(date)
-Instance: $(curl -s http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || hostname)
+Hostname: $(hostname)
 Uptime: $(uptime)
 
 === System Resources ===
@@ -316,7 +316,7 @@ EOF
         local message="📊 *DocFlow Daily Report*
         
 Date: $(date '+%Y-%m-%d')
-Instance: $(curl -s http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || hostname)
+Hostname: $(hostname)
 
 $summary"
         
