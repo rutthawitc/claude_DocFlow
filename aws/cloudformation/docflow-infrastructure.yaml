@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'DocFlow PWA Infrastructure on AWS EC2 with RDS, ElastiCache, and Load Balancer'
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "DocFlow PWA Infrastructure on AWS EC2 with RDS, ElastiCache, and Load Balancer"
 
 Parameters:
   Environment:
@@ -54,14 +54,14 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-vpc'
+          Value: !Sub "${Environment}-docflow-vpc"
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-igw'
+          Value: !Sub "${Environment}-docflow-igw"
 
   InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -73,43 +73,43 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [0, !GetAZs '']
+      AvailabilityZone: !Select [0, !GetAZs ""]
       CidrBlock: 10.0.1.0/24
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-public-subnet-1'
+          Value: !Sub "${Environment}-docflow-public-subnet-1"
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [1, !GetAZs '']
+      AvailabilityZone: !Select [1, !GetAZs ""]
       CidrBlock: 10.0.2.0/24
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-public-subnet-2'
+          Value: !Sub "${Environment}-docflow-public-subnet-2"
 
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [0, !GetAZs '']
+      AvailabilityZone: !Select [0, !GetAZs ""]
       CidrBlock: 10.0.3.0/24
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-private-subnet-1'
+          Value: !Sub "${Environment}-docflow-private-subnet-1"
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [1, !GetAZs '']
+      AvailabilityZone: !Select [1, !GetAZs ""]
       CidrBlock: 10.0.4.0/24
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-private-subnet-2'
+          Value: !Sub "${Environment}-docflow-private-subnet-2"
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -117,7 +117,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-public-routes'
+          Value: !Sub "${Environment}-docflow-public-routes"
 
   PublicRoute:
     Type: AWS::EC2::Route
@@ -143,7 +143,7 @@ Resources:
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub '${Environment}-docflow-alb-sg'
+      GroupName: !Sub "${Environment}-docflow-alb-sg"
       GroupDescription: Security group for Application Load Balancer
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -157,12 +157,12 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-alb-sg'
+          Value: !Sub "${Environment}-docflow-alb-sg"
 
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub '${Environment}-docflow-ec2-sg'
+      GroupName: !Sub "${Environment}-docflow-ec2-sg"
       GroupDescription: Security group for EC2 instances
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -180,12 +180,12 @@ Resources:
           SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-ec2-sg'
+          Value: !Sub "${Environment}-docflow-ec2-sg"
 
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub '${Environment}-docflow-rds-sg'
+      GroupName: !Sub "${Environment}-docflow-rds-sg"
       GroupDescription: Security group for RDS database
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -195,12 +195,12 @@ Resources:
           SourceSecurityGroupId: !Ref EC2SecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-rds-sg'
+          Value: !Sub "${Environment}-docflow-rds-sg"
 
   RedisSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub '${Environment}-docflow-redis-sg'
+      GroupName: !Sub "${Environment}-docflow-redis-sg"
       GroupDescription: Security group for ElastiCache Redis
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -210,32 +210,32 @@ Resources:
           SourceSecurityGroupId: !Ref EC2SecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-redis-sg'
+          Value: !Sub "${Environment}-docflow-redis-sg"
 
   # RDS Database
   DatabaseSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupName: !Sub '${Environment}-docflow-db-subnet-group'
+      DBSubnetGroupName: !Sub "${Environment}-docflow-db-subnet-group"
       DBSubnetGroupDescription: Subnet group for DocFlow database
       SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-db-subnet-group'
+          Value: !Sub "${Environment}-docflow-db-subnet-group"
 
   Database:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Snapshot
     Properties:
-      DBInstanceIdentifier: !Sub '${Environment}-docflow-postgres'
-      DBName: pwausers_db
+      DBInstanceIdentifier: !Sub "${Environment}-docflow-postgres"
+      DBName: docflow_db
       DBInstanceClass: !If [IsProduction, db.t4g.large, db.t4g.medium]
       AllocatedStorage: !If [IsProduction, 100, 20]
       StorageType: gp3
       Engine: postgres
-      EngineVersion: '15.4'
+      EngineVersion: "15.4"
       MasterUsername: postgres
       MasterUserPassword: !Ref DatabasePassword
       VPCSecurityGroups:
@@ -247,13 +247,13 @@ Resources:
       DeletionProtection: !If [IsProduction, true, false]
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-postgres'
+          Value: !Sub "${Environment}-docflow-postgres"
 
   # ElastiCache Redis
   RedisSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
-      CacheSubnetGroupName: !Sub '${Environment}-docflow-redis-subnet-group'
+      CacheSubnetGroupName: !Sub "${Environment}-docflow-redis-subnet-group"
       Description: Subnet group for DocFlow Redis
       SubnetIds:
         - !Ref PrivateSubnet1
@@ -262,7 +262,7 @@ Resources:
   RedisCluster:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
-      CacheClusterId: !Sub '${Environment}-docflow-redis'
+      CacheClusterId: !Sub "${Environment}-docflow-redis"
       CacheNodeType: cache.t4g.micro
       Engine: redis
       NumCacheNodes: 1
@@ -271,15 +271,15 @@ Resources:
       CacheSubnetGroupName: !Ref RedisSubnetGroup
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-redis'
+          Value: !Sub "${Environment}-docflow-redis"
 
   # IAM Role for EC2
   EC2Role:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Environment}-docflow-ec2-role'
+      RoleName: !Sub "${Environment}-docflow-ec2-role"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -291,14 +291,14 @@ Resources:
       Policies:
         - PolicyName: DocFlowS3Access
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - s3:GetObject
                   - s3:PutObject
                   - s3:DeleteObject
-                Resource: !Sub '${S3Bucket}/*'
+                Resource: !Sub "${S3Bucket}/*"
               - Effect: Allow
                 Action:
                   - s3:ListBucket
@@ -307,7 +307,7 @@ Resources:
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      InstanceProfileName: !Sub '${Environment}-docflow-ec2-profile'
+      InstanceProfileName: !Sub "${Environment}-docflow-ec2-profile"
       Roles:
         - !Ref EC2Role
 
@@ -315,7 +315,7 @@ Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub '${Environment}-docflow-files-${AWS::AccountId}'
+      BucketName: !Sub "${Environment}-docflow-files-${AWS::AccountId}"
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -338,9 +338,9 @@ Resources:
   LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      LaunchTemplateName: !Sub '${Environment}-docflow-launch-template'
+      LaunchTemplateName: !Sub "${Environment}-docflow-launch-template"
       LaunchTemplateData:
-        ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2023 AMI (update based on region)
+        ImageId: ami-0c02fb55956c7d316 # Amazon Linux 2023 AMI (update based on region)
         InstanceType: !Ref InstanceType
         KeyName: !Ref KeyPairName
         IamInstanceProfile:
@@ -352,20 +352,20 @@ Resources:
             #!/bin/bash
             yum update -y
             yum install -y docker git amazon-cloudwatch-agent
-            
+
             # Install Docker Compose
             curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
             chmod +x /usr/local/bin/docker-compose
-            
+
             # Start Docker
             systemctl start docker
             systemctl enable docker
             usermod -aG docker ec2-user
-            
+
             # Install CloudWatch agent
             /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
               -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
-            
+
             # Create directories
             mkdir -p /home/ec2-user/docflow
             mkdir -p /var/log/docflow
@@ -376,13 +376,13 @@ Resources:
           - ResourceType: instance
             Tags:
               - Key: Name
-                Value: !Sub '${Environment}-docflow-instance'
+                Value: !Sub "${Environment}-docflow-instance"
 
   # Auto Scaling Group
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      AutoScalingGroupName: !Sub '${Environment}-docflow-asg'
+      AutoScalingGroupName: !Sub "${Environment}-docflow-asg"
       VPCZoneIdentifier:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
@@ -398,14 +398,14 @@ Resources:
       HealthCheckGracePeriod: 300
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-asg'
+          Value: !Sub "${Environment}-docflow-asg"
           PropagateAtLaunch: true
 
   # Application Load Balancer
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub '${Environment}-docflow-alb'
+      Name: !Sub "${Environment}-docflow-alb"
       Scheme: internet-facing
       SecurityGroups:
         - !Ref LoadBalancerSecurityGroup
@@ -414,12 +414,12 @@ Resources:
         - !Ref PublicSubnet2
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-alb'
+          Value: !Sub "${Environment}-docflow-alb"
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub '${Environment}-docflow-targets'
+      Name: !Sub "${Environment}-docflow-targets"
       Port: 3000
       Protocol: HTTP
       VpcId: !Ref VPC
@@ -430,7 +430,7 @@ Resources:
       UnhealthyThresholdCount: 3
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-docflow-targets'
+          Value: !Sub "${Environment}-docflow-targets"
 
   HTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -460,28 +460,28 @@ Outputs:
     Description: VPC ID
     Value: !Ref VPC
     Export:
-      Name: !Sub '${Environment}-docflow-vpc-id'
+      Name: !Sub "${Environment}-docflow-vpc-id"
 
   LoadBalancerDNS:
     Description: Load Balancer DNS Name
     Value: !GetAtt LoadBalancer.DNSName
     Export:
-      Name: !Sub '${Environment}-docflow-alb-dns'
+      Name: !Sub "${Environment}-docflow-alb-dns"
 
   DatabaseEndpoint:
     Description: RDS Database Endpoint
     Value: !GetAtt Database.Endpoint.Address
     Export:
-      Name: !Sub '${Environment}-docflow-db-endpoint'
+      Name: !Sub "${Environment}-docflow-db-endpoint"
 
   RedisEndpoint:
     Description: ElastiCache Redis Endpoint
     Value: !GetAtt RedisCluster.RedisEndpoint.Address
     Export:
-      Name: !Sub '${Environment}-docflow-redis-endpoint'
+      Name: !Sub "${Environment}-docflow-redis-endpoint"
 
   S3BucketName:
     Description: S3 Bucket Name for file storage
     Value: !Ref S3Bucket
     Export:
-      Name: !Sub '${Environment}-docflow-s3-bucket'
+      Name: !Sub "${Environment}-docflow-s3-bucket"

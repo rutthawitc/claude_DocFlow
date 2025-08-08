@@ -5,9 +5,11 @@ This guide explains how to use the SQL scripts for managing administrators in th
 ## Available Scripts
 
 ### 1. `create-local-admin.sql`
+
 Creates a new local administrator account with full system privileges.
 
 ### 2. `promote-user-to-admin.sql`
+
 Promotes an existing PWA user to administrator role.
 
 ## Usage Instructions
@@ -16,10 +18,10 @@ Promotes an existing PWA user to administrator role.
 
 ```bash
 # Method 1: Use default settings (edit script first)
-docker exec docflow-db psql -U postgres -d pwausers_db -f /scripts/create-local-admin.sql
+docker exec docflow-db psql -U postgres -d docflow_db -f /scripts/create-local-admin.sql
 
 # Method 2: With custom parameters
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v admin_username='myadmin' \
   -v admin_password='SecurePass123!' \
   -v admin_email='admin@company.com' \
@@ -33,10 +35,10 @@ docker exec docflow-db psql -U postgres -d pwausers_db \
 ```bash
 # Method 1: Edit the script to set target_username
 # Edit scripts/promote-user-to-admin.sql and change 'CHANGE_ME' to actual username
-docker exec docflow-db psql -U postgres -d pwausers_db -f /scripts/promote-user-to-admin.sql
+docker exec docflow-db psql -U postgres -d docflow_db -f /scripts/promote-user-to-admin.sql
 
 # Method 2: Pass username as parameter (recommended)
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v target_username='john.doe' \
   -f /scripts/promote-user-to-admin.sql
 ```
@@ -44,12 +46,14 @@ docker exec docflow-db psql -U postgres -d pwausers_db \
 ## Security Considerations
 
 ### 🔐 Password Security
+
 - **Change default passwords immediately**
 - **Use strong passwords** (minimum 12 characters, mixed case, numbers, symbols)
 - **Consider using environment variables** for sensitive data
 - **Enable proper password hashing** in the application
 
 ### 🛡️ Access Control
+
 - **Review admin access regularly**
 - **Implement the principle of least privilege**
 - **Monitor admin activities through audit logs**
@@ -61,7 +65,7 @@ docker exec docflow-db psql -U postgres -d pwausers_db \
 
 ```bash
 # Create IT Admin
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v admin_username='it.admin' \
   -v admin_password='ITSecure2024!' \
   -v admin_email='it-admin@company.com' \
@@ -70,7 +74,7 @@ docker exec docflow-db psql -U postgres -d pwausers_db \
   -f /scripts/create-local-admin.sql
 
 # Create System Admin
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v admin_username='sys.admin' \
   -v admin_password='SysAdmin2024!' \
   -v admin_email='sys-admin@company.com' \
@@ -83,12 +87,12 @@ docker exec docflow-db psql -U postgres -d pwausers_db \
 
 ```bash
 # Promote department head to admin
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v target_username='dept.head' \
   -f /scripts/promote-user-to-admin.sql
 
 # Promote IT manager to admin
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v target_username='it.manager' \
   -f /scripts/promote-user-to-admin.sql
 ```
@@ -96,9 +100,10 @@ docker exec docflow-db psql -U postgres -d pwausers_db \
 ## Verification
 
 ### Check Admin Users
+
 ```sql
 -- View all admin users
-SELECT 
+SELECT
     u.username,
     u.first_name,
     u.last_name,
@@ -108,13 +113,14 @@ SELECT
 FROM users u
 JOIN user_roles ur ON u.id = ur.user_id
 JOIN roles r ON ur.role_id = r.id
-WHERE u.is_local_admin = true 
+WHERE u.is_local_admin = true
    OR r.name = 'admin'
 GROUP BY u.id, u.username, u.first_name, u.last_name, u.is_local_admin, u.ba
 ORDER BY u.username;
 ```
 
 ### Check User Permissions
+
 ```sql
 -- Check specific user permissions
 SELECT DISTINCT
@@ -134,10 +140,12 @@ ORDER BY p.name;
 ### Common Issues
 
 1. **User not found error**
+
    - Ensure the PWA user has logged in at least once
    - Check username spelling (case-sensitive)
 
 2. **Role assignment fails**
+
    - Verify roles exist in the database
    - Check for database constraint violations
 
@@ -149,13 +157,13 @@ ORDER BY p.name;
 
 ```bash
 # Reset user roles (remove admin access)
-docker exec docflow-db psql -U postgres -d pwausers_db -c "
-DELETE FROM user_roles 
+docker exec docflow-db psql -U postgres -d docflow_db -c "
+DELETE FROM user_roles
 WHERE user_id = (SELECT id FROM users WHERE username = 'USERNAME');
 "
 
 # Reassign basic user role
-docker exec docflow-db psql -U postgres -d pwausers_db -c "
+docker exec docflow-db psql -U postgres -d docflow_db -c "
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id FROM users u, roles r
 WHERE u.username = 'USERNAME' AND r.name = 'user';

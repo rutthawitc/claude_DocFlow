@@ -55,7 +55,11 @@
       "Bash(docker ps:*)",
       "Bash(docker port:*)",
       "Bash(docker:*)",
-      "Bash(sudo pkill:*)"
+      "Bash(sudo pkill:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)"
     ],
     "deny": []
   }

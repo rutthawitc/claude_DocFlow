@@ -9,17 +9,20 @@ DocFlow is a comprehensive document management system implemented on top of the 
 ### Core Components
 
 1. **Database Layer** (`src/db/schema.ts`)
+
    - Extended existing schema with 5 new tables
    - Maintains referential integrity with existing user system
    - Optimized indexes for performance
 
 2. **Service Layer** (`src/lib/services/`)
+
    - `BranchService`: Branch management and user-branch mapping
    - `DocumentService`: Document CRUD operations and access control
    - `FileService`: PDF validation, encryption, and storage
    - `ActivityLogger`: Comprehensive audit trail system
 
 3. **Authentication Layer** (`src/lib/auth/docflow-auth.ts`)
+
    - Extends existing RBAC with DocFlow-specific roles
    - Branch-level access control
    - Permission-based authorization
@@ -62,16 +65,19 @@ document_status_history (id, document_id, from_status, to_status, changed_by, co
 ### DocFlow Roles
 
 1. **Uploader** (`uploader`)
+
    - Upload documents
    - Send notifications
    - Access dashboard
 
 2. **Branch User** (`branch_user`)
+
    - View branch documents
    - Update document status
    - Add comments
 
 3. **Branch Manager** (`branch_manager`)
+
    - View all R6 branch documents
    - Approve documents
    - Generate reports
@@ -83,17 +89,17 @@ document_status_history (id, document_id, from_status, to_status, changed_by, co
 
 ### Permissions Matrix
 
-| Permission | Uploader | Branch User | Branch Manager | Admin |
-|------------|----------|-------------|----------------|-------|
-| documents:create | ✅ | ❌ | ❌ | ✅ |
-| documents:upload | ✅ | ❌ | ❌ | ✅ |
-| documents:read_branch | ❌ | ✅ | ✅ | ✅ |
-| documents:read_all_branches | ❌ | ❌ | ✅ | ✅ |
-| documents:update_status | ❌ | ✅ | ✅ | ✅ |
-| documents:approve | ❌ | ❌ | ✅ | ✅ |
-| comments:create | ❌ | ✅ | ✅ | ✅ |
-| notifications:send | ✅ | ❌ | ❌ | ✅ |
-| reports:branch | ❌ | ❌ | ✅ | ✅ |
+| Permission                  | Uploader | Branch User | Branch Manager | Admin |
+| --------------------------- | -------- | ----------- | -------------- | ----- |
+| documents:create            | ✅       | ❌          | ❌             | ✅    |
+| documents:upload            | ✅       | ❌          | ❌             | ✅    |
+| documents:read_branch       | ❌       | ✅          | ✅             | ✅    |
+| documents:read_all_branches | ❌       | ❌          | ✅             | ✅    |
+| documents:update_status     | ❌       | ✅          | ✅             | ✅    |
+| documents:approve           | ❌       | ❌          | ✅             | ✅    |
+| comments:create             | ❌       | ✅          | ✅             | ✅    |
+| notifications:send          | ✅       | ❌          | ❌             | ✅    |
+| reports:branch              | ❌       | ❌          | ✅             | ✅    |
 
 ## 🔄 Document Workflow
 
@@ -114,18 +120,21 @@ DRAFT → SENT_TO_BRANCH → ACKNOWLEDGED
 ## 🔐 Security Features
 
 ### File Security
+
 - PDF-only uploads with signature validation
 - File encryption at rest
 - Secure filename sanitization
 - 10MB size limit
 
 ### Access Control
+
 - Branch-level data isolation
 - Role-based permissions
 - User-branch mapping via PWA data
 - Comprehensive audit logging
 
 ### Data Protection
+
 - SQL injection prevention (Drizzle ORM)
 - XSS protection
 - CSRF tokens
@@ -161,6 +170,7 @@ src/
 ### 1. Prerequisites
 
 Ensure your environment has:
+
 - PostgreSQL database running
 - PWA_AUTH_URL configured
 - Upload directory permissions
@@ -184,7 +194,7 @@ Add to your `.env` file:
 
 ```env
 # Existing variables...
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pwausers_db
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/docflow_db
 PWA_AUTH_URL=https://your-pwa-auth-endpoint.com/api/login
 
 # DocFlow specific
@@ -250,6 +260,7 @@ curl -X PATCH /api/documents/123/status \
 ### Activity Logging
 
 All user actions are logged with:
+
 - User ID and action type
 - Document and branch context
 - IP address and user agent
@@ -270,14 +281,14 @@ All user actions are logged with:
 
 ```sql
 -- Recent activity
-SELECT * FROM activity_logs 
-ORDER BY created_at DESC 
+SELECT * FROM activity_logs
+ORDER BY created_at DESC
 LIMIT 50;
 
 -- User activity summary
-SELECT action, COUNT(*) 
-FROM activity_logs 
-WHERE user_id = ? 
+SELECT action, COUNT(*)
+FROM activity_logs
+WHERE user_id = ?
 GROUP BY action;
 
 -- Document access history
@@ -295,18 +306,20 @@ ORDER BY al.created_at DESC;
 Create monitoring endpoints to check:
 
 1. **Database Connection**
+
    ```typescript
-   GET /api/health/database
+   GET / api / health / database;
    ```
 
 2. **File Storage**
+
    ```typescript
-   GET /api/health/storage
+   GET / api / health / storage;
    ```
 
 3. **Authentication**
    ```typescript
-   GET /api/health/auth
+   GET / api / health / auth;
    ```
 
 ## 🔧 Troubleshooting
@@ -314,11 +327,13 @@ Create monitoring endpoints to check:
 ### Common Issues
 
 1. **File Upload Fails**
+
    - Check file size (max 10MB)
    - Verify PDF format
    - Ensure upload directory permissions
 
 2. **Branch Access Denied**
+
    - Verify user's PWA data includes `ba` field
    - Check user roles assignment
    - Validate branch exists in system
@@ -331,6 +346,7 @@ Create monitoring endpoints to check:
 ### Debug Mode
 
 Enable detailed logging by setting:
+
 ```env
 NODE_ENV=development
 ```
@@ -366,6 +382,7 @@ NODE_ENV=development
 ### Dashboard Queries
 
 The system tracks comprehensive metrics for:
+
 - Document volume trends
 - Branch performance
 - User activity patterns
@@ -389,8 +406,9 @@ This implementation follows the same license as the base PWA authentication syst
 ---
 
 **Next Steps**: After completing this backend implementation, you can proceed with:
+
 1. Frontend UI components
-2. PDF viewer integration  
+2. PDF viewer integration
 3. Telegram notification service
 4. Dashboard and analytics
 5. Mobile responsive design
