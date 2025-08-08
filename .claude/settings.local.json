@@ -53,7 +53,9 @@
       "Bash(npx shadcn@latest add:*)",
       "Bash(ls:*)",
       "Bash(docker ps:*)",
-      "Bash(docker port:*)"
+      "Bash(docker port:*)",
+      "Bash(docker:*)",
+      "Bash(sudo pkill:*)"
     ],
     "deny": []
   }
