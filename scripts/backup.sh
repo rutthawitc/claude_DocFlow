@@ -63,7 +63,7 @@ backup_database() {
     local backup_file_gz="$backup_file.gz"
     
     # Create database backup
-    docker exec $DB_CONTAINER pg_dump -U postgres -d pwausers_db > "$backup_file"
+    docker exec $DB_CONTAINER pg_dump -U postgres -d docflow_db > "$backup_file"
     
     if [ $? -eq 0 ]; then
         # Compress backup

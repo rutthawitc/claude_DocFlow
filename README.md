@@ -144,7 +144,7 @@ The DocFlow system includes a comprehensive Telegram notification system for rea
    
    Required environment variables:
    ```env
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pwausers_db
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/docflow_db
    PWA_AUTH_URL=https://your-pwa-auth-endpoint.com/api/login
    AUTH_SECRET=your-secure-secret-key
    NEXTAUTH_URL=http://localhost:3000
@@ -170,7 +170,7 @@ The DocFlow system includes a comprehensive Telegram notification system for rea
    pnpm db:push
    
    # Seed roles and permissions
-   docker-compose exec db psql -U postgres -d pwausers_db -f /scripts/seed-roles.sql
+   docker-compose exec db psql -U postgres -d docflow_db -f /scripts/seed-roles.sql
    ```
 
 5. **Access the application**
@@ -195,7 +195,7 @@ The DocFlow system includes a comprehensive Telegram notification system for rea
    pnpm db:push
    
    # Seed roles (requires local PostgreSQL)
-   psql -h localhost -p 5432 -U postgres -d pwausers_db -f scripts/seed-roles.sql
+   psql -h localhost -p 5432 -U postgres -d docflow_db -f scripts/seed-roles.sql
    ```
 
 4. **Start development server**
@@ -237,20 +237,20 @@ pnpm db:push
 pnpm db:studio
 
 # Seed roles and permissions
-docker-compose exec db psql -U postgres -d pwausers_db -f /scripts/seed-roles.sql
+docker-compose exec db psql -U postgres -d docflow_db -f /scripts/seed-roles.sql
 ```
 
 ### Docker Database Access
 
 ```bash
 # Connect to PostgreSQL
-docker-compose exec db psql -U postgres -d pwausers_db
+docker-compose exec db psql -U postgres -d docflow_db
 
 # View logs
 docker-compose logs db
 
 # Backup database
-docker-compose exec db pg_dump -U postgres pwausers_db > backup.sql
+docker-compose exec db pg_dump -U postgres docflow_db > backup.sql
 ```
 
 ## Development

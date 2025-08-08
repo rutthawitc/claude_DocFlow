@@ -77,10 +77,10 @@ cp .env.example .env.production
 ### 2. Configure Production Variables
 ```env
 # Database Configuration
-DATABASE_URL=postgresql://postgres:SECURE_DB_PASSWORD@db:5432/pwausers_db
+DATABASE_URL=postgresql://postgres:SECURE_DB_PASSWORD@db:5432/docflow_db
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=SECURE_DB_PASSWORD
-POSTGRES_DB=pwausers_db
+POSTGRES_DB=docflow_db
 
 # NextAuth Configuration
 NEXTAUTH_URL=https://your-domain.com
@@ -219,10 +219,10 @@ docker-compose -f docker-compose.prod.yml logs -f
 docker-compose -f docker-compose.prod.yml logs db | grep "ready to accept connections"
 
 # Initialize database schema and data
-docker exec docflow-db psql -U postgres -d pwausers_db -f /scripts/init-docflow-complete.sql
+docker exec docflow-db psql -U postgres -d docflow_db -f /scripts/init-docflow-complete.sql
 
 # Create admin user
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v admin_username='admin' \
   -v admin_password='SecureAdmin2024!' \
   -v admin_email='admin@your-domain.com' \
@@ -242,7 +242,7 @@ curl -I https://localhost # If SSL configured
 curl http://localhost/api/health
 
 # Check database connectivity
-docker exec docflow-db psql -U postgres -d pwausers_db -c "\dt"
+docker exec docflow-db psql -U postgres -d docflow_db -c "\dt"
 ```
 
 ## Monitoring & Health Checks
@@ -254,7 +254,7 @@ docker-compose -f docker-compose.prod.yml ps
 
 # Manual health verification
 docker exec docflow-app curl -f http://localhost:3000/api/health
-docker exec docflow-db pg_isready -U postgres -d pwausers_db
+docker exec docflow-db pg_isready -U postgres -d docflow_db
 docker exec docflow-redis redis-cli --no-auth-warning ping
 ```
 
@@ -340,7 +340,7 @@ docker-compose -f docker-compose.prod.yml restart <service-name>
 docker-compose -f docker-compose.prod.yml ps db
 
 # Test connection
-docker exec docflow-db psql -U postgres -d pwausers_db -c "SELECT version();"
+docker exec docflow-db psql -U postgres -d docflow_db -c "SELECT version();"
 
 # Check environment variables
 docker-compose -f docker-compose.prod.yml exec app env | grep DATABASE
@@ -379,7 +379,7 @@ deploy:
 docker-compose -f docker-compose.prod.yml stop app
 
 # Restore from backup
-docker exec docflow-db psql -U postgres -d pwausers_db < backups/backup-YYYY-MM-DD.sql
+docker exec docflow-db psql -U postgres -d docflow_db < backups/backup-YYYY-MM-DD.sql
 
 # Restart application
 docker-compose -f docker-compose.prod.yml start app
@@ -407,7 +407,7 @@ docker-compose -f docker-compose.prod.yml up -d --build
 cat > backup.sh << 'EOF'
 #!/bin/bash
 DATE=$(date +%Y%m%d_%H%M%S)
-docker exec docflow-db pg_dump -U postgres pwausers_db > "backups/docflow_${DATE}.sql"
+docker exec docflow-db pg_dump -U postgres docflow_db > "backups/docflow_${DATE}.sql"
 # Keep only 30 days of backups
 find backups/ -name "docflow_*.sql" -mtime +30 -delete
 EOF

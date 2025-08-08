@@ -1,6 +1,6 @@
 -- Promote PWA User to Admin Role Script
 -- This script changes a specific PWA user to have admin privileges
--- Usage: psql -U postgres -d pwausers_db -v target_username='username' -f scripts/promote-user-to-admin.sql
+-- Usage: psql -U postgres -d docflow_db -v target_username='username' -f scripts/promote-user-to-admin.sql
 -- Alternative: Edit the script to set the username directly
 
 \echo '============================================';
@@ -8,7 +8,7 @@
 \echo '============================================';
 
 -- Set target username here or pass via -v parameter
--- Example: psql -U postgres -d pwausers_db -v target_username='john.doe' -f scripts/promote-user-to-admin.sql
+-- Example: psql -U postgres -d docflow_db -v target_username='john.doe' -f scripts/promote-user-to-admin.sql
 \set target_username 'CHANGE_ME'  -- Replace with actual PWA username
 
 -- Verify the user exists first (will be handled by the queries below)

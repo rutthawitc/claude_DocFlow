@@ -1,6 +1,6 @@
 -- Create PWA User Script
 -- This script manually creates a PWA user in the database
--- Usage: psql -U postgres -d pwausers_db -v username='11008' -f scripts/create-pwa-user.sql
+-- Usage: psql -U postgres -d docflow_db -v username='11008' -f scripts/create-pwa-user.sql
 
 \echo '============================================';
 \echo 'Creating PWA User Account';

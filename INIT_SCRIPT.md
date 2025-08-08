@@ -48,10 +48,10 @@ docker-compose -f docker-compose.prod.yml up -d db
 docker-compose -f docker-compose.prod.yml logs db | grep "ready to accept connections"
 
 # 3. Initialize complete database
-docker exec docflow-db psql -U postgres -d pwausers_db -f /scripts/init-docflow-complete.sql
+docker exec docflow-db psql -U postgres -d docflow_db -f /scripts/init-docflow-complete.sql
 
 # 4. Create admin user
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v admin_username='admin' \
   -v admin_password='SecureAdmin2024!' \
   -v admin_email='admin@company.com' \
@@ -64,10 +64,10 @@ docker exec docflow-db psql -U postgres -d pwausers_db \
 sudo systemctl start postgresql
 
 # 2. Create database
-createdb -U postgres pwausers_db
+createdb -U postgres docflow_db
 
 # 3. Initialize schema
-psql -U postgres -d pwausers_db -f scripts/init-docflow-complete.sql
+psql -U postgres -d docflow_db -f scripts/init-docflow-complete.sql
 
 # 4. Create admin (interactive)
 npx tsx scripts/create-admin.ts
@@ -80,10 +80,10 @@ npx tsx scripts/create-admin.ts
 #### Using SQL Script (Production)
 ```bash
 # Basic initialization
-docker exec docflow-db psql -U postgres -d pwausers_db -f /scripts/init-docflow-complete.sql
+docker exec docflow-db psql -U postgres -d docflow_db -f /scripts/init-docflow-complete.sql
 
 # With custom parameters (if script supports)
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v database_name='custom_db' \
   -f /scripts/init-docflow-complete.sql
 ```
@@ -105,7 +105,7 @@ node scripts/init-docflow.js
 #### Create Local Admin
 ```bash
 # Method 1: With parameters (recommended)
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v admin_username='localadmin' \
   -v admin_password='StrongPassword123!' \
   -v admin_email='admin@company.com' \
@@ -117,13 +117,13 @@ docker exec docflow-db psql -U postgres -d pwausers_db \
 # Edit scripts/create-local-admin.sql and modify:
 # \set admin_username 'youradmin'
 # Then run:
-docker exec docflow-db psql -U postgres -d pwausers_db -f /scripts/create-local-admin.sql
+docker exec docflow-db psql -U postgres -d docflow_db -f /scripts/create-local-admin.sql
 ```
 
 #### Promote PWA User to Admin
 ```bash
 # Promote existing PWA user
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v target_username='john.doe' \
   -f /scripts/promote-user-to-admin.sql
 ```
@@ -373,10 +373,10 @@ ON CONFLICT (name) DO NOTHING;
 #### Backup Before Initialization
 ```bash
 # Create backup before running scripts
-docker exec docflow-db pg_dump -U postgres pwausers_db > backup-before-init.sql
+docker exec docflow-db pg_dump -U postgres docflow_db > backup-before-init.sql
 
 # Restore if needed
-docker exec docflow-db psql -U postgres pwausers_db < backup-before-init.sql
+docker exec docflow-db psql -U postgres docflow_db < backup-before-init.sql
 ```
 
 #### Partial Recovery
@@ -431,7 +431,7 @@ NODE_ENV=development npx tsx scripts/init-docflow.ts
 NODE_ENV=staging npx tsx scripts/init-docflow.ts
 
 # Production environment (SQL preferred)
-docker exec docflow-db psql -U postgres -d pwausers_db -f /scripts/init-docflow-complete.sql
+docker exec docflow-db psql -U postgres -d docflow_db -f /scripts/init-docflow-complete.sql
 ```
 
 ### 4. **Automated Initialization**
@@ -446,10 +446,10 @@ until docker exec docflow-db pg_isready -U postgres; do
 done
 
 # Initialize database
-docker exec docflow-db psql -U postgres -d pwausers_db -f /scripts/init-docflow-complete.sql
+docker exec docflow-db psql -U postgres -d docflow_db -f /scripts/init-docflow-complete.sql
 
 # Create admin user
-docker exec docflow-db psql -U postgres -d pwausers_db \
+docker exec docflow-db psql -U postgres -d docflow_db \
   -v admin_username="${ADMIN_USERNAME:-admin}" \
   -v admin_password="${ADMIN_PASSWORD:-DefaultPassword123!}" \
   -v admin_email="${ADMIN_EMAIL:-admin@company.com}" \

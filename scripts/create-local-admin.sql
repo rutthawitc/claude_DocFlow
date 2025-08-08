@@ -1,6 +1,6 @@
 -- Create Local Admin User Script
 -- This script creates a local administrator account for DocFlow system
--- Usage: psql -U postgres -d pwausers_db -f scripts/create-local-admin.sql
+-- Usage: psql -U postgres -d docflow_db -f scripts/create-local-admin.sql
 
 \echo '============================================';
 \echo 'Creating Local Administrator Account';

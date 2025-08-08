@@ -105,7 +105,7 @@ check_app_health() {
 
 # Check database connectivity
 check_database() {
-    if docker exec docflow_postgres pg_isready -U postgres -d pwausers_db >/dev/null 2>&1; then
+    if docker exec docflow_postgres pg_isready -U postgres -d docflow_db >/dev/null 2>&1; then
         return 0
     else
         error "Database connectivity check failed"

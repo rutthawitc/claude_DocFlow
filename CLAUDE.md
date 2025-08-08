@@ -184,7 +184,7 @@ This application manages document workflow across regional branches:
 ## Environment Variables Required
 
 ```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pwausers_db
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/docflow_db
 PWA_AUTH_URL=https://your-pwa-auth-endpoint.com/api/login
 AUTH_SECRET=your-secure-secret-key
 NEXTAUTH_URL=http://localhost:3000
