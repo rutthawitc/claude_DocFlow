@@ -9,7 +9,7 @@
 
 -- Set target username here or pass via -v parameter
 -- Example: psql -U postgres -d docflow_db -v target_username='john.doe' -f scripts/promote-user-to-admin.sql
-\set target_username 'CHANGE_ME'  -- Replace with actual PWA username
+-- \set target_username 'CHANGE_ME'  -- Uncomment and replace with actual PWA username if not using -v parameter
 
 -- Verify the user exists first (will be handled by the queries below)
 
