@@ -51,7 +51,9 @@
       "mcp__context7__get-library-docs",
       "WebFetch(domain:ui.shadcn.com)",
       "Bash(npx shadcn@latest add:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker port:*)"
     ],
     "deny": []
   }

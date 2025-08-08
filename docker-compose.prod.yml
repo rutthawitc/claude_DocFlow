@@ -27,7 +27,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile.prod.simple
     container_name: docflow-app
     restart: unless-stopped
     expose:
@@ -57,8 +57,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 90s
     logging:
       driver: "json-file"
       options:
@@ -87,6 +87,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts:/scripts:ro
       - ./backups:/backups
+    ports:
+      - "5432:5432"  # Expose for initialization
     networks:
       - app-network
     healthcheck:
