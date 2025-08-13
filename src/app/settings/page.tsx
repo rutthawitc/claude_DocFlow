@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +37,27 @@ import { BackupInitializer } from "@/components/backup/backup-initializer";
 import { ManualBackupTrigger } from "@/components/backup/manual-backup-trigger";
 
 export default function SettingsPage() {
+  const { data: session, status } = useSession();
+
+  // Authentication and authorization check
+  useEffect(() => {
+    if (status === 'loading') return;
+    
+    if (!session?.user) {
+      redirect('/login');
+      return;
+    }
+
+    // Check if user has settings access (admin or district_manager only)
+    const userRoles = session.user.pwa?.roles || [];
+    const canAccessSettings = userRoles.includes('admin') || userRoles.includes('district_manager');
+
+    if (!canAccessSettings) {
+      redirect('/unauthorized');
+      return;
+    }
+  }, [session, status]);
+
   // System settings state
   const [systemSettings, setSystemSettings] = useState({
     autoBackup: true,
@@ -499,6 +522,33 @@ export default function SettingsPage() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
+
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto" />
+            <p>กำลังตรวจสอบสิทธิ์...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Return null while redirecting
+  if (!session?.user) {
+    return null;
+  }
+
+  // Check authorization
+  const userRoles = session.user.pwa?.roles || [];
+  const canAccessSettings = userRoles.includes('admin') || userRoles.includes('district_manager');
+  
+  if (!canAccessSettings) {
+    return null;
+  }
 
   return (
     <DashboardLayout>

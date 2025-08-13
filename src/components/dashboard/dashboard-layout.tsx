@@ -112,13 +112,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const isAdmin = userRoles.includes("admin");
   const isDistrictManager = userRoles.includes("district_manager");
   const canAccessAdmin = isAdmin || isDistrictManager;
+  const canAccessSettings = isAdmin || isDistrictManager;
 
   // Check if user can upload documents
   const canUpload =
     userRoles.includes("uploader") ||
     userRoles.includes("admin") ||
-    userRoles.includes("district_manager") ||
-    userRoles.includes("user");
+    userRoles.includes("district_manager");
 
   const navItems = [
     {
@@ -154,11 +154,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           },
         ]
       : []),
-    {
+    
+    // Settings - only for admins and district managers
+    ...(canAccessSettings ? [{
       title: "ตั้งค่า",
       href: "/settings",
       icon: <Settings className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
-    },
+    }] : []),
   ];
 
   return (

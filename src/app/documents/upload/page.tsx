@@ -66,7 +66,7 @@ export default function DocumentUploadPage() {
     const userRoles = session.user.pwa?.roles || [];
     const canUpload = userRoles.includes('uploader') || 
                      userRoles.includes('admin') ||
-                     userRoles.includes('user'); // Allow regular users to upload
+                     userRoles.includes('district_manager');
 
     if (!canUpload) {
       redirect('/documents');

@@ -12,7 +12,9 @@ export async function Header() {
   
   // Check DocFlow permissions
   const userRoles = session?.user.pwa?.roles || [];
-  const canUpload = userRoles.includes('uploader') || userRoles.includes('admin') || userRoles.includes('user');
+  const canUpload = userRoles.includes('uploader') || 
+                   userRoles.includes('admin') || 
+                   userRoles.includes('district_manager');
   const canViewDocuments = userRoles.includes('branch_user') || userRoles.includes('branch_manager') || 
                            userRoles.includes('admin') || userRoles.includes('uploader') || userRoles.includes('user');
 
