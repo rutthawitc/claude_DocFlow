@@ -445,3 +445,132 @@ The **Next.js Middleware** is used to protect routes, ensuring that only authent
 *   **Security Utilities**: [src/lib/security/](src/lib/security/)
     *   Contains functions related to general security practices, which might be leveraged by the authentication system.
 
+---
+
+## Research Query
+
+where is session time definition ?
+
+*Session: cda5cde822ddbe646b512837406f7bdd | Generated: 8/13/2025, 3:38:05 PM*
+
+### Analysis Summary
+
+# Codebase Analysis Report: Session Time Definition
+
+This report details the definition and implementation of session timeouts within the codebase, covering both server-side configuration and client-side handling.
+
+## High-Level Overview
+
+Session time definitions are primarily managed by **NextAuth.js** on the server-side, configured in [src/auth.ts](src/auth.ts). These server-side settings dictate the absolute and idle timeouts for user sessions. On the client-side, a custom React hook, [useSessionTimeout](src/hooks/useSessionTimeoutSimple.ts), consumes these definitions to provide real-time session status, warnings, and automatic logout functionality.
+
+## Mid-Level: Session Configuration
+
+The core session timeout parameters are defined within the `session` object of the NextAuth.js configuration in [src/auth.ts](src/auth.ts).
+
+### NextAuth.js Session Configuration
+
+*   **Purpose**: Configures how user sessions are managed, including their strategy and duration.
+*   **Internal Parts**:
+    *   `strategy: 'jwt'`: Specifies that JSON Web Tokens (JWTs) are used for session management.
+    *   `maxAge`: Defines the absolute maximum age of a session.
+    *   `updateAge`: Defines the idle timeout for a session, after which it will be updated if there is activity.
+*   **External Relationships**: These configurations directly influence the behavior of the `jwt` callback and the client-side session management.
+
+**Relevant Code**:
+The session configuration is found in [src/auth.ts:198-202](src/auth.ts:198-202):
+```typescript
+  session: {
+    strategy: 'jwt',
+    maxAge: 4 * 60 * 60, // 4 hours absolute timeout
+    updateAge: 30 * 60, // 30 minutes idle timeout - session updates every 30 minutes
+  },
+```
+*   **Absolute Timeout**: `maxAge: 4 * 60 * 60` (4 hours).
+*   **Idle Timeout**: `updateAge: 30 * 60` (30 minutes).
+
+## Low-Level: Implementation Details
+
+### JWT Callback in NextAuth.js
+
+The `jwt` callback in [src/auth.ts](src/auth.ts) is responsible for enforcing both idle and absolute session timeouts by inspecting the JWT.
+
+*   **Purpose**: Processes the JWT on each request, updating activity timestamps and checking for session expiration.
+*   **Internal Parts**:
+    *   `token.lastActivity`: A custom field added to the JWT to track the last user activity timestamp.
+    *   Idle timeout logic: Compares current time with `token.lastActivity`.
+    *   Absolute timeout logic: Compares current time with `token.iat` (token issuance time).
+*   **External Relationships**: Receives the JWT and user data, and can return `null` to force re-authentication if a timeout is detected.
+
+**Relevant Code**:
+The `jwt` callback is found in [src/auth.ts:165-187](src/auth.ts:165-187):
+```typescript
+    async jwt({ token, user, trigger }) {
+      const now = Math.floor(Date.now() / 1000);
+
+      if (user) {
+        // New login - set creation time and last activity
+        // ...
+        token.iat = now; // Set creation time
+        token.lastActivity = now; // Set initial activity time
+      } else if (trigger === 'update' || !token.lastActivity) {
+        // Update activity time on token refresh/update
+        token.lastActivity = now;
+      }
+
+      // Check idle timeout (30 minutes = 1800 seconds)
+      if (token.lastActivity && now - (token.lastActivity as number) > 30 * 60) {
+        console.log('Session idle timeout exceeded');
+        return null; // Force re-authentication
+      }
+
+      // Check absolute timeout (4 hours = 14400 seconds)
+      if (token.iat && now - (token.iat as number) > 4 * 60 * 60) {
+        console.log('Session absolute timeout exceeded');
+        return null; // Force re-authentication
+      }
+
+      return token;
+    },
+```
+
+### Client-Side Session Timeout Hook
+
+The [useSessionTimeout](src/hooks/useSessionTimeoutSimple.ts) hook provides client-side session management, including displaying warnings and initiating logout.
+
+*   **Purpose**: Manages the client-side representation of the session, providing visual cues and handling automatic logout based on server-defined timeouts.
+*   **Internal Parts**:
+    *   `SessionTimeoutOptions` interface: Allows configuration of `warningTime`, `checkInterval`, and `enableActivityTracking`.
+    *   `timeLeft` state: Tracks the remaining time until session expiration.
+    *   `showWarning` state: Controls the visibility of session warning messages.
+*   **External Relationships**: Utilizes `useSession` from `next-auth/react` to get session expiration data and `signOut` to log out the user.
+
+**Relevant Code**:
+The `SessionTimeoutOptions` interface is defined in [src/hooks/useSessionTimeoutSimple.ts:12-17](src/hooks/useSessionTimeoutSimple.ts:12-17):
+```typescript
+interface SessionTimeoutOptions {
+  warningTime?: number; // Seconds before expiration to show warning (default: 300 = 5 minutes)
+  checkInterval?: number; // How often to check session in milliseconds (default: 30000 = 30 seconds)
+  enableActivityTracking?: boolean; // Enable automatic activity tracking (default: false)
+  activityUpdateThrottle?: number; // Throttle activity updates in milliseconds (default: 300000 = 5 minutes)
+}
+```
+The `useSessionTimeout` hook's core logic for checking expiration is in [src/hooks/useSessionTimeoutSimple.ts:100-116](src/hooks/useSessionTimeoutSimple.ts:100-116):
+```typescript
+      if (sessionExp) {
+        const remaining = sessionExp - now;
+        setTimeLeft(remaining);
+
+        // Show warning before expiration
+        if (remaining <= warningTime && remaining > 0 && !warningShownRef.current) {
+          setShowWarning(true);
+          warningShownRef.current = true;
+        }
+
+        // Auto logout when session expires
+        if (remaining <= 0) {
+          console.log('Session expired, signing out');
+          signOut({ callbackUrl: '/login?expired=1' });
+        }
+      }
+```
+

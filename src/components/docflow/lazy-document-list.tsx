@@ -258,7 +258,7 @@ export default function LazyDocumentList({
   const getStatusText = (status: string) => {
     switch (status) {
       case 'draft': return 'ร่าง';
-      case 'sent_to_branch': return 'ส่งกลับสาขา';
+      case 'sent_to_branch': return 'เอกสารจากเขต';
       case 'acknowledged': return 'รับทราบ';
       case 'sent_back_to_district': return 'ส่งกลับเขต';
       default: return status;
@@ -325,7 +325,7 @@ export default function LazyDocumentList({
               <SelectContent>
                 <SelectItem value="all">ทุกสถานะ</SelectItem>
                 <SelectItem value="draft">ร่าง</SelectItem>
-                <SelectItem value="sent_to_branch">ส่งกลับสาขา</SelectItem>
+                <SelectItem value="sent_to_branch">เอกสารจากเขต</SelectItem>
                 <SelectItem value="acknowledged">รับทราบ</SelectItem>
                 <SelectItem value="sent_back_to_district">ส่งกลับเขต</SelectItem>
               </SelectContent>

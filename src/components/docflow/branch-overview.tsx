@@ -315,7 +315,7 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
                           {/* Draft documents are not shown in main overview - they appear only in upload page */}
                           {branch.documentCounts.sent_to_branch > 0 && (
                             <Badge variant="outline" className={STATUS_COLORS.sent_to_branch}>
-                              ส่งกลับ: {branch.documentCounts.sent_to_branch}
+                              เอกสารจากเขต: {branch.documentCounts.sent_to_branch}
                             </Badge>
                           )}
                           {branch.documentCounts.acknowledged > 0 && (

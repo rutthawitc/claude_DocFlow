@@ -78,7 +78,7 @@ export function StatusManagement({
       case DocumentStatus.DRAFT:
         return 'ร่าง';
       case DocumentStatus.SENT_TO_BRANCH:
-        return 'ส่งกลับสาขา';
+        return 'เอกสารจากเขต';
       case DocumentStatus.ACKNOWLEDGED:
         return 'รับทราบแล้ว';
       case DocumentStatus.SENT_BACK_TO_DISTRICT:
@@ -104,7 +104,7 @@ export function StatusManagement({
         if (isUploader) {
           actions.push({
             status: DocumentStatus.SENT_TO_BRANCH,
-            label: 'ส่งกลับสาขา',
+            label: 'เอกสารจากเขต',
             variant: 'default'
           });
         }
@@ -141,7 +141,7 @@ export function StatusManagement({
         if (isUploader) {
           actions.push({
             status: DocumentStatus.SENT_TO_BRANCH,
-            label: 'ส่งกลับสาขาใหม่',
+            label: 'เอกสารจากเขตใหม่',
             variant: 'default',
             requiresComment: true
           });

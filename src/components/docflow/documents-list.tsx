@@ -86,7 +86,7 @@ const STATUS_COLORS = {
 
 const STATUS_LABELS = {
   draft: 'ร่าง',
-  sent_to_branch: 'ส่งกลับสาขา',
+  sent_to_branch: 'เอกสารจากเขต',
   acknowledged: 'รับทราบ',
   sent_back_to_district: 'ส่งกลับเขต'
 };
@@ -393,7 +393,7 @@ export function DocumentsList({
                 >
                   <option value="all">ทั้งหมด</option>
                   <option value="draft">Draft</option>
-                  <option value="sent_to_branch">ส่งกลับสาขา</option>
+                  <option value="sent_to_branch">เอกสารจากเขต</option>
                   <option value="acknowledged">รับทราบ</option>
                   <option value="sent_back_to_district">ส่งกลับเขต</option>
                 </select>

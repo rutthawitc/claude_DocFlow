@@ -113,7 +113,7 @@ const STATUS_COLORS = {
 
 const STATUS_LABELS = {
   draft: 'ร่าง',
-  sent_to_branch: 'ส่งกลับสาขา',
+  sent_to_branch: 'เอกสารจากเขต',
   acknowledged: 'รับทราบ',
   sent_back_to_district: 'ส่งกลับเขต'
 };
