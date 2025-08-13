@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Building, 
   FileText, 
@@ -14,12 +14,20 @@ import {
   Search,
   Filter,
   RefreshCw,
-  Loader2
+  Loader2,
+  ShieldX
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Branch {
   id: number;
@@ -51,10 +59,13 @@ const STATUS_COLORS = {
 };
 
 export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverviewProps) {
+  const router = useRouter();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'total' | 'pending' | 'ba'>('ba');
+  const [showAccessDeniedDialog, setShowAccessDeniedDialog] = useState(false);
+  const [deniedBranchName, setDeniedBranchName] = useState('');
 
   // Fetch branches with document counts
   const fetchBranches = async () => {
@@ -82,6 +93,32 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
   useEffect(() => {
     fetchBranches();
   }, []);
+
+  // Check if user can access a specific branch
+  const canAccessBranch = (branchBaCode: number): boolean => {
+    // Admin, district_manager, branch_manager, and uploader can access all branches
+    if (userRoles.includes('admin') || 
+        userRoles.includes('district_manager') || 
+        userRoles.includes('branch_manager') ||
+        userRoles.includes('uploader')) {
+      return true;
+    }
+
+    // Regular users can only access their own branch
+    return userBranchBaCode === branchBaCode;
+  };
+
+  // Handle branch card click
+  const handleBranchClick = (branch: Branch) => {
+    if (canAccessBranch(branch.baCode)) {
+      // User has access, navigate to branch
+      router.push(`/documents/branch/${branch.baCode}`);
+    } else {
+      // User doesn't have access, show denial dialog
+      setDeniedBranchName(branch.name);
+      setShowAccessDeniedDialog(true);
+    }
+  };
 
   // Filter and sort branches
   const filteredAndSortedBranches = React.useMemo(() => {
@@ -268,8 +305,11 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
             const totalCount = branch.documentCounts.total;
             
             return (
-              <Link key={branch.id} href={`/documents/branch/${branch.baCode}`}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <Card 
+                key={branch.id} 
+                className="hover:shadow-lg transition-shadow cursor-pointer h-full"
+                onClick={() => handleBranchClick(branch)}
+              >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -346,11 +386,50 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
             );
           })}
         </div>
       )}
+
+      {/* Access Denied Dialog */}
+      <Dialog open={showAccessDeniedDialog} onOpenChange={setShowAccessDeniedDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <ShieldX className="h-6 w-6 text-red-600" />
+                </div>
+              </div>
+              <div>
+                <DialogTitle className="text-red-800">ไม่สามารถเข้าถึงได้</DialogTitle>
+                <DialogDescription className="text-gray-600">
+                  คุณไม่มีสิทธิ์ในการเข้าถึงข้อมูลสาขานี้
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="bg-red-50 rounded-lg p-4">
+              <h4 className="font-medium text-red-900 mb-2">สาขาที่ไม่สามารถเข้าถึง:</h4>
+              <div className="text-sm text-red-700">
+                <p>{deniedBranchName}</p>
+              </div>
+            </div>
+            <div className="mt-4 text-sm text-gray-600">
+              <p>คุณสามารถเข้าถึงได้เฉพาะเอกสารของสาขาที่คุณสังกัดเท่านั้น หากต้องการเข้าถึงข้อมูลของสาขาอื่น กรุณาติดต่อผู้ดูแลระบบ</p>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button 
+              onClick={() => setShowAccessDeniedDialog(false)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              ตกลง
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
