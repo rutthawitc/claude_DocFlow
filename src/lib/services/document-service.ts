@@ -1,4 +1,4 @@
-import { eq, and, desc, gte, lte, count, ilike, or } from 'drizzle-orm';
+import { eq, and, desc, gte, lte, count, ilike, or, ne } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { documents, branches, users, comments, documentStatusHistory, activityLogs } from '@/db/schema';
 import { 
@@ -224,7 +224,12 @@ export class DocumentService {
 
       // Add status filter
       if (filters.status && filters.status !== 'all') {
-        conditions.push(eq(documents.status, filters.status));
+        if (filters.status === 'non-draft') {
+          // Exclude draft documents
+          conditions.push(ne(documents.status, 'draft'));
+        } else {
+          conditions.push(eq(documents.status, filters.status));
+        }
       }
 
       // Add date range filters
@@ -490,6 +495,18 @@ export class DocumentService {
       const document = await this.getDocumentById(documentId);
       if (!document) return false;
 
+      // Check if this is a draft document
+      const isDraftDocument = document.status === 'draft';
+      
+      // Only users with upload permissions can view draft documents
+      const canViewDrafts = userRoles.includes('uploader') || 
+                           userRoles.includes('admin') || 
+                           userRoles.includes('district_manager');
+
+      if (isDraftDocument && !canViewDrafts) {
+        return false;
+      }
+
       // Admin can access all documents
       if (userRoles.includes('admin')) {
         return true;
@@ -631,7 +648,12 @@ export class DocumentService {
 
       // Add status filter
       if (filters.status && filters.status !== 'all') {
-        conditions.push(eq(documents.status, filters.status));
+        if (filters.status === 'non-draft') {
+          // Exclude draft documents
+          conditions.push(ne(documents.status, 'draft'));
+        } else {
+          conditions.push(eq(documents.status, filters.status));
+        }
       }
 
       // Add date range filters

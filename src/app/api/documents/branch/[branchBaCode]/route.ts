@@ -116,11 +116,34 @@ async function getHandler(request: NextRequest, { params: paramsPromise }: Route
     const dateFromObj = dateFrom ? new Date(dateFrom) : undefined;
     const dateToObj = dateTo ? new Date(dateTo) : undefined;
 
-    // All validation is now handled by Zod schemas
+    // Check if user can view draft documents
+    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(actualUserId);
+    const canViewDrafts = roles.includes('uploader') || 
+                         roles.includes('admin') || 
+                         roles.includes('district_manager');
 
-    // Get documents for the branch
+    // For draft documents, only allow users with upload permissions to see them
+    if (status === 'draft' && !canViewDrafts) {
+      const response: ApiResponse<any> = {
+        success: true,
+        data: {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          totalPages: 0
+        }
+      };
+      const jsonResponse = NextResponse.json(response);
+      addRateLimitHeaders(jsonResponse, apiRateLimit);
+      return jsonResponse;
+    }
+
+    // Get documents for the branch - exclude draft documents for users without upload permissions
+    const effectiveStatus = (status === 'all' && !canViewDrafts) ? 'non-draft' : status;
+    
     const result = await DocumentService.getDocumentsByBranch(branchBaCode, {
-      status: status as any,
+      status: effectiveStatus as any,
       dateFrom: dateFromObj,
       dateTo: dateToObj,
       search,

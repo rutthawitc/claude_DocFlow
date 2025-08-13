@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+      <mxfile host="codeviz.app" modified="2025-08-13T03:43:56.613Z" agent="CodeViz Exporter" version="14.6.5" type="device">
+        <diagram id="codeviz-diagram" name="System Diagram">
+          <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+            <root>
+              <mxCell id="0"/>
+              <mxCell id="1" parent="0"/>
+              <mxCell id="section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                <mxGeometry x="1030" y="450" width="390" height="540" as="geometry"/>
+              </mxCell>
+              <mxCell id="section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper_label" value="High-Level Architecture" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                <mxGeometry x="1038" y="458" width="314" height="24" as="geometry"/>
+              </mxCell>
+<mxCell id="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                <mxGeometry x="1410" y="440" width="771" height="670" as="geometry"/>
+              </mxCell>
+              <mxCell id="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper_label" value="Mid-Level Workflow: User Login" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                <mxGeometry x="1418" y="448" width="695" height="24" as="geometry"/>
+              </mxCell>
+<mxCell id="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                <mxGeometry x="50" y="470" width="990" height="380" as="geometry"/>
+              </mxCell>
+              <mxCell id="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper_label" value="Low-Level Implementation Details" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                <mxGeometry x="58" y="478" width="914" height="24" as="geometry"/>
+              </mxCell>
+              <mxCell id="search-results-group-6d33147a8f071b93446f9cbffd89eca2" value="Search Results" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="1">
+                    <mxGeometry x="12" y="12" width="2171" height="1100" as="geometry"/>
+                  </mxCell>
+<mxCell id="terminal-6d33147a8f071b93446f9cbffd89eca2" value="Terminal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="1">
+                    <mxGeometry x="1037.5" y="1312" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="search-result-6d33147a8f071b93446f9cbffd89eca2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                    <mxGeometry x="485" y="80" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="backendNextjs_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" value="Backend&lt;br&gt;Next.js API/Server Actions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper">
+                    <mxGeometry x="170" y="280" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="database_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" value="Database&lt;br&gt;PostgreSQL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper">
+                    <mxGeometry x="170" y="440" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="frontendUI_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" value="Frontend UI&lt;br&gt;Next.js" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper">
+                    <mxGeometry x="190" y="120" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="middleware_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" value="Middleware&lt;br&gt;Next.js" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper">
+                    <mxGeometry x="40" y="150" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="authActions_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" value="Auth Actions&lt;br&gt;Server Action" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                    <mxGeometry x="521" y="570" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="authComponents_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" value="Auth Components&lt;br&gt;React Components" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                    <mxGeometry x="551" y="410" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="authConfig_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" value="Auth Configuration&lt;br&gt;Auth.js" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                    <mxGeometry x="271" y="280" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="authModal_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" value="Auth Modal&lt;br&gt;Next.js Intercepting Route" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                    <mxGeometry x="421" y="250" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="bcryptjs_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" value="bcryptjs&lt;br&gt;Password Hashing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                    <mxGeometry x="40" y="410" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="drizzleORM_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" value="Drizzle ORM&lt;br&gt;Database Access" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                    <mxGeometry x="271" y="120" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="loginPage_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" value="Login Page&lt;br&gt;Next.js Page" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                    <mxGeometry x="571" y="250" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="middleware_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" value="Middleware&lt;br&gt;Next.js" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                    <mxGeometry x="190" y="440" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="sessionProvider_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" value="Session Provider&lt;br&gt;React Context" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                    <mxGeometry x="374" y="410" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="authUtils_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" value="Auth Utilities&lt;br&gt;Helper Functions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                    <mxGeometry x="790" y="150" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="csrfProtection_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" value="CSRF Protection&lt;br&gt;Utility" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                    <mxGeometry x="340" y="140" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="dbConnection_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" value="Database Connection&lt;br&gt;Drizzle ORM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                    <mxGeometry x="40" y="280" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="dbSchema_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" value="Database Schema&lt;br&gt;Drizzle Schema" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                    <mxGeometry x="40" y="120" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="N/A_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" value="Application&lt;br&gt;Security" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                    <mxGeometry x="490" y="280" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="rateLimiting_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" value="Rate Limiting&lt;br&gt;Utility" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                    <mxGeometry x="490" y="120" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="securityUtils_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" value="Security Utilities&lt;br&gt;Helper Functions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                    <mxGeometry x="190" y="150" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="utils_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" value="Utils&lt;br&gt;General Utilities" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                    <mxGeometry x="640" y="140" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="report-section-6d33147a8f071b93446f9cbffd89eca2-0" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                    <mxGeometry x="485" y="190" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="report-section-6d33147a8f071b93446f9cbffd89eca2-1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                    <mxGeometry x="1135" y="280" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="report-section-6d33147a8f071b93446f9cbffd89eca2-2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                    <mxGeometry x="1705.5" y="270" width="120" height="60" as="geometry"/>
+                  </mxCell>
+<mxCell id="report-section-6d33147a8f071b93446f9cbffd89eca2-8" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" vertex="1" parent="search-results-group-6d33147a8f071b93446f9cbffd89eca2">
+                    <mxGeometry x="455" y="300" width="120" height="60" as="geometry"/>
+                  </mxCell>
+              <mxCell id="edge-edge-search-to-terminal-6d33147a8f071b93446f9cbffd89eca2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="search-results-group-6d33147a8f071b93446f9cbffd89eca2" target="terminal-6d33147a8f071b93446f9cbffd89eca2">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-edge-search-to-terminal-6d33147a8f071b93446f9cbffd89eca2_label" value="Provides context to" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-edge-search-to-terminal-6d33147a8f071b93446f9cbffd89eca2">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_frontendUI_backendNextjs_0_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="frontendUI_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" target="backendNextjs_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_frontendUI_backendNextjs_0_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture_label" value="submits credentials" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_frontendUI_backendNextjs_0_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_backendNextjs_database_1_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="backendNextjs_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" target="database_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_backendNextjs_database_1_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture_label" value="verifies/creates session" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_backendNextjs_database_1_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_middleware_backendNextjs_2_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="middleware_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" target="backendNextjs_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_middleware_backendNextjs_2_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture_label" value="intercepts requests" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_middleware_backendNextjs_2_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_backendNextjs_frontendUI_3_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="backendNextjs_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture" target="frontendUI_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_backendNextjs_frontendUI_3_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture_label" value="returns session/error" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_backendNextjs_frontendUI_3_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-1-to-section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="report-section-6d33147a8f071b93446f9cbffd89eca2-1" target="section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-1-to-section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper_label" value="Diagram" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-1-to-section-diagram-6d33147a8f071b93446f9cbffd89eca2-High-Level-Architecture-wrapper">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_loginPage_authComponents_0_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="loginPage_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="authComponents_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_loginPage_authComponents_0_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="uses" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_loginPage_authComponents_0_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_authModal_authComponents_1_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="authModal_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="authComponents_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_authModal_authComponents_1_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="uses" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_authModal_authComponents_1_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_authComponents_authActions_2_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="authComponents_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="authActions_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_authComponents_authActions_2_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="submits to" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_authComponents_authActions_2_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_authActions_authConfig_3_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="authActions_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="authConfig_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_authActions_authConfig_3_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="calls login()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_authActions_authConfig_3_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_authConfig_drizzleORM_4_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="authConfig_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="drizzleORM_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_authConfig_drizzleORM_4_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="queries" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_authConfig_drizzleORM_4_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_authConfig_bcryptjs_5_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="authConfig_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="bcryptjs_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_authConfig_bcryptjs_5_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="compares hash" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_authConfig_bcryptjs_5_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_drizzleORM_authConfig_6_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="drizzleORM_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="authConfig_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_drizzleORM_authConfig_6_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="user data" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_drizzleORM_authConfig_6_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_authConfig_sessionProvider_7_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="authConfig_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="sessionProvider_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_authConfig_sessionProvider_7_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="establishes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_authConfig_sessionProvider_7_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_authConfig_middleware_8_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="authConfig_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="middleware_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_authConfig_middleware_8_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="informs" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_authConfig_middleware_8_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_middleware_authActions_9_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="middleware_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login" target="authActions_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_middleware_authActions_9_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login_label" value="protects routes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_middleware_authActions_9_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-2-to-section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="report-section-6d33147a8f071b93446f9cbffd89eca2-2" target="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-2-to-section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper_label" value="Diagram" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-2-to-section-diagram-6d33147a8f071b93446f9cbffd89eca2-Mid-Level-Workflow:-User-Login-wrapper">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_dbSchema_dbConnection_0_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="dbSchema_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" target="dbConnection_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_dbSchema_dbConnection_0_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details_label" value="defines" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_dbSchema_dbConnection_0_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_dbConnection_dbSchema_1_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="dbConnection_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" target="dbSchema_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_dbConnection_dbSchema_1_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details_label" value="connects to" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_dbConnection_dbSchema_1_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_csrfProtection_N/A_2_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="csrfProtection_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" target="N/A_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_csrfProtection_N/A_2_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details_label" value="used by" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_csrfProtection_N/A_2_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_rateLimiting_N/A_3_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="rateLimiting_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" target="N/A_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_rateLimiting_N/A_3_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details_label" value="applied to" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_rateLimiting_N/A_3_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_utils_N/A_4_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="utils_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" target="N/A_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_utils_N/A_4_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details_label" value="used by" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_utils_N/A_4_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_authUtils_N/A_5_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="authUtils_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" target="N/A_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_authUtils_N/A_5_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details_label" value="used by" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_authUtils_N/A_5_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-L_securityUtils_N/A_6_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="securityUtils_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details" target="N/A_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-L_securityUtils_N/A_6_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details_label" value="used by" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-L_securityUtils_N/A_6_6d33147a8f071b93446f9cbffd89eca2_section_section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-8-to-section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="report-section-6d33147a8f071b93446f9cbffd89eca2-8" target="section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-8-to-section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper_label" value="Diagram" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-8-to-section-diagram-6d33147a8f071b93446f9cbffd89eca2-Low-Level-Implementation-Details-wrapper">
+                  <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+                    <mxPoint as="offset"/>
+                  </mxGeometry>
+                </mxCell>
+<mxCell id="edge-search-result-6d33147a8f071b93446f9cbffd89eca2-to-report-section-6d33147a8f071b93446f9cbffd89eca2-0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="search-result-6d33147a8f071b93446f9cbffd89eca2" target="report-section-6d33147a8f071b93446f9cbffd89eca2-0">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+<mxCell id="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-0-to-report-section-6d33147a8f071b93446f9cbffd89eca2-1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="report-section-6d33147a8f071b93446f9cbffd89eca2-0" target="report-section-6d33147a8f071b93446f9cbffd89eca2-1">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+<mxCell id="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-0-to-report-section-6d33147a8f071b93446f9cbffd89eca2-2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="report-section-6d33147a8f071b93446f9cbffd89eca2-0" target="report-section-6d33147a8f071b93446f9cbffd89eca2-2">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+<mxCell id="edge-report-section-6d33147a8f071b93446f9cbffd89eca2-0-to-report-section-6d33147a8f071b93446f9cbffd89eca2-8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" edge="1" parent="1" source="report-section-6d33147a8f071b93446f9cbffd89eca2-0" target="report-section-6d33147a8f071b93446f9cbffd89eca2-8">
+                  <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+          </mxGraphModel>
+        </diagram>
+      </mxfile>

@@ -54,6 +54,11 @@ export const GET = withAuthHandler(
     const { roles } = await DocFlowAuth.getUserRolesAndPermissions(user.databaseId);
     const accessibleBranches = await DocumentService.getUserAccessibleBranches(user.databaseId, roles);
 
+    // Check if user can view draft documents
+    const canViewDrafts = roles.includes('uploader') || 
+                         roles.includes('admin') || 
+                         roles.includes('district_manager');
+
     if (accessibleBranches.length === 0 && status !== 'draft') {
       const response = ApiResponseHandler.successPaginated(
         [],
@@ -65,9 +70,20 @@ export const GET = withAuthHandler(
       return response;
     }
 
-    // For draft documents, get user's own documents regardless of branch access
+    // For draft documents, only allow users with upload permissions to see them
     let result;
     if (status === 'draft') {
+      if (!canViewDrafts) {
+        const response = ApiResponseHandler.successPaginated(
+          [],
+          0,
+          page,
+          limit
+        );
+        addRateLimitHeaders(response, apiRateLimit);
+        return response;
+      }
+      
       result = await DocumentService.getUserOwnDocuments(user.databaseId, {
         status,
         dateFrom: dateFromObj,
@@ -77,9 +93,11 @@ export const GET = withAuthHandler(
         search
       });
     } else {
-      // Search documents
+      // Search documents - exclude draft documents for users without upload permissions
+      const effectiveStatus = (status === 'all' && !canViewDrafts) ? 'non-draft' : status;
+      
       result = await DocumentService.searchDocuments(search, accessibleBranches, {
-        status,
+        status: effectiveStatus,
         dateFrom: dateFromObj,
         dateTo: dateToObj,
         page,
