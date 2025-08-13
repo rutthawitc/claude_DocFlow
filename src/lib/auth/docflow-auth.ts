@@ -549,20 +549,11 @@ export class DocFlowAuth {
         return isR6Branch;
       }
 
-      // Branch manager can access all R6 branches
-      if (userWithData.roles.includes(DOCFLOW_ROLES.BRANCH_MANAGER)) {
-        const branch = await BranchService.getBranchByBaCode(branchBaCode);
-        return branch?.regionCode === 'R6';
-      }
-
-      // Branch users can only access their own branch
-      if (userWithData.roles.includes(DOCFLOW_ROLES.BRANCH_USER)) {
+      // Branch manager, branch users, and uploaders can only access their own branch
+      if (userWithData.roles.includes(DOCFLOW_ROLES.BRANCH_MANAGER) ||
+          userWithData.roles.includes(DOCFLOW_ROLES.BRANCH_USER) ||
+          userWithData.roles.includes(DOCFLOW_ROLES.UPLOADER)) {
         return userWithData.branch?.baCode === branchBaCode;
-      }
-
-      // Uploaders can access any branch for uploading (but not viewing all documents)
-      if (userWithData.roles.includes(DOCFLOW_ROLES.UPLOADER)) {
-        return true; // For upload purposes
       }
 
       return false;

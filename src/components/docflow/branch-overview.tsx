@@ -96,15 +96,13 @@ export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverv
 
   // Check if user can access a specific branch
   const canAccessBranch = (branchBaCode: number): boolean => {
-    // Admin, district_manager, branch_manager, and uploader can access all branches
+    // Only admin and district_manager can access all branches
     if (userRoles.includes('admin') || 
-        userRoles.includes('district_manager') || 
-        userRoles.includes('branch_manager') ||
-        userRoles.includes('uploader')) {
+        userRoles.includes('district_manager')) {
       return true;
     }
 
-    // Regular users can only access their own branch
+    // All other users (including branch_manager, uploader, branch_user) can only access their own branch
     return userBranchBaCode === branchBaCode;
   };
 
