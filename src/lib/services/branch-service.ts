@@ -115,7 +115,7 @@ export class BranchService {
   /**
    * Get document counts for a branch (including all document statuses)
    */
-  static async getBranchDocumentCounts(branchBaCode: number): Promise<DocumentCounts> {
+  static async getBranchDocumentCounts(branchBaCode: number, canViewDrafts: boolean = true): Promise<DocumentCounts> {
     const db = await getDb();
     
     // Get counts by status, including ALL documents
@@ -137,8 +137,13 @@ export class BranchService {
       sent_back_to_district: 0
     };
 
-    // Aggregate results
+    // Aggregate results - exclude draft counts if user can't view drafts
     statusCounts.forEach(({ status, count: statusCount }) => {
+      if (status === 'draft' && !canViewDrafts) {
+        // Don't include draft documents in total count for unauthorized users
+        return;
+      }
+      
       counts.total += statusCount;
       if (status in counts) {
         counts[status as keyof DocumentCounts] = statusCount;
@@ -151,11 +156,11 @@ export class BranchService {
   /**
    * Get branch with document counts
    */
-  static async getBranchWithCounts(branchBaCode: number): Promise<BranchWithDocumentCounts | null> {
+  static async getBranchWithCounts(branchBaCode: number, canViewDrafts: boolean = true): Promise<BranchWithDocumentCounts | null> {
     const branch = await this.getBranchByBaCode(branchBaCode);
     if (!branch) return null;
 
-    const documentCounts = await this.getBranchDocumentCounts(branchBaCode);
+    const documentCounts = await this.getBranchDocumentCounts(branchBaCode, canViewDrafts);
 
     return {
       ...branch,
@@ -166,12 +171,12 @@ export class BranchService {
   /**
    * Get all branches with document counts
    */
-  static async getAllBranchesWithCounts(): Promise<BranchWithDocumentCounts[]> {
+  static async getAllBranchesWithCounts(canViewDrafts: boolean = true): Promise<BranchWithDocumentCounts[]> {
     const allBranches = await this.getAllBranches();
     
     const branchesWithCounts = await Promise.all(
       allBranches.map(async (branch) => {
-        const documentCounts = await this.getBranchDocumentCounts(branch.baCode);
+        const documentCounts = await this.getBranchDocumentCounts(branch.baCode, canViewDrafts);
         return {
           ...branch,
           documentCounts

@@ -79,8 +79,11 @@ export async function GET(request: NextRequest) {
       // Search branches
       branches = await BranchService.searchBranches(search);
     } else if (includeCounts) {
-      // Get all branches with document counts
-      branches = await BranchService.getAllBranchesWithCounts();
+      // Get all branches with document counts - pass user roles for draft filtering
+      const canViewDrafts = roles.includes('uploader') || 
+                           roles.includes('admin') || 
+                           roles.includes('district_manager');
+      branches = await BranchService.getAllBranchesWithCounts(canViewDrafts);
     } else {
       // Get basic branch list
       branches = await BranchService.getAllBranches();
