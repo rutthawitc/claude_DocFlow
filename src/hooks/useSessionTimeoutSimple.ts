@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { signOut } from 'next-auth/react';
+import { getDefaultSessionTimeoutOptions } from '@/lib/config/session-config-client';
 
 interface SessionTimeoutHook {
   timeLeft: number;
@@ -22,11 +23,14 @@ interface SessionTimeoutOptions {
  * Consolidates useSessionTimeout and useSessionTimeoutSimple with configurable options
  */
 export function useSessionTimeout(options: SessionTimeoutOptions = {}): SessionTimeoutHook {
+  // Get default options from centralized configuration
+  const defaultOptions = getDefaultSessionTimeoutOptions();
+  
   const {
-    warningTime = 300, // 5 minutes
-    checkInterval = 30000, // 30 seconds
-    enableActivityTracking = false,
-    activityUpdateThrottle = 300000 // 5 minutes
+    warningTime = defaultOptions.warningTime,
+    checkInterval = defaultOptions.checkInterval,
+    enableActivityTracking = defaultOptions.enableActivityTracking,
+    activityUpdateThrottle = defaultOptions.activityUpdateThrottle
   } = options;
 
   const { data: session, update } = useSession();
@@ -138,9 +142,12 @@ export function useSessionTimeout(options: SessionTimeoutOptions = {}): SessionT
  * This is the recommended version for most use cases
  */
 export function useSessionTimeoutSimple(): SessionTimeoutHook {
+  // Get default options from centralized configuration
+  const defaultOptions = getDefaultSessionTimeoutOptions();
+  
   return useSessionTimeout({
-    warningTime: 300, // 5 minutes warning
-    checkInterval: 30000, // Check every 30 seconds
+    warningTime: defaultOptions.warningTime,
+    checkInterval: defaultOptions.checkInterval,
     enableActivityTracking: false // No automatic activity tracking
   });
 }
@@ -150,11 +157,14 @@ export function useSessionTimeoutSimple(): SessionTimeoutHook {
  * Use this if you need the old useSessionTimeout behavior
  */
 export function useSessionTimeoutWithActivity(): SessionTimeoutHook {
+  // Get default options from centralized configuration
+  const defaultOptions = getDefaultSessionTimeoutOptions();
+  
   return useSessionTimeout({
-    warningTime: 300, // 5 minutes warning
+    warningTime: defaultOptions.warningTime,
     checkInterval: 1000, // Check every second (like the old hook)
     enableActivityTracking: true, // Enable activity tracking
-    activityUpdateThrottle: 300000 // Update every 5 minutes
+    activityUpdateThrottle: defaultOptions.activityUpdateThrottle
   });
 }
 

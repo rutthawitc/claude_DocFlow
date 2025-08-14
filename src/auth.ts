@@ -10,6 +10,7 @@ import { users, roles, userRoles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { DocFlowAuth } from '@/lib/auth/docflow-auth';
 import { LocalAdminService } from '@/lib/auth/local-admin';
+import { getValidatedSessionConfig } from '@/lib/config/session-config';
 
 // ประเภทข้อมูลสำหรับผู้ใช้งาน PWA
 interface PWAUserData {
@@ -114,13 +115,16 @@ async function getUserRolesAndPermissions(userId: string) {
   }
 }
 
+// Get centralized session configuration
+const sessionConfig = getValidatedSessionConfig();
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   basePath: '/api/auth',
   debug: process.env.NODE_ENV === 'development',
   session: {
     strategy: 'jwt',
-    maxAge: 4 * 60 * 60, // 4 hours absolute timeout
-    updateAge: 30 * 60, // 30 minutes idle timeout - session updates every 30 minutes
+    maxAge: sessionConfig.absoluteTimeoutSeconds, // Centralized absolute timeout
+    updateAge: sessionConfig.idleTimeoutSeconds, // Centralized idle timeout
   },
   pages: {
     signIn: '/login',
@@ -477,14 +481,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.lastActivity = now;
       }
       
-      // Check idle timeout (30 minutes = 1800 seconds)
-      if (token.lastActivity && now - (token.lastActivity as number) > 30 * 60) {
+      // Check idle timeout using centralized configuration
+      if (token.lastActivity && now - (token.lastActivity as number) > sessionConfig.idleTimeoutSeconds) {
         console.log('Session idle timeout exceeded');
         return null; // Force re-authentication
       }
       
-      // Check absolute timeout (4 hours = 14400 seconds)
-      if (token.iat && now - (token.iat as number) > 4 * 60 * 60) {
+      // Check absolute timeout using centralized configuration
+      if (token.iat && now - (token.iat as number) > sessionConfig.absoluteTimeoutSeconds) {
         console.log('Session absolute timeout exceeded');
         return null; // Force re-authentication
       }
