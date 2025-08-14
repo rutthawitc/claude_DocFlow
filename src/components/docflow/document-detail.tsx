@@ -401,7 +401,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
               {document.uploader && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">ผู้อัปโหลด</h4>
-                  <div className="flex items-center gap-2 justify-end">
+                  <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
                       {document.uploader.firstName} {document.uploader.lastName}
