@@ -234,10 +234,10 @@ export class DocumentService {
 
       // Add date range filters
       if (filters.dateFrom) {
-        conditions.push(gte(documents.uploadDate, filters.dateFrom));
+        conditions.push(gte(documents.createdAt, filters.dateFrom));
       }
       if (filters.dateTo) {
-        conditions.push(lte(documents.uploadDate, filters.dateTo));
+        conditions.push(lte(documents.createdAt, filters.dateTo));
       }
 
       // Add search filter
@@ -276,7 +276,7 @@ export class DocumentService {
         .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
         .leftJoin(users, eq(documents.uploaderId, users.id))
         .where(whereClause)
-        .orderBy(desc(documents.uploadDate))
+        .orderBy(desc(documents.createdAt))
         .limit(filters.limit)
         .offset(offset);
 
@@ -658,10 +658,10 @@ export class DocumentService {
 
       // Add date range filters
       if (filters.dateFrom) {
-        conditions.push(gte(documents.uploadDate, filters.dateFrom));
+        conditions.push(gte(documents.createdAt, filters.dateFrom));
       }
       if (filters.dateTo) {
-        conditions.push(lte(documents.uploadDate, filters.dateTo));
+        conditions.push(lte(documents.createdAt, filters.dateTo));
       }
 
       // Add search condition
@@ -695,7 +695,7 @@ export class DocumentService {
         .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
         .leftJoin(users, eq(documents.uploaderId, users.id))
         .where(whereClause)
-        .orderBy(desc(documents.uploadDate))
+        .orderBy(desc(documents.createdAt))
         .limit(filters.limit)
         .offset(offset);
 
@@ -849,10 +849,10 @@ export class DocumentService {
 
       // Add date range filters
       if (filters.dateFrom) {
-        conditions.push(gte(documents.uploadDate, filters.dateFrom));
+        conditions.push(gte(documents.createdAt, filters.dateFrom));
       }
       if (filters.dateTo) {
-        conditions.push(lte(documents.uploadDate, filters.dateTo));
+        conditions.push(lte(documents.createdAt, filters.dateTo));
       }
 
       // Add search condition
@@ -889,7 +889,7 @@ export class DocumentService {
         .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
         .leftJoin(users, eq(documents.uploaderId, users.id))
         .where(whereClause)
-        .orderBy(desc(documents.uploadDate))
+        .orderBy(desc(documents.createdAt))
         .limit(filters.limit)
         .offset(offset);
 

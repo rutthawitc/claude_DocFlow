@@ -472,24 +472,34 @@ export function DocumentsList({
                     </div>
 
                     {/* Metadata */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {format(new Date(doc.mtDate), 'dd/MM/yyyy', { locale: th })}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 flex-shrink-0" />
+                        <span>{format(new Date(doc.mtDate), 'dd/MM/yyyy', { locale: th })}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        {formatFileSize(doc.fileSize)}
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 flex-shrink-0" />
+                        <span>{formatFileSize(doc.fileSize)}</span>
                       </div>
-                      <div>
-                        ประจำ: {doc.monthYear}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">ประจำ:</span>
+                        <span>{doc.monthYear}</span>
                       </div>
-                      {doc.uploader && (
-                        <div className="text-right">
-                          โดย: {doc.uploader.firstName} {doc.uploader.lastName}
-                        </div>
-                      )}
                     </div>
+                    
+                    {/* Uploader and Upload Date */}
+                    {doc.uploader && (
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-gray-600 pt-2 border-t border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">โดย:</span>
+                          <span>{doc.uploader.firstName} {doc.uploader.lastName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">วันที่:</span>
+                          <span>{format(new Date(doc.createdAt), 'dd/MM/yyyy HH:mm', { locale: th })}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
