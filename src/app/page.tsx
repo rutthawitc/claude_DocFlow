@@ -9,11 +9,11 @@ export default async function Home() {
     <div className="flex flex-col min-h-[calc(100vh-64px)] items-center justify-center bg-gray-50 py-12 px-4">
       <div className="text-center space-y-6 max-w-3xl">
         <h1 className="text-4xl font-bold tracking-tight sm:text-4xl">
-          ระบบยืนยันตัวตนผู้ใช้งานการประปาส่วนภูมิภาค
+          ระบบติดตามสถานะเอกสารเบิกจ่าย
         </h1>
         <p className="text-xl text-gray-600">
-          ระบบสมัยใหม่ที่พัฒนาด้วย Next.js 15 และ Auth.js
-          เพื่อการจัดการผู้ใช้งานอย่างมีประสิทธิภาพ
+          ระบบนี้ช่วยให้คุณสามารถติดตามสถานะเอกสารเบิกจ่ายได้อย่างง่ายดาย
+          และมีประสิทธิภาพ
         </p>
         <div className="flex justify-center gap-4">
           {session ? (

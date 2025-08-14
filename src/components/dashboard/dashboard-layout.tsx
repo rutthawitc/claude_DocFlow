@@ -113,6 +113,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const isDistrictManager = userRoles.includes("district_manager");
   const canAccessAdmin = isAdmin || isDistrictManager;
   const canAccessSettings = isAdmin || isDistrictManager;
+  const canAccessReports = isAdmin || isDistrictManager;
 
   // Check if user can upload documents
   const canUpload =
@@ -140,11 +141,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       href: "/profile",
       icon: <User className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
     },
-    {
+    ...(canAccessReports ? [{
       title: "รายงาน",
       href: "/reports",
       icon: <BarChart3 className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
-    },
+    }] : []),
     ...(canAccessAdmin
       ? [
           {

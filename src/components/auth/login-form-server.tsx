@@ -23,57 +23,66 @@ import { useEffect, useState } from "react";
 export function LoginFormServer() {
   // initialState สำหรับ loginAction
   const initialState = { errors: {}, message: "" };
-  const [state, formAction, isPending] = useActionState(loginAction, initialState);
-  
+  const [state, formAction, isPending] = useActionState(
+    loginAction,
+    initialState
+  );
+
   // ใช้สถานะสำหรับแสดงข้อความข้อผิดพลาดของ signIn
   const [signInError, setSignInError] = useState("");
-  
+
   // ใช้ static ID เพื่อหลีกเลี่ยง hydration mismatch
   const usernameId = "login-username";
   const passwordId = "login-password";
-  
+
   // ใช้ useEffect เพื่อตรวจสอบและใช้ข้อมูล credentials จาก server action
   useEffect(() => {
     // ถ้ามีข้อมูล credentials จาก server action และการทำงานสำเร็จ
     if (state.success && state.credentials) {
-      console.log('Credentials received from server action, signing in from client');
+      console.log(
+        "Credentials received from server action, signing in from client"
+      );
       // เรียกใช้ signIn ในฝั่ง client
-      signIn('credentials', {
+      signIn("credentials", {
         username: state.credentials.username,
         pwd: state.credentials.pwd,
-        callbackUrl: '/documents',
+        callbackUrl: "/documents",
         redirect: true, // Use automatic redirect
-      }).then((result) => {
-        if (result?.error) {
-          console.log('Login error from client signIn:', result.error);
-          setSignInError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-        } else {
-          console.log('Login successful from client signIn');
-          // การ redirect จะถูกจัดการโดย login/page.tsx ใน useEffect ที่ตรวจสอบ session
-        }
-      }).catch((error) => {
-        console.error('SignIn error:', error);
-        setSignInError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง');
-      });
+      })
+        .then((result) => {
+          if (result?.error) {
+            console.log("Login error from client signIn:", result.error);
+            setSignInError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+          } else {
+            console.log("Login successful from client signIn");
+            // การ redirect จะถูกจัดการโดย login/page.tsx ใน useEffect ที่ตรวจสอบ session
+          }
+        })
+        .catch((error) => {
+          console.error("SignIn error:", error);
+          setSignInError("เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง");
+        });
     }
   }, [state]);
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">
+        {/*         <CardTitle className="text-2xl font-bold text-center">
           เข้าสู่ระบบ
         </CardTitle>
         <CardDescription className="text-center">
-          เข้าสู่ระบบด้วยบัญชี PWA ของคุณ
-        </CardDescription>
+          เข้าสู่ระบบด้วยบัญชี PWA Intranet
+        </CardDescription> */}
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
           {/* ไม่ใช้ csrf_token อีกต่อไป */}
           {(state.message || signInError) && (
             <Alert variant="destructive">
-              <AlertDescription>{state.message || signInError}</AlertDescription>
+              <AlertDescription>
+                {state.message || signInError}
+              </AlertDescription>
             </Alert>
           )}
 

@@ -1,5 +1,11 @@
 import { LoginFormWrapper } from "@/components/auth/login-form-wrapper";
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
@@ -15,9 +21,9 @@ export default async function LoginModal() {
     <Dialog open>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>เข้าสู่ระบบ</DialogTitle>
+          <DialogTitle>Doc Flow</DialogTitle>
           <DialogDescription>
-            เข้าสู่ระบบด้วยบัญชี PWA ของคุณ
+            เข้าสู่ระบบด้วยบัญชี PWA Intranet ของคุณ
           </DialogDescription>
         </DialogHeader>
         <LoginFormWrapper />
