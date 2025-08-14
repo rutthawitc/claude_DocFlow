@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 export default async function LoginModal() {
   const session = await auth();
@@ -21,7 +22,15 @@ export default async function LoginModal() {
     <Dialog open>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Doc Flow</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Image 
+              src="/document-icon.svg" 
+              alt="Document icon" 
+              width={24} 
+              height={24}
+            />
+            Docflow
+          </DialogTitle>
           <DialogDescription>
             เข้าสู่ระบบด้วยบัญชี PWA Intranet ของคุณ
           </DialogDescription>

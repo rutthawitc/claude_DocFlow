@@ -6,8 +6,8 @@ import { AuthContextProvider } from "@/context/auth-context";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "PWA Authentication System'",
-  description: "NextJS 15 และ Auth.js Authentication System",
+  title: "DocFlow - ระบบติดตามสถานะเอกสารเบิกจ่าย",
+  description: "PWA Documents workflow & tracking System",
 };
 
 export default function RootLayout({
