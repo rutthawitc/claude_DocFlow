@@ -42,6 +42,7 @@ export default function ClientOnlyLoginPage() {
   // Get search params - safe since this is client-only
   const expired = searchParams.get('expired');
   const idle = searchParams.get('idle');
+  const error = searchParams.get('error');
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -72,6 +73,24 @@ export default function ClientOnlyLoginPage() {
               <div className="text-sm text-blue-800">
                 <p className="font-medium">เซสชันหมดอายุเนื่องจากไม่มีการใช้งาน</p>
                 <p>กรุณาเข้าสู่ระบบอีกครั้ง</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Authentication error messages */}
+        {error && (
+          <div className="rounded-md bg-red-50 p-4 border border-red-200">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+              <div className="text-sm text-red-800">
+                <p className="font-medium">เข้าสู่ระบบไม่สำเร็จ</p>
+                <p>
+                  {error === 'CredentialsSignin' 
+                    ? 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบและลองอีกครั้ง' 
+                    : 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองอีกครั้ง'
+                  }
+                </p>
               </div>
             </div>
           </div>

@@ -30,6 +30,11 @@ export function LoginFormServer() {
 
   // ใช้สถานะสำหรับแสดงข้อความข้อผิดพลาดของ signIn
   const [signInError, setSignInError] = useState("");
+  
+  // Clear errors when user starts typing
+  const clearErrors = () => {
+    if (signInError) setSignInError("");
+  };
 
   // ใช้ static ID เพื่อหลีกเลี่ยง hydration mismatch
   const usernameId = "login-username";
@@ -47,15 +52,16 @@ export function LoginFormServer() {
         username: state.credentials.username,
         pwd: state.credentials.pwd,
         callbackUrl: "/documents",
-        redirect: true, // Use automatic redirect
+        redirect: false, // Don't redirect automatically to handle errors properly
       })
         .then((result) => {
           if (result?.error) {
             console.log("Login error from client signIn:", result.error);
-            setSignInError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
-          } else {
+            setSignInError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบและลองอีกครั้ง");
+          } else if (result?.ok) {
             console.log("Login successful from client signIn");
-            // การ redirect จะถูกจัดการโดย login/page.tsx ใน useEffect ที่ตรวจสอบ session
+            // Redirect manually on success
+            window.location.href = "/documents";
           }
         })
         .catch((error) => {
@@ -93,6 +99,7 @@ export function LoginFormServer() {
               name="username"
               placeholder="กรอกชื่อผู้ใช้"
               required
+              onChange={clearErrors}
             />
             {state.errors?.username && (
               <p className="text-sm text-red-500">{state.errors.username}</p>
@@ -107,6 +114,7 @@ export function LoginFormServer() {
               type="password"
               placeholder="กรอกรหัสผ่าน"
               required
+              onChange={clearErrors}
             />
             {state.errors?.pwd && (
               <p className="text-sm text-red-500">{state.errors.pwd}</p>
