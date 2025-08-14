@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLoadingState } from '@/hooks/useLoadingState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,20 +42,16 @@ interface DraftedDocumentsListProps {
 export function DraftedDocumentsList({ onEditDocument, refreshTrigger }: DraftedDocumentsListProps) {
   const router = useRouter();
   const [draftDocuments, setDraftDocuments] = useState<DraftDocument[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { loading, error, execute, setError } = useLoadingState({ initialLoading: true });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<DraftDocument | null>(null);
 
   // Fetch drafted documents
   const fetchDraftDocuments = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch('/api/documents?status=draft', {
+      const response = await execute(fetch('/api/documents?status=draft', {
         credentials: 'include'
-      });
+      }));
 
       const result = await response.json();
 
@@ -66,9 +63,7 @@ export function DraftedDocumentsList({ onEditDocument, refreshTrigger }: Drafted
       }
     } catch (err) {
       console.error('Error fetching drafted documents:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load drafted documents');
-    } finally {
-      setLoading(false);
+      // Error is automatically handled by execute()
     }
   };
 
