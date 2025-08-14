@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { NextRequest } from 'next/server';
+import { withAuthHandler } from '@/lib/middleware/api-auth';
+import { ApiResponseHandler } from '@/lib/middleware/api-responses';
 import { FileManagementService } from '@/lib/services/file-management-service';
 import { DocFlowAuth } from '@/lib/auth/docflow-auth';
-import { rateLimiters, addRateLimitHeaders } from '@/lib/rate-limit';
 import { z } from 'zod';
 
 // Validation schemas
@@ -28,67 +28,15 @@ const BackupRequestSchema = z.object({
 /**
  * GET /api/files/management - Get file statistics and settings
  */
-export async function GET(request: NextRequest) {
-  try {
-    // Apply rate limiting
-    const apiRateLimit = await rateLimiters.api.checkLimit(request);
-    if (!apiRateLimit.success) {
-      const response = NextResponse.json(
-        {
-          success: false,
-          error: 'Too Many Requests',
-          message: 'API rate limit exceeded. Please try again later.',
-          retryAfter: apiRateLimit.retryAfter
-        },
-        { status: 429 }
-      );
-      addRateLimitHeaders(response, apiRateLimit);
-      return response;
-    }
-
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-      const response = NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-      addRateLimitHeaders(response, apiRateLimit);
-      return response;
-    }
-
-    const username = session.user.id;
-
-    // Get user from database
-    const { getDb } = await import('@/db');
-    const { users } = await import('@/db/schema');
-    const { eq } = await import('drizzle-orm');
-    
-    const db = await getDb();
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username)
-    });
-    
-    if (!user) {
-      const response = NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 401 }
-      );
-      addRateLimitHeaders(response, apiRateLimit);
-      return response;
-    }
+export const GET = withAuthHandler(
+  async (request, { user }) => {
 
     // Check permissions (admin or district manager only)
-    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(user.id);
+    const { roles } = await DocFlowAuth.getUserRolesAndPermissions(user.databaseId);
     const hasPermission = roles.includes('admin') || roles.includes('district_manager');
     
     if (!hasPermission) {
-      const response = NextResponse.json(
-        { success: false, error: 'Insufficient permissions. Admin or district manager access required.' },
-        { status: 403 }
-      );
-      addRateLimitHeaders(response, apiRateLimit);
-      return response;
+      return ApiResponseHandler.forbidden('Insufficient permissions. Admin or district manager access required.');
     }
 
     // Get file statistics and settings
@@ -97,29 +45,15 @@ export async function GET(request: NextRequest) {
       FileManagementService.getFileSettings(),
     ]);
 
-    const response = NextResponse.json({
-      success: true,
-      data: {
-        stats,
-        settings,
-      }
+    return ApiResponseHandler.success({
+      stats,
+      settings,
     });
-    addRateLimitHeaders(response, apiRateLimit);
-    return response;
-
-  } catch (error) {
-    console.error('File management GET error:', error);
-    
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+  },
+  {
+    requireAuth: true
   }
-}
+);
 
 /**
  * PUT /api/files/management - Update file management settings
