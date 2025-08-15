@@ -203,7 +203,9 @@ export async function validateRequest(
 
     // Validate params if schema provided
     if (validation?.params && context?.params) {
-      validatedData.params = validation.params.parse(context.params);
+      // Handle Next.js 15 params Promise
+      const params = context.params instanceof Promise ? await context.params : context.params;
+      validatedData.params = validation.params.parse(params);
     }
 
     // Validate query parameters if schema provided
@@ -370,7 +372,9 @@ export function withAuthHandler<T = any>(
   return async (request: NextRequest, context?: { params?: any }): Promise<NextResponse> => {
     try {
       const { user, validatedData } = await withAuth(request, options, context);
-      return await handler(request, { user, params: context?.params, validatedData });
+      // Handle Next.js 15 params Promise
+      const params = context?.params instanceof Promise ? await context.params : context?.params;
+      return await handler(request, { user, params, validatedData });
     } catch (error) {
       if (error instanceof ApiAuthError) {
         return createAuthErrorResponse(error, request, options.rateLimit);

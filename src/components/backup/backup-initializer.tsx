@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Play, RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLoadingState } from '@/hooks/useLoadingState';
 
 interface BackupStatus {
   initialized: boolean;
@@ -23,8 +24,8 @@ interface BackupStatus {
 export function BackupInitializer() {
   const { data: session } = useSession();
   const [status, setStatus] = useState<BackupStatus>({ initialized: false });
-  const [loading, setLoading] = useState(false);
-  const [initializing, setInitializing] = useState(false);
+  const statusLoading = useLoadingState();
+  const initializeLoading = useLoadingState();
 
   // Check if user has admin or district_manager role
   const userRoles = session?.user?.pwa?.roles || [];
@@ -34,9 +35,8 @@ export function BackupInitializer() {
   const checkStatus = async () => {
     if (!hasPermission) return;
     
-    setLoading(true);
     try {
-      const response = await fetch('/api/backup/init');
+      const response = await statusLoading.execute(fetch('/api/backup/init'));
       const result = await response.json();
       
       if (result.success) {
@@ -60,18 +60,18 @@ export function BackupInitializer() {
         running: false,
         error: 'Failed to check backup status'
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   // Initialize backup scheduler
   const initializeScheduler = async () => {
-    setInitializing(true);
+    // Using centralized loading hook
     try {
-      const response = await fetch('/api/backup/init', {
-        method: 'POST'
-      });
+      const response = await initializeLoading.execute(
+        fetch('/api/backup/init', {
+          method: 'POST'
+        })
+      );
       const result = await response.json();
 
       if (result.success) {
@@ -83,8 +83,6 @@ export function BackupInitializer() {
     } catch (error) {
       console.error('Error initializing backup scheduler:', error);
       toast.error('❌ Failed to initialize backup scheduler');
-    } finally {
-      setInitializing(false);
     }
   };
 
@@ -126,7 +124,7 @@ export function BackupInitializer() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {loading ? (
+            {statusLoading.loading ? (
               <Badge variant="secondary">
                 <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
                 Checking...
@@ -183,9 +181,9 @@ export function BackupInitializer() {
             variant="outline"
             size="sm"
             onClick={checkStatus}
-            disabled={loading}
+            disabled={statusLoading.loading}
           >
-            {loading ? (
+            {statusLoading.loading ? (
               <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -197,9 +195,9 @@ export function BackupInitializer() {
             <Button
               size="sm"
               onClick={initializeScheduler}
-              disabled={initializing}
+              disabled={initializeLoading.loading}
             >
-              {initializing ? (
+              {initializeLoading.loading ? (
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Play className="h-4 w-4 mr-2" />
