@@ -10,6 +10,7 @@ import { users, roles, userRoles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { DocFlowAuth } from '@/lib/auth/docflow-auth';
 import { LocalAdminService } from '@/lib/auth/local-admin';
+import { getValidatedSessionConfig } from '@/lib/config/session-config';
 
 // ประเภทข้อมูลสำหรับผู้ใช้งาน PWA
 interface PWAUserData {
@@ -114,13 +115,16 @@ async function getUserRolesAndPermissions(userId: string) {
   }
 }
 
+// Get centralized session configuration
+const sessionConfig = getValidatedSessionConfig();
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   basePath: '/api/auth',
   debug: process.env.NODE_ENV === 'development',
   session: {
     strategy: 'jwt',
-    maxAge: 4 * 60 * 60, // 4 hours absolute timeout
-    updateAge: 30 * 60, // 30 minutes idle timeout - session updates every 30 minutes
+    maxAge: sessionConfig.absoluteTimeoutSeconds, // Centralized absolute timeout
+    updateAge: sessionConfig.idleTimeoutSeconds, // Centralized idle timeout
   },
   pages: {
     signIn: '/login',
@@ -149,8 +153,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        let pwaAuthSuccess = false;
+        let data = null;
+
+        // Try PWA API authentication first
         try {
-          // First try PWA API authentication
           console.log('🔄 Attempting PWA API authentication...');
           const response = await fetch(process.env.PWA_AUTH_URL, {
             method: 'POST',
@@ -163,26 +170,42 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }),
           });
 
-          let pwaAuthSuccess = false;
-          let data = null;
-
           if (response.ok) {
-            data = await response.json();
-            console.log('PWA API response:', JSON.stringify(data, null, 2));
-            
-            if (data && data.status === 'success') {
-              pwaAuthSuccess = true;
-              console.log('✅ PWA API authentication successful');
-            } else {
-              console.log('❌ PWA API authentication failed');
+            try {
+              const responseText = await response.text();
+              console.log('PWA API raw response:', responseText);
+              
+              // Clean up the response text (remove extra parentheses if present)
+              const cleanedResponseText = responseText.replace(/^\(/, '').replace(/\);?$/, '');
+              console.log('PWA API cleaned response:', cleanedResponseText);
+              
+              // Try to parse JSON
+              data = JSON.parse(cleanedResponseText);
+              console.log('PWA API response:', JSON.stringify(data, null, 2));
+              
+              if (data && data.status === 'success') {
+                pwaAuthSuccess = true;
+                console.log('✅ PWA API authentication successful');
+              } else {
+                console.log('❌ PWA API authentication failed');
+              }
+            } catch (jsonError) {
+              console.error('PWA API JSON parsing error:', jsonError);
+              console.log('❌ PWA API returned invalid JSON, falling back to local admin');
             }
           } else {
             console.error('PWA API error, status:', response.status);
           }
+        } catch (fetchError) {
+          console.error('PWA API fetch error:', fetchError);
+          console.log('❌ PWA API request failed, falling back to local admin');
+        }
 
-          // If PWA API fails, try local admin authentication
-          if (!pwaAuthSuccess) {
-            console.log('🔄 Attempting local admin authentication...');
+        // If PWA API fails, try local admin authentication
+        if (!pwaAuthSuccess) {
+          console.log('🔄 Attempting local admin authentication...');
+          
+          try {
             const localAdmin = await LocalAdminService.authenticateLocalAdmin(username, password);
             
             if (localAdmin) {
@@ -217,15 +240,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               console.log('❌ Local admin authentication failed');
               return null;
             }
-          }
-
-          // Continue with PWA API success flow
-          if (!pwaAuthSuccess || !data) {
-            console.error('Both PWA API and local admin authentication failed');
+          } catch (localAdminError) {
+            console.error('Local admin authentication error:', localAdminError);
             return null;
           }
+        }
 
-          console.log('API login success');
+        // Continue with PWA API success flow
+        if (!pwaAuthSuccess || !data) {
+          console.error('Both PWA API and local admin authentication failed');
+          return null;
+        }
+
+        console.log('API login success');
+        
+        try {
           
           // Create or update user in database
           const userId = data.username.toString();
@@ -477,14 +506,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.lastActivity = now;
       }
       
-      // Check idle timeout (30 minutes = 1800 seconds)
-      if (token.lastActivity && now - (token.lastActivity as number) > 30 * 60) {
+      // Check idle timeout using centralized configuration
+      if (token.lastActivity && now - (token.lastActivity as number) > sessionConfig.idleTimeoutSeconds) {
         console.log('Session idle timeout exceeded');
         return null; // Force re-authentication
       }
       
-      // Check absolute timeout (4 hours = 14400 seconds)
-      if (token.iat && now - (token.iat as number) > 4 * 60 * 60) {
+      // Check absolute timeout using centralized configuration
+      if (token.iat && now - (token.iat as number) > sessionConfig.absoluteTimeoutSeconds) {
         console.log('Session absolute timeout exceeded');
         return null; // Force re-authentication
       }

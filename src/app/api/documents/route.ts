@@ -10,7 +10,6 @@ import {
   validateQuery,
   handleValidationError 
 } from '@/lib/validation/middleware';
-import { rateLimiters, addRateLimitHeaders } from '@/lib/rate-limit';
 
 // POST - Upload document with specialized handler
 export async function POST(request: NextRequest) {
@@ -19,34 +18,8 @@ export async function POST(request: NextRequest) {
 
 // GET - Search and list documents
 export const GET = withAuthHandler(
-  async (request, { user }) => {
-    // Apply general API rate limiting
-    const apiRateLimit = await rateLimiters.api.checkLimit(request);
-    if (!apiRateLimit.success) {
-      const response = ApiResponseHandler.rateLimited(
-        'API rate limit exceeded. Please try again later.',
-        apiRateLimit.retryAfter
-      );
-      addRateLimitHeaders(response, apiRateLimit);
-      return response;
-    }
-
-    const { searchParams } = new URL(request.url);
-
-    // Validate query parameters with Zod schema
-    let validatedQuery;
-    try {
-      validatedQuery = validateQuery(searchParams, documentSearchSchema);
-      console.log('Documents API - Query parameters validated successfully');
-    } catch (validationError) {
-      console.error('Documents API - Query validation error:', validationError);
-      if (validationError instanceof ValidationError) {
-        return handleValidationError(validationError);
-      }
-      throw validationError;
-    }
-
-    const { search, status, page, limit, dateFrom, dateTo } = validatedQuery;
+  async (request, { user, validatedData }) => {
+    const { search, status, page, limit, dateFrom, dateTo } = validatedData.query;
     const dateFromObj = dateFrom ? new Date(dateFrom) : undefined;
     const dateToObj = dateTo ? new Date(dateTo) : undefined;
 
@@ -60,28 +33,24 @@ export const GET = withAuthHandler(
                          roles.includes('district_manager');
 
     if (accessibleBranches.length === 0 && status !== 'draft') {
-      const response = ApiResponseHandler.successPaginated(
+      return ApiResponseHandler.successPaginated(
         [],
         0,
         page,
         limit
       );
-      addRateLimitHeaders(response, apiRateLimit);
-      return response;
     }
 
     // For draft documents, only allow users with upload permissions to see them
     let result;
     if (status === 'draft') {
       if (!canViewDrafts) {
-        const response = ApiResponseHandler.successPaginated(
+        return ApiResponseHandler.successPaginated(
           [],
           0,
           page,
           limit
         );
-        addRateLimitHeaders(response, apiRateLimit);
-        return response;
       }
       
       result = await DocumentService.getUserOwnDocuments(user.databaseId, {
@@ -105,11 +74,13 @@ export const GET = withAuthHandler(
       });
     }
 
-    const response = ApiResponseHandler.success(result);
-    addRateLimitHeaders(response, apiRateLimit);
-    return response;
+    return ApiResponseHandler.success(result);
   },
   {
-    requireAuth: true
+    requireAuth: true,
+    rateLimit: 'api',
+    validation: {
+      query: documentSearchSchema
+    }
   }
 );

@@ -1,31 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { CacheService } from '@/lib/cache/cache-service';
 import { RedisService } from '@/lib/cache/redis-config';
 import { PDFStreamingService } from '@/lib/services/pdf-streaming-service';
 import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 
-export async function GET(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Check admin permissions
-    const userPermissions = await DocFlowAuth.getUserRolesAndPermissions(parseInt(session.user.id));
-    const hasAdminAccess = userPermissions.permissions.includes(DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS);
-
-    if (!hasAdminAccess) {
-      return NextResponse.json(
-        { success: false, error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
+export const GET = withAuthHandler(
+  async (request, { user }) => {
 
     // Get cache service instance
     const cache = CacheService.getInstance();
@@ -83,43 +64,22 @@ export async function GET(request: NextRequest) {
       success: true,
       data: stats,
     });
-  } catch (error) {
-    console.error('Error getting cache stats:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to get cache statistics' },
-      { status: 500 }
-    );
+  },
+  {
+    requireAuth: true,
+    requiredPermissions: [DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS],
+    rateLimit: 'api'
   }
-}
+);
 
-export async function DELETE(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Check admin permissions
-    const userPermissions = await DocFlowAuth.getUserRolesAndPermissions(parseInt(session.user.id));
-    const hasAdminAccess = userPermissions.permissions.includes(DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS);
-
-    if (!hasAdminAccess) {
-      return NextResponse.json(
-        { success: false, error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
-
+export const DELETE = withAuthHandler(
+  async (request, { user }) => {
     // Clear all cache
     const cache = CacheService.getInstance();
     const success = await cache.clear();
 
     if (success) {
-      console.log(`🗑️ Cache cleared by admin user ${session.user.id}`);
+      console.log(`🗑️ Cache cleared by admin user ${user.sessionUserId}`);
       return NextResponse.json({
         success: true,
         message: 'Cache cleared successfully',
@@ -130,14 +90,13 @@ export async function DELETE(request: NextRequest) {
         { status: 500 }
       );
     }
-  } catch (error) {
-    console.error('Error clearing cache:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to clear cache' },
-      { status: 500 }
-    );
+  },
+  {
+    requireAuth: true,
+    requiredPermissions: [DOCFLOW_PERMISSIONS.ADMIN_FULL_ACCESS],
+    rateLimit: 'api'
   }
-}
+);
 
 async function generateRecommendations(
   cacheStats: any,

@@ -60,7 +60,10 @@
       "Bash(git merge:*)",
       "Bash(git reset:*)",
       "Bash(git restore:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(rg:*)",
+      "Bash(npm run build:*)",
+      "Bash(/dev/null)"
     ],
     "deny": []
   }

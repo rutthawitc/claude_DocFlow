@@ -1,42 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { NextRequest } from 'next/server';
+import { withAuthHandler } from '@/lib/middleware/api-auth';
+import { ApiResponseHandler } from '@/lib/middleware/api-responses';
 import { BranchService } from '@/lib/services/branch-service';
 import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
-import { ApiResponse } from '@/lib/types';
 
-export async function GET(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const username = session.user.id; // This is actually the username (11008)
-    
-    // Get user from database by username to get the actual numeric ID
-    const { getDb } = await import('@/db');
-    const { users } = await import('@/db/schema');
-    const { eq } = await import('drizzle-orm');
-    
-    const db = await getDb();
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username)
-    });
-    
-    if (!user) {
-      console.error('User not found in database:', username);
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 401 }
-      );
-    }
-    
-    const actualUserId = user.id; // This is the numeric database ID
-    console.log('Branch API - Username:', username);
+export const GET = withAuthHandler(
+  async (request, { user }) => {
+    const actualUserId = user.databaseId;
+    console.log('Branch API - Username:', user.sessionUserId);
     console.log('Branch API - Actual user DB ID:', actualUserId);
     const { searchParams } = new URL(request.url);
 
@@ -64,10 +35,7 @@ export async function GET(request: NextRequest) {
     console.log('Branch API - Final permission result:', hasReadPermission);
 
     if (!hasReadPermission) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions to access branch data' },
-        { status: 403 }
-      );
+      return ApiResponseHandler.forbidden('Insufficient permissions to access branch data');
     }
 
     // Get user's role to determine what branches they can see
@@ -104,18 +72,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const response: ApiResponse<typeof branches> = {
-      success: true,
-      data: branches
-    };
-
-    return NextResponse.json(response);
-
-  } catch (error) {
-    console.error('Error fetching branches:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return ApiResponseHandler.success(branches);
+  },
+  {
+    requireAuth: true
   }
-}
+);

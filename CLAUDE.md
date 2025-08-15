@@ -164,14 +164,17 @@ This application manages document workflow across regional branches:
 - Form data, query parameters, and JSON body validation
 - Type-safe parameter extraction and validation
 
-#### Session Timeout Management (`src/hooks/useSessionTimeoutSimple.ts`, `src/components/auth/SessionTimeoutWarning.tsx`)
+#### Session Timeout Management (`src/lib/config/session-config.ts`, `src/hooks/useSessionTimeoutSimple.ts`, `src/components/auth/SessionTimeoutWarning.tsx`)
 
-- Client-side session timeout monitoring with 30-second check intervals
-- User warning dialog displayed 5 minutes before session expiration
-- Manual session extension capability through warning interface
-- Automatic logout with timeout-specific redirect messages
-- Optimized implementation preventing navigation interference
-- Thai language localization for all timeout-related messages
+- **Centralized Configuration**: All session timeout values managed in `src/lib/config/session-config.ts`
+- **Environment Variable Support**: Configurable timeout values via environment variables
+- **Dual Timeout System**: 4-hour absolute timeout and 30-minute idle timeout
+- **Client-side Monitoring**: Real-time session status checking with 30-second intervals
+- **User Warning System**: 5-minute warning before session expiration with extension option
+- **Automatic Logout**: Seamless logout with timeout-specific redirect messages
+- **Type Safety**: TypeScript interfaces and validation for all timeout configurations
+- **Optimized Performance**: Prevention of navigation interference during timeout checks
+- **Thai Localization**: Complete Thai language support for all timeout-related messages
 
 #### System Settings Service (`src/lib/services/system-settings-service.ts`)
 
@@ -193,6 +196,11 @@ AUTH_TRUST_HOST=true
 # Optional: Telegram Bot Configuration (can also be set via UI)
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 TELEGRAM_CHAT_ID=your-default-chat-id
+
+# Optional: Session Timeout Configuration (defaults will be used if not set)
+SESSION_ABSOLUTE_TIMEOUT_SECONDS=14400  # 4 hours
+SESSION_IDLE_TIMEOUT_SECONDS=1800       # 30 minutes  
+SESSION_WARNING_TIME_SECONDS=300        # 5 minutes
 
 # Optional: Redis Configuration for Caching (falls back to in-memory if not configured)
 REDIS_HOST=localhost
@@ -574,3 +582,5 @@ The `useSessionTimeout` hook's core logic for checking expiration is in [src/hoo
       }
 ```
 
+
+- "Always ask me to start sev server. Because Sometime, I'm already started on port 3000. And if you want to user login, please ask me to input"

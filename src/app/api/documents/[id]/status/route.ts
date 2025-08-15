@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { DocumentService } from '@/lib/services/document-service';
 import { ActivityLogger } from '@/lib/services/activity-logger';
 import { NotificationService } from '@/lib/services/notification-service';
@@ -10,12 +10,6 @@ import {
   documentStatusUpdateSchema, 
   documentIdSchema
 } from '@/lib/validation/schemas';
-import { 
-  ValidationError,
-  validateBody,
-  validateParams,
-  handleValidationError 
-} from '@/lib/validation/middleware';
 
 interface RouteParams {
   params: Promise<{
@@ -25,62 +19,13 @@ interface RouteParams {
 
 export async function PATCH(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
-  try {
-    // Validate path parameters
-    let validatedParams;
-    try {
-      validatedParams = validateParams(params, documentIdSchema);
-    } catch (validationError) {
-      if (validationError instanceof ValidationError) {
-        return handleValidationError(validationError);
-      }
-      throw validationError;
-    }
-
-    const documentId = validatedParams.id;
-
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const username = session.user.id;
-
-    // Get user from database by username to get the actual numeric ID
-    const { getDb } = await import('@/db');
-    const { users } = await import('@/db/schema');
-    const { eq } = await import('drizzle-orm');
-    
-    const db = await getDb();
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username)
-    });
-    
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 401 }
-      );
-    }
-    
-    const actualUserId = user.id;
-
-    // Validate request body
-    let validatedBody;
-    try {
-      validatedBody = await validateBody(request, documentStatusUpdateSchema);
-    } catch (validationError) {
-      if (validationError instanceof ValidationError) {
-        return handleValidationError(validationError);
-      }
-      throw validationError;
-    }
-
-    const { status, comment } = validatedBody;
+  return withAuthHandler(
+    async (request, { user, validatedData }) => {
+      const documentId = validatedData.params.id;
+      const validatedBody = validatedData.body;
+      const actualUserId = user.databaseId;
+      
+      const { status, comment } = validatedBody;
 
     // Check update status permission
     const hasUpdatePermission = await DocFlowAuth.hasPermission(actualUserId, DOCFLOW_PERMISSIONS.DOCUMENTS_UPDATE_STATUS);
@@ -198,18 +143,14 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       message: `Document status updated to ${status}`
     };
 
-    return NextResponse.json(response);
-
-  } catch (error) {
-    console.error('Error updating document status:', error);
-    
-    if (error instanceof ValidationError) {
-      return handleValidationError(error);
+      return NextResponse.json(response);
+    },
+    {
+      requireAuth: true,
+      validation: {
+        params: documentIdSchema,
+        body: documentStatusUpdateSchema
+      }
     }
-    
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  )(request, { params });
 }

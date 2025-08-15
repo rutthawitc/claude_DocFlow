@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { useLoadingState } from "@/hooks/useLoadingState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,16 +111,15 @@ export default function SettingsPage() {
     largestFile: null,
   });
 
-  const [loading, setLoading] = useState({
-    testConnection: false,
-    testMessage: false,
-    saving: false,
-    loading: true, // Start with loading true
-    systemAlert: false,
-    fileManagement: false,
-    cleanup: false,
-    backup: false,
-  });
+  // Centralized loading states
+  const mainLoading = useLoadingState({ initialLoading: true, timeout: 30000 });
+  const testConnectionLoading = useLoadingState();
+  const testMessageLoading = useLoadingState();
+  const savingLoading = useLoadingState();
+  const systemAlertLoading = useLoadingState();
+  const fileManagementLoading = useLoadingState();
+  const cleanupLoading = useLoadingState();
+  const backupLoading = useLoadingState();
 
   const [modalState, setModalState] = useState({
     cleanupModal: false,
@@ -129,11 +129,9 @@ export default function SettingsPage() {
   // Load settings when component mounts
   useEffect(() => {
     const loadSettings = async () => {
-      setLoading(prev => ({ ...prev, loading: true }));
-      
       try {
         // Load Telegram settings
-        const telegramResponse = await fetch('/api/telegram/settings');
+        const telegramResponse = await mainLoading.execute(fetch('/api/telegram/settings'));
         const telegramResult = await telegramResponse.json();
         
         if (telegramResult.success && telegramResult.data) {
@@ -180,8 +178,7 @@ export default function SettingsPage() {
       } catch (error) {
         console.error('Error loading settings:', error);
         toast.error("❌ เกิดข้อผิดพลาดในการโหลดการตั้งค่า");
-      } finally {
-        setLoading(prev => ({ ...prev, loading: false }));
+        mainLoading.setError(error instanceof Error ? error.message : 'Failed to load settings');
       }
     };
 
@@ -195,18 +192,18 @@ export default function SettingsPage() {
       return;
     }
 
-    setLoading(prev => ({ ...prev, testConnection: true }));
-
     try {
-      const response = await fetch('/api/telegram/test-connection', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          botToken: telegramSettings.botToken,
-        }),
-      });
+      const response = await testConnectionLoading.execute(
+        fetch('/api/telegram/test-connection', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            botToken: telegramSettings.botToken,
+          }),
+        })
+      );
 
       const result = await response.json();
 
@@ -219,7 +216,7 @@ export default function SettingsPage() {
       console.error('Test connection error:', error);
       toast.error("❌ เกิดข้อผิดพลาดในการทดสอบการเชื่อมต่อ");
     } finally {
-      setLoading(prev => ({ ...prev, testConnection: false }));
+      // Loading handled by hook
     }
   };
 
@@ -235,19 +232,19 @@ export default function SettingsPage() {
       return;
     }
 
-    setLoading(prev => ({ ...prev, testMessage: true }));
-
     try {
-      const response = await fetch('/api/telegram/test-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          botToken: telegramSettings.botToken,
-          chatId: telegramSettings.defaultChatId,
-        }),
-      });
+      const response = await testMessageLoading.execute(
+        fetch('/api/telegram/test-message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            botToken: telegramSettings.botToken,
+            chatId: telegramSettings.defaultChatId,
+          }),
+        })
+      );
 
       const result = await response.json();
 
@@ -260,13 +257,13 @@ export default function SettingsPage() {
       console.error('Test message error:', error);
       toast.error("❌ เกิดข้อผิดพลาดในการส่งข้อความทดสอบ");
     } finally {
-      setLoading(prev => ({ ...prev, testMessage: false }));
+      // Loading handled by hook
     }
   };
 
   // Save Telegram settings
   const handleSaveSettings = async () => {
-    setLoading(prev => ({ ...prev, saving: true }));
+    // Using centralized loading hook
 
     try {
       const response = await fetch('/api/telegram/settings', {
@@ -299,13 +296,13 @@ export default function SettingsPage() {
       console.error('Save settings error:', error);
       toast.error("❌ เกิดข้อผิดพลาดในการบันทึกการตั้งค่า");
     } finally {
-      setLoading(prev => ({ ...prev, saving: false }));
+      // Loading handled by hook
     }
   };
 
   // Save system settings
   const handleSaveSystemSettings = async () => {
-    setLoading(prev => ({ ...prev, saving: true }));
+    // Using centralized loading hook
 
     try {
       const response = await fetch('/api/system-settings', {
@@ -344,13 +341,13 @@ export default function SettingsPage() {
       console.error('Save system settings error:', error);
       toast.error("❌ เกิดข้อผิดพลาดในการบันทึกการตั้งค่าระบบ");
     } finally {
-      setLoading(prev => ({ ...prev, saving: false }));
+      // Loading handled by hook
     }
   };
 
   // Send test system alert
   const handleTestSystemAlert = async () => {
-    setLoading(prev => ({ ...prev, systemAlert: true }));
+    // Using centralized loading hook
 
     try {
       const response = await fetch('/api/telegram/system-alert', {
@@ -376,22 +373,22 @@ export default function SettingsPage() {
       console.error('Test system alert error:', error);
       toast.error("❌ เกิดข้อผิดพลาดในการส่งการแจ้งเตือนทดสอบ");
     } finally {
-      setLoading(prev => ({ ...prev, systemAlert: false }));
+      // Loading handled by hook
     }
   };
 
   // Save file management settings
   const handleSaveFileSettings = async () => {
-    setLoading(prev => ({ ...prev, fileManagement: true }));
-
     try {
-      const response = await fetch('/api/files/management', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(fileSettings),
-      });
+      const response = await fileManagementLoading.execute(
+        fetch('/api/files/management', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(fileSettings),
+        })
+      );
 
       const result = await response.json();
 
@@ -411,8 +408,6 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Save file settings error:', error);
       toast.error("❌ เกิดข้อผิดพลาดในการบันทึกการตั้งค่าการจัดการไฟล์");
-    } finally {
-      setLoading(prev => ({ ...prev, fileManagement: false }));
     }
   };
 
@@ -436,7 +431,7 @@ export default function SettingsPage() {
   };
 
   const confirmFileCleanup = async () => {
-    setLoading(prev => ({ ...prev, cleanup: true }));
+    // Using centralized loading hook
 
     try {
       const response = await fetch('/api/files/management', {
@@ -471,7 +466,7 @@ export default function SettingsPage() {
       console.error('File cleanup error:', error);
       toast.error("❌ เกิดข้อผิดพลาดในการทำความสะอาดไฟล์");
     } finally {
-      setLoading(prev => ({ ...prev, cleanup: false }));
+      // Loading handled by hook
     }
   };
 
@@ -485,7 +480,7 @@ export default function SettingsPage() {
   };
 
   const confirmFileBackup = async () => {
-    setLoading(prev => ({ ...prev, backup: true }));
+    // Using centralized loading hook
 
     try {
       const response = await fetch('/api/files/management', {
@@ -510,7 +505,7 @@ export default function SettingsPage() {
       console.error('File backup error:', error);
       toast.error("❌ เกิดข้อผิดพลาดในการสำรองข้อมูล");
     } finally {
-      setLoading(prev => ({ ...prev, backup: false }));
+      // Loading handled by hook
     }
   };
 
@@ -597,8 +592,8 @@ export default function SettingsPage() {
           {/* Settings Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Backup Management Section */}
-            {!loading.loading && <BackupInitializer />}
-            {!loading.loading && (
+            {!mainLoading.loading && <BackupInitializer />}
+            {!mainLoading.loading && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -613,7 +608,7 @@ export default function SettingsPage() {
             )}
             
             {/* Loading indicator */}
-            {loading.loading && (
+            {mainLoading.loading && (
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-center space-x-2">
@@ -625,7 +620,7 @@ export default function SettingsPage() {
             )}
             
             {/* Telegram Settings */}
-            {!loading.loading && (
+            {!mainLoading.loading && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -725,17 +720,17 @@ export default function SettingsPage() {
                       disabled={
                         !telegramSettings.enabled || 
                         !telegramSettings.botToken ||
-                        loading.testConnection ||
-                        loading.testMessage ||
-                        loading.systemAlert
+                        testConnectionLoading.loading ||
+                        testMessageLoading.loading ||
+                        systemAlertLoading.loading
                       }
                     >
-                      {loading.testConnection ? (
+                      {testConnectionLoading.loading ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <TestTube className="h-4 w-4 mr-2" />
                       )}
-                      {loading.testConnection ? "กำลังทดสอบ..." : "ทดสอบการเชื่อมต่อ"}
+                      {testConnectionLoading.loading ? "กำลังทดสอบ..." : "ทดสอบการเชื่อมต่อ"}
                     </Button>
                     <Button
                       variant="outline"
@@ -745,17 +740,17 @@ export default function SettingsPage() {
                         !telegramSettings.enabled || 
                         !telegramSettings.botToken ||
                         !telegramSettings.defaultChatId ||
-                        loading.testConnection ||
-                        loading.testMessage ||
-                        loading.systemAlert
+                        testConnectionLoading.loading ||
+                        testMessageLoading.loading ||
+                        systemAlertLoading.loading
                       }
                     >
-                      {loading.testMessage ? (
+                      {testMessageLoading.loading ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <Send className="h-4 w-4 mr-2" />
                       )}
-                      {loading.testMessage ? "กำลังส่ง..." : "ส่งข้อความทดสอบ"}
+                      {testMessageLoading.loading ? "กำลังส่ง..." : "ส่งข้อความทดสอบ"}
                     </Button>
                     <Button
                       variant="outline"
@@ -766,17 +761,17 @@ export default function SettingsPage() {
                         !telegramSettings.botToken ||
                         !telegramSettings.defaultChatId ||
                         !telegramSettings.notifications.systemAlerts ||
-                        loading.testConnection ||
-                        loading.testMessage ||
-                        loading.systemAlert
+                        testConnectionLoading.loading ||
+                        testMessageLoading.loading ||
+                        systemAlertLoading.loading
                       }
                     >
-                      {loading.systemAlert ? (
+                      {systemAlertLoading.loading ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <AlertTriangle className="h-4 w-4 mr-2" />
                       )}
-                      {loading.systemAlert ? "กำลังส่ง..." : "ทดสอบแจ้งเตือนระบบ"}
+                      {systemAlertLoading.loading ? "กำลังส่ง..." : "ทดสอบแจ้งเตือนระบบ"}
                     </Button>
                   </div>
                 </div>
@@ -1039,10 +1034,10 @@ export default function SettingsPage() {
                 <div className="pt-4 border-t">
                   <Button 
                     onClick={handleSaveSettings}
-                    disabled={loading.saving}
+                    disabled={savingLoading.loading}
                     className="w-full"
                   >
-                    {loading.saving ? (
+                    {savingLoading.loading ? (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                         กำลังบันทึก...
@@ -1254,10 +1249,10 @@ export default function SettingsPage() {
                 <div className="pt-4 border-t">
                   <Button 
                     onClick={handleSaveSystemSettings}
-                    disabled={loading.saving}
+                    disabled={savingLoading.loading}
                     className="w-full"
                   >
-                    {loading.saving ? (
+                    {savingLoading.loading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         กำลังบันทึก...
@@ -1480,35 +1475,35 @@ export default function SettingsPage() {
                       variant="outline" 
                       size="sm"
                       onClick={handleFileCleanup}
-                      disabled={!fileSettings.cleanupEnabled || loading.cleanup}
+                      disabled={!fileSettings.cleanupEnabled || cleanupLoading.loading}
                     >
-                      {loading.cleanup ? (
+                      {cleanupLoading.loading ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <Trash2 className="h-4 w-4 mr-2" />
                       )}
-                      {loading.cleanup ? "กำลังทำความสะอาด..." : "ทำความสะอาดไฟล์"}
+                      {cleanupLoading.loading ? "กำลังทำความสะอาด..." : "ทำความสะอาดไฟล์"}
                     </Button>
                     
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={handleFileBackup}
-                      disabled={!fileSettings.backupEnabled || loading.backup}
+                      disabled={!fileSettings.backupEnabled || backupLoading.loading}
                     >
-                      {loading.backup ? (
+                      {backupLoading.loading ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <Archive className="h-4 w-4 mr-2" />
                       )}
-                      {loading.backup ? "กำลังสำรอง..." : "สำรองข้อมูล"}
+                      {backupLoading.loading ? "กำลังสำรอง..." : "สำรองข้อมูล"}
                     </Button>
 
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={refreshFileStats}
-                      disabled={loading.fileManagement}
+                      disabled={fileManagementLoading.loading}
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
                       รีเฟรชข้อมูล
@@ -1520,10 +1515,10 @@ export default function SettingsPage() {
                 <div className="pt-4 border-t">
                   <Button 
                     onClick={handleSaveFileSettings}
-                    disabled={loading.fileManagement}
+                    disabled={fileManagementLoading.loading}
                     className="w-full"
                   >
-                    {loading.fileManagement ? (
+                    {fileManagementLoading.loading ? (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                         กำลังบันทึก...

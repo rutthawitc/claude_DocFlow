@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useLoadingState } from '@/hooks/useLoadingState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ interface BackupHistoryProps {
 export function BackupHistory({ limit = 10, showTitle = true }: BackupHistoryProps) {
   const { data: session } = useSession();
   const [history, setHistory] = useState<BackupJobResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { loading, error, execute } = useLoadingState();
 
   // Check if user has admin or district_manager role
   const userRoles = session?.user?.pwa?.roles || [];
@@ -36,9 +37,8 @@ export function BackupHistory({ limit = 10, showTitle = true }: BackupHistoryPro
   const loadHistory = async () => {
     if (!hasPermission) return;
     
-    setLoading(true);
     try {
-      const response = await fetch(`/api/backup/history?limit=${limit}`);
+      const response = await execute(fetch(`/api/backup/history?limit=${limit}`));
       const result = await response.json();
       
       if (result.success) {
@@ -49,13 +49,11 @@ export function BackupHistory({ limit = 10, showTitle = true }: BackupHistoryPro
         }));
         setHistory(parsedHistory);
       } else {
-        toast.error(`❌ Failed to load backup history: ${result.error}`);
+        throw new Error(result.error || 'Failed to load backup history');
       }
     } catch (error) {
       console.error('Error loading backup history:', error);
-      toast.error('❌ Failed to load backup history');
-    } finally {
-      setLoading(false);
+      toast.error(`❌ Failed to load backup history: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

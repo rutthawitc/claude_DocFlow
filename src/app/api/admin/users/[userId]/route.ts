@@ -1,27 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { LocalAdminService } from '@/lib/auth/local-admin';
 import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 import { getDb } from '@/db';
 import { eq } from 'drizzle-orm';
 import { users } from '@/db/schema';
-
-// Helper function to get actual user database ID from username
-async function getUserDatabaseId(username: string): Promise<number | null> {
-  try {
-    const db = await getDb();
-    if (!db) return null;
-    
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username)
-    });
-    
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting user database ID:', error);
-    return null;
-  }
-}
 
 // GET - Get specific user
 export async function GET(

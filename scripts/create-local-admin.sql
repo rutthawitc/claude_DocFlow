@@ -9,7 +9,7 @@
 -- Variables (modify these as needed)
 -- Note: In production, these should be passed as environment variables
 \set admin_username 'localadmin'
-\set admin_password 'Admin123!'  -- Change this to a secure password
+\set admin_password 'Admin123' 
 \set admin_email 'admin@docflow.local'
 \set admin_first_name 'Local'
 \set admin_last_name 'Administrator'

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { DocumentService } from '@/lib/services/document-service';
 import { StreamingFileHandler } from '@/lib/services/file-service';
 import { ActivityLogger } from '@/lib/services/activity-logger';
@@ -13,17 +13,9 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise;
-  try {
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const username = session.user.id; // This is actually the username (11008)
+  return withAuthHandler(
+    async (request, { user }) => {
+    const userId = user.databaseId;
     const documentId = parseInt(params.id);
 
     if (isNaN(documentId)) {
@@ -32,25 +24,6 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
         { status: 400 }
       );
     }
-
-    // Get user from database by username to get the actual numeric ID
-    const { getDb } = await import('@/db');
-    const { users } = await import('@/db/schema');
-    const { eq } = await import('drizzle-orm');
-    
-    const db = await getDb();
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username)
-    });
-    
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 401 }
-      );
-    }
-    
-    const userId = user.id; // This is the numeric database ID
 
     // Get document
     const document = await DocumentService.getDocumentById(documentId);
@@ -104,12 +77,9 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
         'Cache-Control': 'private, max-age=3600'
       }
     });
-
-  } catch (error) {
-    console.error('Error downloading document:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+    },
+    {
+      requireAuth: true
+    }
+  )(request, { params });
 }
