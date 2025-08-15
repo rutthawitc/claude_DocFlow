@@ -153,8 +153,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        let pwaAuthSuccess = false;
+        let data = null;
+
+        // Try PWA API authentication first
         try {
-          // First try PWA API authentication
           console.log('🔄 Attempting PWA API authentication...');
           const response = await fetch(process.env.PWA_AUTH_URL, {
             method: 'POST',
@@ -167,26 +170,42 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }),
           });
 
-          let pwaAuthSuccess = false;
-          let data = null;
-
           if (response.ok) {
-            data = await response.json();
-            console.log('PWA API response:', JSON.stringify(data, null, 2));
-            
-            if (data && data.status === 'success') {
-              pwaAuthSuccess = true;
-              console.log('✅ PWA API authentication successful');
-            } else {
-              console.log('❌ PWA API authentication failed');
+            try {
+              const responseText = await response.text();
+              console.log('PWA API raw response:', responseText);
+              
+              // Clean up the response text (remove extra parentheses if present)
+              const cleanedResponseText = responseText.replace(/^\(/, '').replace(/\);?$/, '');
+              console.log('PWA API cleaned response:', cleanedResponseText);
+              
+              // Try to parse JSON
+              data = JSON.parse(cleanedResponseText);
+              console.log('PWA API response:', JSON.stringify(data, null, 2));
+              
+              if (data && data.status === 'success') {
+                pwaAuthSuccess = true;
+                console.log('✅ PWA API authentication successful');
+              } else {
+                console.log('❌ PWA API authentication failed');
+              }
+            } catch (jsonError) {
+              console.error('PWA API JSON parsing error:', jsonError);
+              console.log('❌ PWA API returned invalid JSON, falling back to local admin');
             }
           } else {
             console.error('PWA API error, status:', response.status);
           }
+        } catch (fetchError) {
+          console.error('PWA API fetch error:', fetchError);
+          console.log('❌ PWA API request failed, falling back to local admin');
+        }
 
-          // If PWA API fails, try local admin authentication
-          if (!pwaAuthSuccess) {
-            console.log('🔄 Attempting local admin authentication...');
+        // If PWA API fails, try local admin authentication
+        if (!pwaAuthSuccess) {
+          console.log('🔄 Attempting local admin authentication...');
+          
+          try {
             const localAdmin = await LocalAdminService.authenticateLocalAdmin(username, password);
             
             if (localAdmin) {
@@ -221,15 +240,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               console.log('❌ Local admin authentication failed');
               return null;
             }
-          }
-
-          // Continue with PWA API success flow
-          if (!pwaAuthSuccess || !data) {
-            console.error('Both PWA API and local admin authentication failed');
+          } catch (localAdminError) {
+            console.error('Local admin authentication error:', localAdminError);
             return null;
           }
+        }
 
-          console.log('API login success');
+        // Continue with PWA API success flow
+        if (!pwaAuthSuccess || !data) {
+          console.error('Both PWA API and local admin authentication failed');
+          return null;
+        }
+
+        console.log('API login success');
+        
+        try {
           
           // Create or update user in database
           const userId = data.username.toString();

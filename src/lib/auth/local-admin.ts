@@ -325,7 +325,34 @@ export class LocalAdminService {
 
       if (!user || !user.password) return null;
 
-      const isValidPassword = await bcrypt.compare(password, user.password);
+      // Check if password is already hashed (bcrypt hashes are 60 characters)
+      let isValidPassword = false;
+      
+      if (user.password.length === 60 && user.password.startsWith('$2')) {
+        // Password is already hashed, use bcrypt compare
+        isValidPassword = await bcrypt.compare(password, user.password);
+      } else {
+        // Password is plain text (transition period), compare directly and hash it
+        if (user.password === password) {
+          isValidPassword = true;
+          
+          // Update to hashed password for security
+          try {
+            const hashedPassword = await bcrypt.hash(password, 12);
+            await db.update(users)
+              .set({ 
+                password: hashedPassword,
+                updatedAt: new Date()
+              })
+              .where(eq(users.id, user.id));
+            console.log(`Updated plain text password to hashed for user: ${username}`);
+          } catch (hashError) {
+            console.error('Error updating password hash:', hashError);
+            // Continue with authentication even if hash update fails
+          }
+        }
+      }
+      
       if (!isValidPassword) return null;
 
       return await this.getLocalAdminUser(user.id);
