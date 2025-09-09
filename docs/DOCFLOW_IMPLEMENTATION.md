@@ -41,7 +41,7 @@ DocFlow is a comprehensive document management system implemented on top of the 
 branches (id, ba_code, branch_code, name, region_id, region_code, is_active, created_at, updated_at)
 
 -- Documents
-documents (id, file_path, original_filename, file_size, branch_ba_code, upload_date, mt_number, mt_date, subject, month_year, status, uploader_id, created_at, updated_at)
+documents (id, file_path, original_filename, file_size, branch_ba_code, upload_date, mt_number, mt_date, subject, month_year, status, uploader_id, doc_received_date, created_at, updated_at)
 
 -- Comments
 comments (id, document_id, user_id, content, created_at)
@@ -243,7 +243,8 @@ curl -X POST /api/documents \
   -F "mtNumber=MT001" \
   -F "mtDate=2024-01-15" \
   -F "subject=ขอเบิกค่าใช้จ่าย" \
-  -F "monthYear=มกราคม 2567"
+  -F "monthYear=มกราคม 2567" \
+  -F "docReceivedDate=2025-09-10"
 ```
 
 #### Update Status
