@@ -1,0 +1,1 @@
+ALTER TABLE "documents" ADD COLUMN "doc_received_date" date;

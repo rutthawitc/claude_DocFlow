@@ -31,7 +31,11 @@ export const documentUploadSchema = z.object({
     .min(1, 'Month/Year is required')
     .max(50, 'Month/Year must be less than 50 characters')
     .regex(/^[\u0E00-\u0E7F\s\d]+$/, 'Month/Year must contain only Thai characters, numbers and spaces')
-    .trim()
+    .trim(),
+
+  docReceivedDate: z.string()
+    .optional()
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'Document received date must be in YYYY-MM-DD format')
 });
 
 export const documentUpdateSchema = z.object({
@@ -63,7 +67,11 @@ export const documentUpdateSchema = z.object({
     .int('Branch BA code must be an integer')
     .min(1000, 'Branch BA code must be at least 1000')
     .max(9999, 'Branch BA code must be at most 9999')
+    .optional(),
+
+  docReceivedDate: z.string()
     .optional()
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'Document received date must be in YYYY-MM-DD format')
 }).refine(data => Object.values(data).some(value => value !== undefined), {
   message: 'At least one field must be provided for update'
 });

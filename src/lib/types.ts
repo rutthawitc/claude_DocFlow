@@ -42,6 +42,7 @@ export interface Document {
   mtDate: Date;
   subject: string;
   monthYear: string;
+  docReceivedDate?: Date;
   status: string;
   uploaderId: number;
   createdAt: Date;
@@ -108,6 +109,7 @@ export interface DocumentUploadData {
   mtDate: string;
   subject: string;
   monthYear: string;
+  docReceivedDate?: string;
 }
 
 export interface DocumentFilters {

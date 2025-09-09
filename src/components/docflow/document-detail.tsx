@@ -49,6 +49,7 @@ interface Document {
   mtDate: string;
   subject: string;
   monthYear: string;
+  docReceivedDate?: string;
   status: string;
   uploaderId: number;
   createdAt: string;
@@ -366,35 +367,48 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
                 <p className="text-gray-700 mt-1">{document.subject}</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">
-                    วันที่ มท: {format(new Date(document.mtDate), 'dd MMMM yyyy', { locale: th })}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Hash className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">
-                    ประจำเดือน: {document.monthYear}
-                  </span>
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">
+                      วันที่ มท: {format(new Date(document.mtDate), 'dd MMMM yyyy', { locale: th })}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">
+                      ประจำเดือน: {document.monthYear}
+                    </span>
+                  </div>
                 </div>
 
-                {document.branch && (
+                {document.docReceivedDate && (
                   <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-gray-500" />
+                    <Calendar className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
-                      {document.branch.name}
+                      วันที่รับเอกสารต้นฉบับจากสาขา: {format(new Date(document.docReceivedDate), 'dd MMMM yyyy', { locale: th })}
                     </span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">
-                    {formatFileSize(document.fileSize)}
-                  </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {document.branch && (
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">
+                        {document.branch.name}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">
+                      {formatFileSize(document.fileSize)}
+                    </span>
+                  </div>
                 </div>
               </div>
 

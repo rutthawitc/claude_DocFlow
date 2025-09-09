@@ -46,6 +46,7 @@ interface DocumentUploadProps {
     monthYear: string;
     branchBaCode: number;
     originalFilename: string;
+    docReceivedDate?: string;
   };
   onEditComplete?: () => void;
 }
@@ -56,6 +57,7 @@ interface FormData {
   mtDate: string;
   subject: string;
   monthYear: string;
+  docReceivedDate: string;
 }
 
 export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEditComplete }: DocumentUploadProps) {
@@ -70,7 +72,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     mtNumber: editDocument?.mtNumber || '',
     mtDate: editDocument?.mtDate || '',
     subject: editDocument?.subject || '',
-    monthYear: editDocument?.monthYear || getCurrentMonthYear()
+    monthYear: editDocument?.monthYear || getCurrentMonthYear(),
+    docReceivedDate: editDocument?.docReceivedDate || ''
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -85,7 +88,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         mtNumber: editDocument.mtNumber,
         mtDate: editDocument.mtDate,
         subject: editDocument.subject,
-        monthYear: editDocument.monthYear
+        monthYear: editDocument.monthYear,
+        docReceivedDate: editDocument.docReceivedDate || ''
       });
       // Clear any existing file selection when switching to edit mode
       setSelectedFile(null);
@@ -100,7 +104,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         mtNumber: '',
         mtDate: '',
         subject: '',
-        monthYear: getCurrentMonthYear()
+        monthYear: getCurrentMonthYear(),
+        docReceivedDate: ''
       });
     }
   }, [editDocument]);
@@ -258,7 +263,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           mtNumber: formData.mtNumber,
           mtDate: formData.mtDate,
           subject: formData.subject,
-          monthYear: formData.monthYear
+          monthYear: formData.monthYear,
+          docReceivedDate: formData.docReceivedDate
         };
 
         let response;
@@ -271,6 +277,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           uploadFormData.append('mtDate', formData.mtDate);
           uploadFormData.append('subject', formData.subject);
           uploadFormData.append('monthYear', formData.monthYear);
+          uploadFormData.append('docReceivedDate', formData.docReceivedDate);
 
           response = await fetch(`/api/documents/${editDocument.id}`, {
             method: 'PUT',
@@ -324,6 +331,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         uploadFormData.append('mtDate', formData.mtDate);
         uploadFormData.append('subject', formData.subject);
         uploadFormData.append('monthYear', formData.monthYear);
+        uploadFormData.append('docReceivedDate', formData.docReceivedDate);
 
         const response = await fetch('/api/documents', {
           method: 'POST',
@@ -354,7 +362,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             mtNumber: '',
             mtDate: '',
             subject: '',
-            monthYear: ''
+            monthYear: '',
+            docReceivedDate: ''
           });
           
           if (fileInputRef.current) {
@@ -502,25 +511,40 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         </div>
 
         <form className="space-y-4">
-          {/* Branch Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="branchBaCode">สาขา *</Label>
-            <select
-              id="branchBaCode"
-              value={formData.branchBaCode}
-              onChange={(e) => handleInputChange('branchBaCode', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">เลือกสาขา</option>
-              {branches.map((branch) => (
-                <option key={branch.baCode} value={branch.baCode}>
-                  {branch.name} (BA: {branch.baCode})
-                </option>
-              ))}
-            </select>
-            {(fieldErrors.branchBaCode || (errors.branchBaCode && errors.branchBaCode[0])) && (
-              <p className="text-sm text-red-600">{fieldErrors.branchBaCode || errors.branchBaCode[0]}</p>
-            )}
+          {/* Branch Selection and Doc Received Date */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="branchBaCode">สาขา *</Label>
+              <select
+                id="branchBaCode"
+                value={formData.branchBaCode}
+                onChange={(e) => handleInputChange('branchBaCode', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">เลือกสาขา</option>
+                {branches.map((branch) => (
+                  <option key={branch.baCode} value={branch.baCode}>
+                    {branch.name} (BA: {branch.baCode})
+                  </option>
+                ))}
+              </select>
+              {(fieldErrors.branchBaCode || (errors.branchBaCode && errors.branchBaCode[0])) && (
+                <p className="text-sm text-red-600">{fieldErrors.branchBaCode || errors.branchBaCode[0]}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="docReceivedDate">วันที่รับเอกสารต้นฉบับจากสาขา</Label>
+              <ThaiDatePicker
+                value={formData.docReceivedDate}
+                onChange={(value) => handleInputChange('docReceivedDate', value)}
+                placeholder="เลือกวันที่รับเอกสาร"
+                className={fieldErrors.docReceivedDate || (errors.docReceivedDate && errors.docReceivedDate[0]) ? 'border-red-300' : ''}
+              />
+              {(fieldErrors.docReceivedDate || (errors.docReceivedDate && errors.docReceivedDate[0])) && (
+                <p className="text-sm text-red-600">{fieldErrors.docReceivedDate || errors.docReceivedDate[0]}</p>
+              )}
+            </div>
           </div>
 
           {/* MT Number */}
@@ -629,7 +653,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                     mtNumber: '',
                     mtDate: '',
                     subject: '',
-                    monthYear: ''
+                    monthYear: '',
+                    docReceivedDate: ''
                   });
                   onEditComplete?.();
                 }}

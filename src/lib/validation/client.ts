@@ -28,7 +28,11 @@ export const clientDocumentUploadSchema = z.object({
     .min(1, 'กรุณาระบุประจำเดือน/ปี')
     .max(50, 'ประจำเดือน/ปีต้องมีความยาวไม่เกิน 50 ตัวอักษร')
     .regex(/^[\u0E00-\u0E7F\s\d]+$/, 'ประจำเดือน/ปีต้องเป็นภาษาไทย ตัวเลข และช่องว่างเท่านั้น')
-    .trim()
+    .trim(),
+
+  docReceivedDate: z.string()
+    .optional()
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'รูปแบบวันที่ไม่ถูกต้อง')
 });
 
 export const clientCommentCreateSchema = z.object({

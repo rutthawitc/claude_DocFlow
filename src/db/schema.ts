@@ -100,6 +100,7 @@ export const documents = pgTable('documents', {
   mtDate: date('mt_date').notNull(),
   subject: text('subject').notNull(),
   monthYear: varchar('month_year', { length: 20 }).notNull(),
+  docReceivedDate: date('doc_received_date'),
   status: varchar('status', { length: 50 }).notNull().default('sent_to_branch'),
   uploaderId: integer('uploader_id').notNull().references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),

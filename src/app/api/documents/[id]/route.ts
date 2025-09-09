@@ -275,7 +275,7 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
 
     // Parse JSON body for metadata update
     const updateData = await request.json();
-    const { branchBaCode, mtNumber, mtDate, subject, monthYear } = updateData;
+    const { branchBaCode, mtNumber, mtDate, subject, monthYear, docReceivedDate } = updateData;
 
     // Validate required fields
     if (!branchBaCode || !mtNumber || !mtDate || !subject || !monthYear) {
@@ -303,7 +303,8 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       mtNumber,
       mtDate,
       subject,
-      monthYear
+      monthYear,
+      docReceivedDate
     });
 
     if (!updatedDocument) {
@@ -429,6 +430,7 @@ export async function PUT(request: NextRequest, { params: paramsPromise }: Route
     const mtDate = formData.get('mtDate') as string;
     const subject = formData.get('subject') as string;
     const monthYear = formData.get('monthYear') as string;
+    const docReceivedDate = formData.get('docReceivedDate') as string || undefined;
 
     if (!branchBaCode || !mtNumber || !mtDate || !subject || !monthYear) {
       return NextResponse.json(
@@ -454,7 +456,8 @@ export async function PUT(request: NextRequest, { params: paramsPromise }: Route
       mtNumber,
       mtDate,
       subject,
-      monthYear
+      monthYear,
+      docReceivedDate
     };
 
     // Update document with new file and metadata

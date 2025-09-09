@@ -51,6 +51,7 @@ export class DocumentService {
         mtDate: metadata.mtDate, // Keep as string for date fields
         subject: metadata.subject,
         monthYear: metadata.monthYear,
+        docReceivedDate: metadata.docReceivedDate || null,
         status: DocumentStatus.DRAFT,
         uploaderId: uploaderId
       };
@@ -743,6 +744,7 @@ export class DocumentService {
           mtDate: metadata.mtDate,
           subject: metadata.subject,
           monthYear: metadata.monthYear,
+          docReceivedDate: metadata.docReceivedDate || null,
           updatedAt: new Date()
         })
         .where(eq(documents.id, documentId))

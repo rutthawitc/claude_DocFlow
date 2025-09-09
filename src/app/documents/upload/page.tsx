@@ -46,6 +46,7 @@ interface DraftDocument {
   monthYear: string;
   branchBaCode: number;
   originalFilename: string;
+  docReceivedDate?: string;
 }
 
 export default function DocumentUploadPage() {
@@ -87,7 +88,8 @@ export default function DocumentUploadPage() {
       subject: document.subject,
       monthYear: document.monthYear,
       branchBaCode: document.branchBaCode,
-      originalFilename: document.originalFilename
+      originalFilename: document.originalFilename,
+      docReceivedDate: document.docReceivedDate
     });
   };
 

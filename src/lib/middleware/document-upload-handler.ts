@@ -86,7 +86,8 @@ export async function handleDocumentUpload(request: NextRequest): Promise<NextRe
       mtNumber: validatedData.mtNumber,
       mtDate: validatedData.mtDate,
       subject: validatedData.subject,
-      monthYear: validatedData.monthYear
+      monthYear: validatedData.monthYear,
+      docReceivedDate: validatedData.docReceivedDate
     };
 
     // Create document
