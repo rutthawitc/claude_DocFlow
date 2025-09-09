@@ -52,6 +52,9 @@ export class DocumentService {
         subject: metadata.subject,
         monthYear: metadata.monthYear,
         docReceivedDate: metadata.docReceivedDate || null,
+        hasAdditionalDocs: metadata.hasAdditionalDocs || false,
+        additionalDocsCount: metadata.additionalDocsCount || 0,
+        additionalDocs: metadata.additionalDocs || [],
         status: DocumentStatus.DRAFT,
         uploaderId: uploaderId
       };

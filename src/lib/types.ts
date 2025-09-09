@@ -110,6 +110,9 @@ export interface DocumentUploadData {
   subject: string;
   monthYear: string;
   docReceivedDate?: string;
+  hasAdditionalDocs?: boolean;
+  additionalDocsCount?: number;
+  additionalDocs?: string[];
 }
 
 export interface DocumentFilters {

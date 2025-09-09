@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ThaiDatePicker } from '@/components/ui/thai-date-picker';
 import { 
   Upload, 
@@ -58,6 +59,9 @@ interface FormData {
   subject: string;
   monthYear: string;
   docReceivedDate: string;
+  hasAdditionalDocs: boolean;
+  additionalDocsCount: number;
+  additionalDocs: string[];
 }
 
 export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEditComplete }: DocumentUploadProps) {
@@ -73,7 +77,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     mtDate: editDocument?.mtDate || '',
     subject: editDocument?.subject || '',
     monthYear: editDocument?.monthYear || getCurrentMonthYear(),
-    docReceivedDate: editDocument?.docReceivedDate || ''
+    docReceivedDate: editDocument?.docReceivedDate || '',
+    hasAdditionalDocs: false,
+    additionalDocsCount: 1,
+    additionalDocs: ['']
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -89,7 +96,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         mtDate: editDocument.mtDate,
         subject: editDocument.subject,
         monthYear: editDocument.monthYear,
-        docReceivedDate: editDocument.docReceivedDate || ''
+        docReceivedDate: editDocument.docReceivedDate || '',
+        hasAdditionalDocs: false,
+        additionalDocsCount: 1,
+        additionalDocs: ['']
       });
       // Clear any existing file selection when switching to edit mode
       setSelectedFile(null);
@@ -197,6 +207,38 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     }
   }, [validateSingleField]);
 
+  // Handle additional documents checkbox
+  const handleAdditionalDocsToggle = useCallback((checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      hasAdditionalDocs: checked,
+      additionalDocsCount: checked ? prev.additionalDocsCount || 1 : 1,
+      additionalDocs: checked ? (prev.additionalDocs || ['']) : ['']
+    }));
+  }, []);
+
+  // Handle additional documents count change
+  const handleAdditionalDocsCountChange = useCallback((count: number) => {
+    const validCount = Math.max(1, Math.min(10, count));
+    setFormData(prev => {
+      const currentDocs = prev.additionalDocs || [];
+      const newDocs = Array.from({ length: validCount }, (_, i) => currentDocs[i] || '');
+      return {
+        ...prev,
+        additionalDocsCount: validCount,
+        additionalDocs: newDocs
+      };
+    });
+  }, []);
+
+  // Handle individual additional document change
+  const handleAdditionalDocChange = useCallback((index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      additionalDocs: (prev.additionalDocs || []).map((doc, i) => i === index ? value : doc)
+    }));
+  }, []);
+
   // Validate file
   const validateFileSelection = useCallback((file: File | null): { isValid: boolean; error?: string } => {
     if (!file && !isEditMode) {
@@ -264,7 +306,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           mtDate: formData.mtDate,
           subject: formData.subject,
           monthYear: formData.monthYear,
-          docReceivedDate: formData.docReceivedDate
+          docReceivedDate: formData.docReceivedDate,
+          hasAdditionalDocs: formData.hasAdditionalDocs,
+          additionalDocsCount: formData.additionalDocsCount,
+          additionalDocs: formData.additionalDocs
         };
 
         let response;
@@ -278,6 +323,9 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           uploadFormData.append('subject', formData.subject);
           uploadFormData.append('monthYear', formData.monthYear);
           uploadFormData.append('docReceivedDate', formData.docReceivedDate);
+          uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
+          uploadFormData.append('additionalDocsCount', formData.additionalDocsCount.toString());
+          uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs));
 
           response = await fetch(`/api/documents/${editDocument.id}`, {
             method: 'PUT',
@@ -332,6 +380,9 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         uploadFormData.append('subject', formData.subject);
         uploadFormData.append('monthYear', formData.monthYear);
         uploadFormData.append('docReceivedDate', formData.docReceivedDate);
+        uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
+        uploadFormData.append('additionalDocsCount', formData.additionalDocsCount.toString());
+        uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs));
 
         const response = await fetch('/api/documents', {
           method: 'POST',
@@ -363,7 +414,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             mtDate: '',
             subject: '',
             monthYear: '',
-            docReceivedDate: ''
+            docReceivedDate: '',
+            hasAdditionalDocs: false,
+            additionalDocsCount: 1,
+            additionalDocs: ['']
           });
           
           if (fileInputRef.current) {
@@ -579,7 +633,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
 
           {/* Subject */}
           <div className="space-y-2">
-            <Label htmlFor="subject">เรื่องเบิกจ่าย *</Label>
+            <Label htmlFor="subject">รายละเอียด เพิ่มเติม *</Label>
             <Textarea
               id="subject"
               value={formData.subject}
@@ -590,6 +644,51 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             />
             {(fieldErrors.subject || (errors.subject && errors.subject[0])) && (
               <p className="text-sm text-red-600">{fieldErrors.subject || errors.subject[0]}</p>
+            )}
+          </div>
+
+          {/* Additional Documents */}
+          <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="hasAdditionalDocs"
+                checked={formData.hasAdditionalDocs}
+                onCheckedChange={handleAdditionalDocsToggle}
+              />
+              <Label htmlFor="hasAdditionalDocs" className="cursor-pointer">
+                เอกสารที่ต้องส่งเพิ่มเติม/แก้ไข
+              </Label>
+              {formData.hasAdditionalDocs && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={formData.additionalDocsCount}
+                    onChange={(e) => handleAdditionalDocsCountChange(parseInt(e.target.value) || 1)}
+                    className="w-16 h-8"
+                  />
+                  <span className="text-sm text-gray-600">ฉบับ</span>
+                </div>
+              )}
+            </div>
+
+            {formData.hasAdditionalDocs && (
+              <div className="space-y-2">
+                {(formData.additionalDocs || []).slice(0, formData.additionalDocsCount).map((doc, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-600 w-6">
+                      {index + 1}.
+                    </span>
+                    <Input
+                      value={doc || ''}
+                      onChange={(e) => handleAdditionalDocChange(index, e.target.value)}
+                      placeholder={`เอกสารเพิ่มเติมที่ ${index + 1}`}
+                      className="flex-1"
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -654,7 +753,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                     mtDate: '',
                     subject: '',
                     monthYear: '',
-                    docReceivedDate: ''
+                    docReceivedDate: '',
+                    hasAdditionalDocs: false,
+                    additionalDocsCount: 1,
+                    additionalDocs: ['']
                   });
                   onEditComplete?.();
                 }}

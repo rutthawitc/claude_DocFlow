@@ -87,7 +87,10 @@ export async function handleDocumentUpload(request: NextRequest): Promise<NextRe
       mtDate: validatedData.mtDate,
       subject: validatedData.subject,
       monthYear: validatedData.monthYear,
-      docReceivedDate: validatedData.docReceivedDate
+      docReceivedDate: validatedData.docReceivedDate,
+      hasAdditionalDocs: validatedData.hasAdditionalDocs,
+      additionalDocsCount: validatedData.additionalDocsCount,
+      additionalDocs: validatedData.additionalDocs
     };
 
     // Create document

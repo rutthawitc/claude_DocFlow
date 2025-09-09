@@ -68,7 +68,9 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/docflow_db\" pnpm db:push)",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN doc_received_date date;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, mt_number, doc_received_date FROM documents ORDER BY id DESC LIMIT 5;\")",
-      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, mt_number, doc_received_date FROM documents WHERE mt_number = ''55210-5/444'';\")"
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, mt_number, doc_received_date FROM documents WHERE mt_number = ''55210-5/444'';\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN additional_docs_count integer DEFAULT 0;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN additional_docs text[];\")"
     ],
     "deny": []
   }

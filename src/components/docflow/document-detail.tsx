@@ -50,6 +50,9 @@ interface Document {
   subject: string;
   monthYear: string;
   docReceivedDate?: string;
+  hasAdditionalDocs?: boolean;
+  additionalDocsCount?: number;
+  additionalDocs?: string[];
   status: string;
   uploaderId: number;
   createdAt: string;
@@ -425,6 +428,34 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
               )}
             </CardContent>
           </Card>
+
+          {/* Additional Documents */}
+          {document.hasAdditionalDocs && document.additionalDocs && document.additionalDocs.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  เอกสารที่ต้องส่งเพิ่มเติม/แก้ไข
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {document.additionalDocs.filter(doc => doc && doc.trim() !== '').map((doc, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
+                      <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-blue-700">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-900">{doc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* PDF Viewer */}
           <PDFViewer

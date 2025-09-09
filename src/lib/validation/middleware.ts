@@ -143,6 +143,21 @@ export function validateFormData<T>(
     }
   }
   
+  // Handle special fields that need JSON parsing
+  if (data.additionalDocs && typeof data.additionalDocs === 'string') {
+    try {
+      data.additionalDocs = JSON.parse(data.additionalDocs);
+    } catch (e) {
+      // If JSON parsing fails, leave as string and let Zod validation handle the error
+      console.warn('Failed to parse additionalDocs as JSON:', data.additionalDocs);
+    }
+  }
+  
+  // Convert boolean strings to booleans
+  if (data.hasAdditionalDocs && typeof data.hasAdditionalDocs === 'string') {
+    data.hasAdditionalDocs = data.hasAdditionalDocs === 'true';
+  }
+  
   try {
     return schema.parse(data);
   } catch (error) {

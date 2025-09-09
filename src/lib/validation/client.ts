@@ -32,7 +32,23 @@ export const clientDocumentUploadSchema = z.object({
 
   docReceivedDate: z.string()
     .optional()
-    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'รูปแบบวันที่ไม่ถูกต้อง')
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'รูปแบบวันที่ไม่ถูกต้อง'),
+
+  hasAdditionalDocs: z.boolean()
+    .optional()
+    .default(false),
+
+  additionalDocsCount: z.coerce.number()
+    .int('จำนวนเอกสารเพิ่มเติมต้องเป็นตัวเลขจำนวนเต็ม')
+    .min(0, 'จำนวนเอกสารเพิ่มเติมต้องไม่น้อยกว่า 0')
+    .max(10, 'จำนวนเอกสารเพิ่มเติมต้องไม่เกิน 10')
+    .optional()
+    .default(0),
+
+  additionalDocs: z.array(z.string().trim())
+    .max(10, 'ไม่สามารถมีเอกสารเพิ่มเติมมากกว่า 10 รายการ')
+    .optional()
+    .default([])
 });
 
 export const clientCommentCreateSchema = z.object({
