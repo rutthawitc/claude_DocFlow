@@ -357,65 +357,108 @@ export function AdditionalDocumentUpload({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {existingFile && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePdfView(index, doc, existingFile.originalFilename)}
-                          className="h-8"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          ดูเอกสาร
-                        </Button>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-2">
+                      {existingFile && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePdfView(index, doc, existingFile.originalFilename)}
+                            className="h-8"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            ดูเอกสาร
+                          </Button>
 
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleFileDownload(index, existingFile.originalFilename)}
-                          className="h-8"
-                        >
-                          <Download className="h-3 w-3 mr-1" />
-                          ดาวน์โหลด
-                        </Button>
-                        
-                        {canUpload && !existingFile.isVerified && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>ยืนยันการลบไฟล์</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  คุณต้องการลบไฟล์ &ldquo;{existingFile.originalFilename}&rdquo; หรือไม่? 
-                                  การกระทำนี้ไม่สามารถย้อนกลับได้
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleFileDelete(index)}
-                                  className="bg-red-600 hover:bg-red-700"
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleFileDownload(index, existingFile.originalFilename)}
+                            className="h-8"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            ดาวน์โหลด
+                          </Button>
+                          
+                          {canUpload && !existingFile.isVerified && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-red-600 hover:text-red-700"
                                 >
-                                  ลบไฟล์
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </>
-                    )}
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>ยืนยันการลบไฟล์</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    คุณต้องการลบไฟล์ &ldquo;{existingFile.originalFilename}&rdquo; หรือไม่? 
+                                    การกระทำนี้ไม่สามารถย้อนกลับได้
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleFileDelete(index)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    ลบไฟล์
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </>
+                      )}
+
+                      {canUpload && (!existingFile || !existingFile.isVerified) && (
+                        <div className="relative">
+                          <Button
+                            variant={existingFile ? "outline" : "default"}
+                            size="sm"
+                            disabled={isUploading || (existingFile?.isVerified || false)}
+                            className="h-8"
+                            onClick={() => {
+                              const input = document.getElementById(`file-input-${index}`) as HTMLInputElement;
+                              input?.click();
+                            }}
+                          >
+                            {isUploading ? (
+                              <>
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                กำลังอัปโหลด...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-3 w-3 mr-1" />
+                                {existingFile ? 'เปลี่ยนไฟล์' : 'อัปโหลด'}
+                              </>
+                            )}
+                          </Button>
+                          
+                          <input
+                            id={`file-input-${index}`}
+                            type="file"
+                            accept=".pdf"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleFileUpload(file, index, doc);
+                              }
+                              e.target.value = '';
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
 
                     {canVerify && existingFile && (
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-md">
                         {/* Debug info */}
                         {console.log(`Checkbox for index ${index}:`, {
                           canVerify,
@@ -435,51 +478,10 @@ export function AdditionalDocumentUpload({
                         />
                         <label
                           htmlFor={`verify-${index}`}
-                          className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-blue-700"
                         >
                           เอกสารถูกต้อง
                         </label>
-                      </div>
-                    )}
-
-                    {canUpload && (!existingFile || !existingFile.isVerified) && (
-                      <div className="relative">
-                        <Button
-                          variant={existingFile ? "outline" : "default"}
-                          size="sm"
-                          disabled={isUploading || (existingFile?.isVerified || false)}
-                          className="h-8"
-                          onClick={() => {
-                            const input = document.getElementById(`file-input-${index}`) as HTMLInputElement;
-                            input?.click();
-                          }}
-                        >
-                          {isUploading ? (
-                            <>
-                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                              กำลังอัปโหลด...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="h-3 w-3 mr-1" />
-                              {existingFile ? 'เปลี่ยนไฟล์' : 'อัปโหลด'}
-                            </>
-                          )}
-                        </Button>
-                        
-                        <input
-                          id={`file-input-${index}`}
-                          type="file"
-                          accept=".pdf"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleFileUpload(file, index, doc);
-                            }
-                            e.target.value = '';
-                          }}
-                        />
                       </div>
                     )}
                   </div>
