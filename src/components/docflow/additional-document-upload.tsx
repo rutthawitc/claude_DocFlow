@@ -9,7 +9,9 @@ import {
   Trash2, 
   Loader2,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { AdditionalDocumentPDFModal } from './additional-document-pdf-modal';
 
 interface AdditionalFile {
   id: number;
@@ -34,6 +38,9 @@ interface AdditionalFile {
   originalFilename: string;
   fileSize: number;
   uploaderId: number;
+  isVerified: boolean;
+  verifiedBy: number | null;
+  verifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,11 +61,27 @@ export function AdditionalDocumentUpload({
   const [uploadingItems, setUploadingItems] = useState<Set<number>>(new Set());
   const [existingFiles, setExistingFiles] = useState<Record<number, AdditionalFile>>({});
   const [loading, setLoading] = useState(true);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [selectedPdfFile, setSelectedPdfFile] = useState<{
+    itemIndex: number;
+    itemName: string;
+    filename: string;
+  } | null>(null);
 
   // Check if user can upload files
   const canUpload = userRoles.includes('branch_user') || 
                    userRoles.includes('branch_manager') || 
                    userRoles.includes('admin');
+
+  // Check if user can verify files (admin, district_manager, uploader)
+  const canVerify = userRoles.includes('admin') || 
+                   userRoles.includes('district_manager') || 
+                   userRoles.includes('uploader');
+
+  // Debug logging
+  console.log('AdditionalDocumentUpload - userRoles:', userRoles);
+  console.log('AdditionalDocumentUpload - canVerify:', canVerify);
+  console.log('AdditionalDocumentUpload - existingFiles:', existingFiles);
 
   // Fetch existing files
   useEffect(() => {
@@ -214,6 +237,55 @@ export function AdditionalDocumentUpload({
     }
   };
 
+  // Handle PDF view
+  const handlePdfView = (itemIndex: number, itemName: string, filename: string) => {
+    setSelectedPdfFile({ itemIndex, itemName, filename });
+    setPdfModalOpen(true);
+  };
+
+  // Handle verification status change
+  const handleVerificationChange = async (itemIndex: number, isVerified: boolean) => {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/additional-files`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ itemIndex, isVerified })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast.success(isVerified ? 'ยืนยันเอกสารเรียบร้อย' : 'ยกเลิกการยืนยันเรียบร้อย');
+        
+        // Refresh existing files to get updated verification status
+        const filesResponse = await fetch(`/api/documents/${documentId}/additional-files`, {
+          credentials: 'include'
+        });
+        const filesResult = await filesResponse.json();
+        
+        if (filesResponse.ok && filesResult.success) {
+          const filesMap: Record<number, AdditionalFile> = {};
+          filesResult.data.forEach((file: AdditionalFile) => {
+            filesMap[file.itemIndex] = file;
+          });
+          setExistingFiles(filesMap);
+        }
+
+        if (onFileUploaded) {
+          onFileUploaded();
+        }
+      } else {
+        throw new Error(result.error || 'Verification update failed');
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      toast.error('ไม่สามารถอัพเดทสถานะการยืนยันได้');
+    }
+  };
+
   // Format file size
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -237,6 +309,7 @@ export function AdditionalDocumentUpload({
   }
 
   return (
+    <>
     <Card>
       <CardContent className="p-6">
         <div className="space-y-4">
@@ -264,6 +337,12 @@ export function AdditionalDocumentUpload({
                             <Badge variant="outline" className="text-xs">
                               {formatFileSize(existingFile.fileSize)}
                             </Badge>
+                            {existingFile.isVerified && (
+                              <div className="flex items-center gap-1">
+                                <Check className="h-3 w-3 text-green-600" />
+                                <span className="text-xs text-green-600">เอกสารถูกต้อง</span>
+                              </div>
+                            )}
                           </div>
                           <p className="text-xs text-gray-600">
                             {existingFile.originalFilename}
@@ -284,6 +363,16 @@ export function AdditionalDocumentUpload({
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handlePdfView(index, doc, existingFile.originalFilename)}
+                          className="h-8"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          ดูเอกสาร
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleFileDownload(index, existingFile.originalFilename)}
                           className="h-8"
                         >
@@ -291,7 +380,7 @@ export function AdditionalDocumentUpload({
                           ดาวน์โหลด
                         </Button>
                         
-                        {canUpload && (
+                        {canUpload && !existingFile.isVerified && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
@@ -325,12 +414,40 @@ export function AdditionalDocumentUpload({
                       </>
                     )}
 
-                    {canUpload && (
+                    {canVerify && existingFile && (
+                      <div className="flex items-center space-x-2">
+                        {/* Debug info */}
+                        {console.log(`Checkbox for index ${index}:`, {
+                          canVerify,
+                          existingFile: existingFile ? {
+                            id: existingFile.id,
+                            isVerified: existingFile.isVerified,
+                            verifiedBy: existingFile.verifiedBy
+                          } : null
+                        })}
+                        <Checkbox
+                          id={`verify-${index}`}
+                          checked={existingFile.isVerified || false}
+                          onCheckedChange={(checked) => {
+                            console.log(`Checkbox changed for index ${index}:`, checked);
+                            handleVerificationChange(index, checked as boolean);
+                          }}
+                        />
+                        <label
+                          htmlFor={`verify-${index}`}
+                          className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          เอกสารถูกต้อง
+                        </label>
+                      </div>
+                    )}
+
+                    {canUpload && (!existingFile || !existingFile.isVerified) && (
                       <div className="relative">
                         <Button
                           variant={existingFile ? "outline" : "default"}
                           size="sm"
-                          disabled={isUploading}
+                          disabled={isUploading || (existingFile?.isVerified || false)}
                           className="h-8"
                           onClick={() => {
                             const input = document.getElementById(`file-input-${index}`) as HTMLInputElement;
@@ -381,5 +498,21 @@ export function AdditionalDocumentUpload({
         )}
       </CardContent>
     </Card>
+
+    {/* PDF Modal */}
+    {selectedPdfFile && (
+      <AdditionalDocumentPDFModal
+        isOpen={pdfModalOpen}
+        onClose={() => {
+          setPdfModalOpen(false);
+          setSelectedPdfFile(null);
+        }}
+        documentId={documentId}
+        itemIndex={selectedPdfFile.itemIndex}
+        itemName={selectedPdfFile.itemName}
+        filename={selectedPdfFile.filename}
+      />
+    )}
+    </>
   );
 }

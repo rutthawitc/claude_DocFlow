@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
+import { DocFlowAuth } from '@/lib/auth/docflow-auth';
 
 interface RouteParams {
   params: Promise<{
@@ -216,6 +217,82 @@ export async function DELETE(request: NextRequest, { params: paramsPromise }: Ro
         console.error('Error deleting additional file:', error);
         return NextResponse.json(
           { success: false, error: 'Failed to delete file' },
+          { status: 500 }
+        );
+      }
+    }
+  )(request);
+}
+
+// PATCH: Update verification status of additional file
+export async function PATCH(request: NextRequest, { params: paramsPromise }: RouteParams) {
+  const params = await paramsPromise;
+  return withAuthHandler(
+    async (request, { user }) => {
+      try {
+        const documentId = parseInt(params.id);
+        if (isNaN(documentId)) {
+          return NextResponse.json(
+            { success: false, error: 'Invalid document ID' },
+            { status: 400 }
+          );
+        }
+
+        const { itemIndex, isVerified } = await request.json();
+        
+        if (typeof itemIndex !== 'number' || typeof isVerified !== 'boolean') {
+          return NextResponse.json(
+            { success: false, error: 'Invalid parameters' },
+            { status: 400 }
+          );
+        }
+
+        // Check if user has verification permissions (admin, district_manager, or uploader)
+        const { roles } = await DocFlowAuth.getUserRolesAndPermissions(user.databaseId);
+        const canVerify = roles.includes('admin') || 
+                         roles.includes('district_manager') || 
+                         roles.includes('uploader');
+
+        if (!canVerify) {
+          return NextResponse.json(
+            { success: false, error: 'Insufficient permissions' },
+            { status: 403 }
+          );
+        }
+
+        const db = await getDb();
+
+        // Update verification status
+        const updateData = isVerified ? {
+          isVerified: true,
+          verifiedBy: user.databaseId,
+          verifiedAt: new Date(),
+          updatedAt: new Date()
+        } : {
+          isVerified: false,
+          verifiedBy: null,
+          verifiedAt: null,
+          updatedAt: new Date()
+        };
+
+        await db
+          .update(additionalDocumentFiles)
+          .set(updateData)
+          .where(
+            and(
+              eq(additionalDocumentFiles.documentId, documentId),
+              eq(additionalDocumentFiles.itemIndex, itemIndex)
+            )
+          );
+
+        return NextResponse.json({
+          success: true,
+          message: isVerified ? 'File verified successfully' : 'File verification removed'
+        });
+      } catch (error) {
+        console.error('Error updating verification status:', error);
+        return NextResponse.json(
+          { success: false, error: 'Failed to update verification status' },
           { status: 500 }
         );
       }
