@@ -26,7 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { AdditionalDocumentPDFModal } from './additional-document-pdf-modal';
 
 interface AdditionalFile {
@@ -38,7 +39,7 @@ interface AdditionalFile {
   originalFilename: string;
   fileSize: number;
   uploaderId: number;
-  isVerified: boolean;
+  isVerified: boolean | null;
   verifiedBy: number | null;
   verifiedAt: string | null;
   createdAt: string;
@@ -308,12 +309,28 @@ export function AdditionalDocumentUpload({
     );
   }
 
+  // Check if all additional documents have been uploaded
+  const filteredDocs = additionalDocs.filter(doc => doc && doc.trim() !== '');
+  const allDocsUploaded = filteredDocs.length > 0 && filteredDocs.every((_, index) => existingFiles[index]);
+
   return (
     <>
     <Card>
       <CardContent className="p-6">
+        {/* All documents uploaded indicator */}
+        {allDocsUploaded && (
+          <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span className="text-sm font-medium text-green-700">
+                เอกสารแนบครบแล้วกำลังตรวจสอบ
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
-          {additionalDocs.filter(doc => doc && doc.trim() !== '').map((doc, index) => {
+          {filteredDocs.map((doc, index) => {
             const existingFile = existingFiles[index];
             const isUploading = uploadingItems.has(index);
 
@@ -457,31 +474,68 @@ export function AdditionalDocumentUpload({
                       )}
                     </div>
 
-                    {canVerify && existingFile && (
-                      <div className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-md">
-                        {/* Debug info */}
-                        {console.log(`Checkbox for index ${index}:`, {
-                          canVerify,
-                          existingFile: existingFile ? {
-                            id: existingFile.id,
-                            isVerified: existingFile.isVerified,
-                            verifiedBy: existingFile.verifiedBy
-                          } : null
-                        })}
-                        <Checkbox
-                          id={`verify-${index}`}
-                          checked={existingFile.isVerified || false}
-                          onCheckedChange={(checked) => {
-                            console.log(`Checkbox changed for index ${index}:`, checked);
-                            handleVerificationChange(index, checked as boolean);
-                          }}
-                        />
-                        <label
-                          htmlFor={`verify-${index}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-blue-700"
-                        >
-                          เอกสารถูกต้อง
-                        </label>
+                    {existingFile && (canVerify || !canVerify) && (
+                      <div className="bg-blue-50 px-3 py-3 rounded-md">
+                        {canVerify ? (
+                          // Admin/District Manager/Uploader - can change verification status
+                          <div className="space-y-2">
+                            <div className="text-xs font-medium text-blue-700 mb-2">สถานะการตรวจสอบ:</div>
+                            <RadioGroup
+                              value={existingFile.isVerified === true ? "correct" : existingFile.isVerified === false ? "incorrect" : ""}
+                              onValueChange={(value) => {
+                                console.log(`Radio changed for index ${index}:`, value);
+                                if (value === "correct") {
+                                  handleVerificationChange(index, true);
+                                } else if (value === "incorrect") {
+                                  handleVerificationChange(index, false);
+                                }
+                              }}
+                              className="flex space-x-6"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="incorrect" id={`incorrect-${index}`} />
+                                <Label
+                                  htmlFor={`incorrect-${index}`}
+                                  className="text-sm font-medium text-red-700 cursor-pointer"
+                                >
+                                  เอกสารไม่ถูกต้อง
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="correct" id={`correct-${index}`} />
+                                <Label
+                                  htmlFor={`correct-${index}`}
+                                  className="text-sm font-medium text-green-700 cursor-pointer"
+                                >
+                                  เอกสารถูกต้อง
+                                </Label>
+                              </div>
+                            </RadioGroup>
+                          </div>
+                        ) : (
+                          // Branch users - read-only status display
+                          <div className="space-y-1">
+                            <div className="text-xs font-medium text-blue-700">สถานะการตรวจสอบ:</div>
+                            <div className="flex items-center space-x-2">
+                              {existingFile.isVerified === true ? (
+                                <>
+                                  <Check className="h-4 w-4 text-green-600" />
+                                  <span className="text-sm font-medium text-green-700">เอกสารถูกต้อง</span>
+                                </>
+                              ) : existingFile.isVerified === false ? (
+                                <>
+                                  <AlertCircle className="h-4 w-4 text-red-600" />
+                                  <span className="text-sm font-medium text-red-700">เอกสารไม่ถูกต้อง</span>
+                                </>
+                              ) : (
+                                <>
+                                  <AlertCircle className="h-4 w-4 text-gray-500" />
+                                  <span className="text-sm font-medium text-gray-600">ยังไม่ตรวจสอบ</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

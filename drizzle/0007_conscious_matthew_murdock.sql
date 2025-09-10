@@ -1,0 +1,1 @@
+ALTER TABLE "additional_document_files" ALTER COLUMN "is_verified" DROP DEFAULT;

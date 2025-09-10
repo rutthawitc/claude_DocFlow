@@ -129,7 +129,7 @@ export const additionalDocumentFiles = pgTable('additional_document_files', {
   originalFilename: varchar('original_filename', { length: 255 }).notNull(),
   fileSize: integer('file_size').notNull(),
   uploaderId: integer('uploader_id').notNull().references(() => users.id),
-  isVerified: boolean('is_verified').default(false),
+  isVerified: boolean('is_verified'),
   verifiedBy: integer('verified_by').references(() => users.id),
   verifiedAt: timestamp('verified_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
