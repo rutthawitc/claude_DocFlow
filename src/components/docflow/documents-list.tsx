@@ -17,7 +17,9 @@ import {
   Loader2,
   RefreshCw,
   Trash2,
-  CheckCircle
+  CheckCircle,
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +51,7 @@ interface Document {
   uploaderId: number;
   createdAt: string;
   updatedAt: string;
+  additionalDocs?: string[];
   branch?: {
     id: number;
     name: string;
@@ -60,6 +63,27 @@ interface Document {
     firstName: string;
     lastName: string;
   };
+}
+
+interface AdditionalFile {
+  id: number;
+  documentId: number;
+  itemIndex: number;
+  itemName: string;
+  filePath: string;
+  originalFilename: string;
+  fileSize: number;
+  uploaderId: number;
+  isVerified: boolean | null;
+  verifiedBy: number | null;
+  verifiedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface VerificationStatusProps {
+  documentId: number;
+  additionalDocs?: string[];
 }
 
 interface DocumentsListProps {
@@ -90,6 +114,123 @@ const STATUS_LABELS = {
   acknowledged: 'รับทราบ',
   sent_back_to_district: 'ส่งกลับเขต'
 };
+
+// Verification Status Component
+function VerificationStatus({ documentId, additionalDocs = [] }: VerificationStatusProps) {
+  const [verificationData, setVerificationData] = useState<{
+    verified: number;
+    incorrect: number;
+    unverified: number;
+    notUploaded: number;
+    total: number;
+  }>({ verified: 0, incorrect: 0, unverified: 0, notUploaded: 0, total: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchVerificationStatus = async () => {
+      if (!additionalDocs || additionalDocs.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/documents/${documentId}/additional-files`, {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const files: AdditionalFile[] = result.data;
+            const filteredDocs = additionalDocs.filter(doc => doc && doc.trim() !== '');
+            
+            let verified = 0;
+            let incorrect = 0;
+            let unverified = 0;
+            let notUploaded = 0;
+
+            // Count verification status for each additional document
+            filteredDocs.forEach((_, index) => {
+              const file = files.find(f => f.itemIndex === index);
+              if (file) {
+                if (file.isVerified === true) {
+                  verified++;
+                } else if (file.isVerified === false) {
+                  incorrect++;
+                } else {
+                  unverified++; // Uploaded but not yet reviewed
+                }
+              } else {
+                notUploaded++; // Document not uploaded yet
+              }
+            });
+
+            setVerificationData({
+              verified,
+              incorrect,
+              unverified,
+              notUploaded,
+              total: filteredDocs.length
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching verification status:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVerificationStatus();
+  }, [documentId, additionalDocs]);
+
+  if (loading || verificationData.total === 0) {
+    return null;
+  }
+
+  return (
+    <div className="text-right">
+      <div className="text-xs font-medium text-gray-600 mb-1">สถานะการตรวจเอกสารแนบ</div>
+      <div className="flex flex-col gap-1">
+        {verificationData.verified > 0 && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded-md border border-green-200 justify-end">
+            <span className="text-sm font-medium text-green-700">
+              ตรวจแล้ว {verificationData.verified} ฉบับ
+            </span>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </div>
+        )}
+        
+        {verificationData.incorrect > 0 && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded-md border border-red-200 justify-end">
+            <span className="text-sm font-medium text-red-700">
+              ต้องส่งใหม่ {verificationData.incorrect} ฉบับ
+            </span>
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </div>
+        )}
+        
+        {verificationData.unverified > 0 && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-yellow-50 rounded-md border border-yellow-200 justify-end">
+            <span className="text-sm font-medium text-yellow-700">
+              ยังไม่ตรวจสอบ {verificationData.unverified} ฉบับ
+            </span>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </div>
+        )}
+        
+        {verificationData.notUploaded > 0 && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-orange-50 rounded-md border border-orange-200 justify-end">
+            <span className="text-sm font-medium text-orange-700">
+              กรุณาแนบเอกสารเพื่อตรวจสอบ {verificationData.notUploaded} ฉบับ
+            </span>
+            <Clock className="h-4 w-4 text-orange-600" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function DocumentsList({ 
   branchBaCode, 
@@ -502,8 +643,16 @@ export function DocumentsList({
                     )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
+                  {/* Actions and Verification Status */}
+                  <div className="flex flex-col items-end gap-3">
+                    {/* Verification Status */}
+                    <VerificationStatus 
+                      documentId={doc.id} 
+                      additionalDocs={doc.additionalDocs}
+                    />
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
                     <Link href={`/documents/${doc.id}`}>
                       <Button variant="outline" size="sm">
                         <Eye className="h-4 w-4 mr-1" />
@@ -575,6 +724,7 @@ export function DocumentsList({
                         </DialogContent>
                       </Dialog>
                     )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
