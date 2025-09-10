@@ -15,12 +15,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // ไม่ต้องใช้ csrfToken อีกต่อไปเพราะเราจะไม่ใช้การตรวจสอบ CSRF ในการล็อกอิน
 
 export function LoginFormServer() {
+  const router = useRouter();
+  
   // initialState สำหรับ loginAction
   const initialState = { errors: {}, message: "" };
   const [state, formAction, isPending] = useActionState(
@@ -34,6 +37,30 @@ export function LoginFormServer() {
   // Clear errors when user starts typing
   const clearErrors = () => {
     if (signInError) setSignInError("");
+  };
+
+  // Function to determine redirect URL based on user data
+  const getRedirectUrl = (session: any): string => {
+    if (!session?.user?.pwa) {
+      return '/documents'; // Default fallback
+    }
+
+    const userRoles = session.user.pwa.roles || [];
+    const userBA = session.user.pwa.ba;
+
+    console.log('Determining redirect URL - User roles:', userRoles, 'BA:', userBA);
+
+    // Check if user is a branch user and has a valid BA
+    if (userRoles.includes('branch_user') && userBA) {
+      return `/documents/branch/${userBA}`;
+    } else if (userRoles.includes('district_manager')) {
+      return '/documents';
+    } else if (userRoles.includes('admin')) {
+      return '/documents';
+    } else {
+      // Default for other roles (uploader, branch_manager, etc.)
+      return '/documents';
+    }
   };
 
   // ใช้ static ID เพื่อหลีกเลี่ยง hydration mismatch
@@ -51,17 +78,19 @@ export function LoginFormServer() {
       signIn("credentials", {
         username: state.credentials.username,
         pwd: state.credentials.pwd,
-        callbackUrl: "/documents",
         redirect: false, // Don't redirect automatically to handle errors properly
       })
-        .then((result) => {
+        .then(async (result) => {
           if (result?.error) {
-            console.log("Login error from client signIn:", result.error);
+            console.log("🔥 LOGIN FORM - Login error from client signIn:", result.error);
             setSignInError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบและลองอีกครั้ง");
-          } else if (result?.ok) {
-            console.log("Login successful from client signIn");
-            // Redirect manually on success
-            window.location.href = "/documents";
+          } else if (result?.ok && result?.url) {
+            console.log("✅ LOGIN FORM - Login successful from client signIn");
+            console.log("🔄 LOGIN FORM - Result URL:", result.url);
+            
+            // Force a page reload to ensure the session is properly updated
+            // and the client-only-login-page redirect logic can run
+            window.location.reload();
           }
         })
         .catch((error) => {

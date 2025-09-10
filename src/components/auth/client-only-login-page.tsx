@@ -15,16 +15,48 @@ export default function ClientOnlyLoginPage() {
   const [redirectAttempted, setRedirectAttempted] = useState(false);
   
   useEffect(() => {
-    console.log('Current auth status:', status, 'Path:', pathname);
-    console.log('Session data:', JSON.stringify(session));
+    console.log('🔍 CLIENT LOGIN PAGE - Auth status:', status, 'Path:', pathname);
+    console.log('🔍 CLIENT LOGIN PAGE - Session user roles:', session?.user?.pwa?.roles);
+    console.log('🔍 CLIENT LOGIN PAGE - Session user BA:', session?.user?.pwa?.ba);
+    console.log('🔍 CLIENT LOGIN PAGE - Redirect attempted:', redirectAttempted);
     
-    // ถ้ามี session (ล็อกอินแล้ว) ให้เปลี่ยนเส้นทางไปที่ documents
+    // ถ้ามี session (ล็อกอินแล้ว) ให้เปลี่ยนเส้นทางไปที่หน้าที่เหมาะสม
     if (session && !redirectAttempted) {
-      console.log('User is logged in, redirecting to documents');
+      console.log('✅ CLIENT LOGIN PAGE - User is logged in, determining redirect destination');
       setRedirectAttempted(true);
-      window.location.href = '/documents';
+      
+      // Get user roles from session
+      const userRoles = session.user?.pwa?.roles || [];
+      const userBA = session.user?.pwa?.ba;
+      
+      console.log('🎯 CLIENT LOGIN PAGE - User roles:', userRoles);
+      console.log('🎯 CLIENT LOGIN PAGE - User BA:', userBA);
+      
+      // Determine redirect destination based on user role
+      let redirectUrl = '/documents'; // Default fallback
+      
+      // Priority order: admin > district_manager > branch users (including managers)
+      if (userRoles.includes('admin')) {
+        redirectUrl = '/documents';
+        console.log('🚀 CLIENT LOGIN PAGE - Redirecting admin to documents overview');
+      } else if (userRoles.includes('district_manager')) {
+        redirectUrl = '/documents';
+        console.log('🚀 CLIENT LOGIN PAGE - Redirecting district manager to documents overview');
+      } else if ((userRoles.includes('branch_user') || userRoles.includes('branch_manager')) && userBA) {
+        // All branch users (including branch managers) go to their specific branch
+        redirectUrl = `/documents/branch/${userBA}`;
+        console.log('🚀 CLIENT LOGIN PAGE - Redirecting branch user/manager to their branch:', redirectUrl);
+      } else {
+        // Default for other roles (uploader, etc.)
+        console.log('🚀 CLIENT LOGIN PAGE - Redirecting to default documents page');
+      }
+      
+      console.log('🎯 CLIENT LOGIN PAGE - Final redirect URL:', redirectUrl);
+      window.location.href = redirectUrl;
     } else if (status === 'unauthenticated') {
-      console.log('User is not authenticated');
+      console.log('❌ CLIENT LOGIN PAGE - User is not authenticated');
+    } else if (session && redirectAttempted) {
+      console.log('⏭️ CLIENT LOGIN PAGE - Session exists but redirect already attempted');
     }
   }, [session, status, router, pathname, redirectAttempted]);
 

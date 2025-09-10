@@ -489,6 +489,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Allow all successful authentications to proceed
+      return true;
+    },
+    async redirect({ url, baseUrl }) {
+      // Handle post-login redirect logic
+      console.log('Redirect callback - url:', url, 'baseUrl:', baseUrl);
+      
+      // If the URL is already an absolute URL to our domain, use it
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      
+      // If it's a relative URL, resolve it against the base URL
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      
+      // Default redirect logic will be handled by our login components
+      return baseUrl;
+    },
     async jwt({ token, user, trigger }) {
       const now = Math.floor(Date.now() / 1000);
       
