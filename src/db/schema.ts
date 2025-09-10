@@ -119,6 +119,20 @@ export const comments = pgTable('comments', {
   createdAt: timestamp('created_at', { withTimezone: false }).defaultNow().notNull(),
 });
 
+// Additional document files table
+export const additionalDocumentFiles = pgTable('additional_document_files', {
+  id: serial('id').primaryKey(),
+  documentId: integer('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  itemIndex: integer('item_index').notNull(), // Index in the additionalDocs array
+  itemName: text('item_name').notNull(), // The name/description from additionalDocs array
+  filePath: varchar('file_path', { length: 500 }).notNull(),
+  originalFilename: varchar('original_filename', { length: 255 }).notNull(),
+  fileSize: integer('file_size').notNull(),
+  uploaderId: integer('uploader_id').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Activity logs table (extended)
 export const activityLogs = pgTable('activity_logs', {
   id: serial('id').primaryKey(),
@@ -207,6 +221,7 @@ export const documentsRelations = relations(documents, ({ one, many }) => ({
     references: [users.id],
   }),
   comments: many(comments),
+  additionalFiles: many(additionalDocumentFiles),
   activityLogs: many(activityLogs),
   statusHistory: many(documentStatusHistory),
 }));
@@ -218,6 +233,17 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   }),
   user: one(users, {
     fields: [comments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const additionalDocumentFilesRelations = relations(additionalDocumentFiles, ({ one }) => ({
+  document: one(documents, {
+    fields: [additionalDocumentFiles.documentId],
+    references: [documents.id],
+  }),
+  uploader: one(users, {
+    fields: [additionalDocumentFiles.uploaderId],
     references: [users.id],
   }),
 }));
