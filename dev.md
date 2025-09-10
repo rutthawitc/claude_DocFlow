@@ -299,54 +299,69 @@ The DocFlow system is now fully functional:
 
 ### 🆕 Latest Updates (2025-09-10)
 
-#### ✅ **Document Verification UI Enhancement**
+#### ✅ **Document Verification Status Indicators**
 
 1. **Database Schema Updates**
    - Removed default value for `isVerified` in `additionalDocumentFiles` table
    - Updated TypeScript interface to support `isVerified: boolean | null`
    - Applied database migration with careful data handling
 
-2. **Radio Button Verification Implementation**
-   - Replaced checkbox with professional radio button verification
-   - Added Thai-localized options:
-     - "เอกสารไม่ถูกต้อง" (Document is incorrect)
-     - "เอกสารถูกต้อง" (Document is correct)
-   - Initial state: No radio button selected for new documents
-   - Horizontal radio button layout for improved UI
-   - Color-coded verification (red for incorrect, green for correct)
-   - Read-only status display for branch users
+2. **Verification Status Indicator Implementation**
+   - Introduced comprehensive status indicators for document verification
+   - Four distinct indicator types:
+     - 🟢 "ตรวจแล้ว X ฉบับ" (Green) - Documents verified as correct
+     - 🔴 "ต้องส่งใหม่ X ฉบับ" (Red) - Documents marked incorrect, need resubmission
+     - 🟡 "ยังไม่ตรวจสอบ X ฉบับ" (Yellow) - Documents uploaded but awaiting review
+     - 🟠 "กรุณาแนบเอกสารเพื่อตรวจสอบ X ฉบับ" (Orange) - Documents not uploaded yet
 
-3. **Additional Documents Upload Indicator**
-   - Implemented green check indicator:
-     - Text: "เอกสารแนบครบแล้วกำลังตรวจสอบ" (Additional documents complete, under review)
-   - Visible across all user roles
-   - Appears when all additional documents are uploaded
-   - Professional green background styling
+3. **Placement and UI Design**
+   - Right-side positioning in document card actions area
+   - Compact vertical design suitable for right-side placement
+   - Responsive design maintaining layout across different screen sizes
+   - Professional styling with appropriate colors and spacing
 
-4. **Verification Components**
-   - Updated `additional-document-upload.tsx` core implementation
-   - Added shadcn/ui radio group component
-   - Enhanced role-based access control for verification
-   - Maintained consistent blue background for verification sections
+4. **Status Detection Logic**
+   - Verified documents: `isVerified: true` - counted as verified
+   - Incorrect documents: `isVerified: false` - counted as incorrect
+   - Uploaded unverified: `isVerified: null` - counted as unverified
+   - Not uploaded: No file exists - counted as not uploaded
 
-5. **Technical Implementation**
-   - Database migrations to handle `isVerified` column changes
-   - Updated database migration script
-   - Implemented dynamic verification state management
-   - Comprehensive role-based permission checks
-   - Seamless integration with existing authentication middleware
+5. **User Experience Enhancements**
+   - Clear action guidance through color-coded status indicators
+   - Orange indicators prompt document upload
+   - Yellow indicators inform documents are pending review
+   - Red indicators alert for document resubmission
+   - Green indicators confirm successful verification
 
-6. **Verification Workflow Enhancements**
+6. **Technical Implementation**
+   - `VerificationStatus` component fetches verification data
+   - API integration using `/api/documents/[id]/additional-files`
+   - Smart counting logic for document status differentiation
+   - Performance optimization with loading states and error handling
+
+7. **Verification Workflow**
    - Non-blocking verification process
-   - Document workflow remains flexible after verification
+   - Flexible document workflow after verification
    - Comprehensive audit trail for verification events
-   - Telegram notifications for verification status changes
+   - Telegram notifications for status changes
 
-7. **User Experience Improvements**
-   - Clear verification workflow with intentional radio button selection
-   - Professional, culturally appropriate UI design
-   - Consistent experience across different user roles
-   - Improved visual hierarchy and information presentation
+8. **Next Development Priorities**
+   - Add hover tooltips for status explanations
+   - Implement batch verification actions for admins
+   - Enhance filtering by verification status
+   - Develop real-time update mechanism for document verification
+
+9. **Affected Components**
+   - `src/components/docflow/documents-list.tsx`
+   - Enhanced Document interface with additionalDocs property
+   - Added AdditionalFile interface for type safety
+   - Implemented comprehensive status counting logic
+
+10. **User Role Considerations**
+    - Visibility across all user roles
+    - Read-only status display for branch users
+    - Professional, culturally appropriate UI design
+    - Consistent experience across user roles
 
 ### 🆕 Latest Updates (2025-08-15)
 
