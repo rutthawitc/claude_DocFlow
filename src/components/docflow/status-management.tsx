@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { 
@@ -31,6 +31,22 @@ interface StatusManagementProps {
   onStatusUpdate?: (newStatus: DocumentStatus) => void;
 }
 
+interface AdditionalFile {
+  id: number;
+  documentId: number;
+  itemIndex: number;
+  itemName: string;
+  filePath: string;
+  originalFilename: string;
+  fileSize: number;
+  uploaderId: number;
+  isVerified: boolean | null;
+  verifiedBy: number | null;
+  verifiedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export function StatusManagement({ 
   documentId, 
   currentStatus, 
@@ -42,6 +58,82 @@ export function StatusManagement({
   const [comment, setComment] = useState('');
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<DocumentStatus | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<{
+    allVerified: boolean;
+    hasAdditionalDocs: boolean;
+    loading: boolean;
+  }>({ allVerified: false, hasAdditionalDocs: false, loading: true });
+
+  // Check verification status for additional documents
+  useEffect(() => {
+    const checkVerificationStatus = async () => {
+      try {
+        // First, get document details to check if it has additional docs
+        const docResponse = await fetch(`/api/documents/${documentId}`, {
+          credentials: 'include'
+        });
+
+        if (docResponse.ok) {
+          const docResult = await docResponse.json();
+          if (docResult.success && docResult.data) {
+            const document = docResult.data;
+            
+            // Check if document has additional docs
+            if (!document.hasAdditionalDocs || !document.additionalDocs || document.additionalDocs.length === 0) {
+              setVerificationStatus({
+                allVerified: true, // No additional docs means all verified by default
+                hasAdditionalDocs: false,
+                loading: false
+              });
+              return;
+            }
+
+            // Get additional files verification status
+            const filesResponse = await fetch(`/api/documents/${documentId}/additional-files`, {
+              credentials: 'include'
+            });
+
+            if (filesResponse.ok) {
+              const filesResult = await filesResponse.json();
+              if (filesResult.success && filesResult.data) {
+                const files: AdditionalFile[] = filesResult.data;
+                const filteredDocs = document.additionalDocs.filter((doc: string) => doc && doc.trim() !== '');
+                
+                let verified = 0;
+                let total = filteredDocs.length;
+
+                filteredDocs.forEach((_: string, index: number) => {
+                  const file = files.find(f => f.itemIndex === index);
+                  if (file && file.isVerified === true) {
+                    verified++;
+                  }
+                });
+
+                const allVerified = total > 0 && verified === total && 
+                                  files.filter(f => f.isVerified === false).length === 0 &&
+                                  files.filter(f => f.isVerified === null).length === 0;
+
+                setVerificationStatus({
+                  allVerified,
+                  hasAdditionalDocs: true,
+                  loading: false
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking verification status:', error);
+        setVerificationStatus({
+          allVerified: false,
+          hasAdditionalDocs: true,
+          loading: false
+        });
+      }
+    };
+
+    checkVerificationStatus();
+  }, [documentId]);
 
   const getStatusIcon = (status: DocumentStatus) => {
     switch (status) {
@@ -227,21 +319,47 @@ export function StatusManagement({
         <div className="space-y-2">
           <Label className="text-sm font-medium">การดำเนินการ:</Label>
           <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-            {availableActions.map((action) => (
-              <Button
-                key={action.status}
-                variant={action.variant}
-                size="sm"
-                disabled={isUpdating}
-                onClick={() => handleStatusUpdate(action.status, action.requiresComment)}
-                className="flex items-center gap-1"
-              >
-                {getStatusIcon(action.status)}
-                {action.label}
-              </Button>
-            ))}
+            {availableActions.map((action) => {
+              // Check if this is the "Send Back to District" button and additional docs are not verified
+              const isSendBackAction = action.status === DocumentStatus.SENT_BACK_TO_DISTRICT;
+              const shouldDisableDueToVerification = isSendBackAction && 
+                verificationStatus.hasAdditionalDocs && 
+                !verificationStatus.allVerified && 
+                !verificationStatus.loading;
+
+              return (
+                <Button
+                  key={action.status}
+                  variant={action.variant}
+                  size="sm"
+                  disabled={isUpdating || shouldDisableDueToVerification}
+                  onClick={() => handleStatusUpdate(action.status, action.requiresComment)}
+                  className="flex items-center gap-1"
+                  title={shouldDisableDueToVerification ? 'กรุณาตรวจสอบเอกสารเพิ่มเติมให้ครบทุกฉบับก่อนส่งกลับเขต' : undefined}
+                >
+                  {getStatusIcon(action.status)}
+                  {action.label}
+                </Button>
+              );
+            })}
           </div>
         </div>
+        
+        {/* Verification Status Warning */}
+        {verificationStatus.hasAdditionalDocs && !verificationStatus.allVerified && !verificationStatus.loading && 
+         availableActions.some(action => action.status === DocumentStatus.SENT_BACK_TO_DISTRICT) && (
+          <div className="flex items-start gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
+            <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-orange-700 font-medium">
+                ไม่สามารถส่งกลับเขตได้ในขณะนี้
+              </p>
+              <p className="text-xs text-orange-600 mt-1">
+                กรุณาตรวจสอบเอกสารเพิ่มเติมให้ครบทุกฉบับก่อนส่งกลับเขต
+              </p>
+            </div>
+          </div>
+        )}
       )}
 
       <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
