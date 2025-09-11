@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { flushSync } from 'react-dom';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { th } from 'date-fns/locale';
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
+import React, { useState, useEffect, useCallback } from "react";
+import { flushSync } from "react-dom";
+import Link from "next/link";
+import { format } from "date-fns";
+import { th } from "date-fns/locale";
+import {
+  Search,
+  Filter,
+  Download,
+  Eye,
   Calendar,
   FileText,
   ChevronLeft,
@@ -21,14 +21,14 @@ import {
   AlertCircle,
   Clock,
   MessageSquare,
-  BadgeCheck
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@/context/auth-context';
+  BadgeCheck,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/context/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import { CommentSystem } from "@/components/docflow/comment-system";
 
 interface Document {
   id: number;
@@ -112,21 +113,24 @@ interface Filters {
 }
 
 const STATUS_COLORS = {
-  draft: 'bg-gray-100 text-gray-700 border-gray-200',
-  sent_to_branch: 'bg-orange-100 text-orange-700 border-orange-200',
-  acknowledged: 'bg-green-100 text-green-700 border-green-200',
-  sent_back_to_district: 'bg-blue-100 text-blue-700 border-blue-200'
+  draft: "bg-gray-100 text-gray-700 border-gray-200",
+  sent_to_branch: "bg-orange-100 text-orange-700 border-orange-200",
+  acknowledged: "bg-green-100 text-green-700 border-green-200",
+  sent_back_to_district: "bg-blue-100 text-blue-700 border-blue-200",
 };
 
 const STATUS_LABELS = {
-  draft: 'ร่าง',
-  sent_to_branch: 'เอกสารจากเขต',
-  acknowledged: 'รับทราบ',
-  sent_back_to_district: 'ส่งกลับเขต'
+  draft: "ร่าง",
+  sent_to_branch: "เอกสารจากเขต",
+  acknowledged: "รับทราบแล้ว",
+  sent_back_to_district: "ส่งกลับเขต",
 };
 
-// Verification Status Component
-function VerificationStatus({ documentId, additionalDocs = [] }: VerificationStatusProps) {
+// Modern Verification Status Component with Progress Bar
+function VerificationStatus({
+  documentId,
+  additionalDocs = [],
+}: VerificationStatusProps) {
   const [verificationData, setVerificationData] = useState<{
     verified: number;
     incorrect: number;
@@ -134,7 +138,14 @@ function VerificationStatus({ documentId, additionalDocs = [] }: VerificationSta
     notUploaded: number;
     total: number;
     allVerified: boolean;
-  }>({ verified: 0, incorrect: 0, unverified: 0, notUploaded: 0, total: 0, allVerified: false });
+  }>({
+    verified: 0,
+    incorrect: 0,
+    unverified: 0,
+    notUploaded: 0,
+    total: 0,
+    allVerified: false,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -145,16 +156,21 @@ function VerificationStatus({ documentId, additionalDocs = [] }: VerificationSta
       }
 
       try {
-        const response = await fetch(`/api/documents/${documentId}/additional-files`, {
-          credentials: 'include'
-        });
+        const response = await fetch(
+          `/api/documents/${documentId}/additional-files`,
+          {
+            credentials: "include",
+          },
+        );
 
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
             const files: AdditionalFile[] = result.data;
-            const filteredDocs = additionalDocs.filter(doc => doc && doc.trim() !== '');
-            
+            const filteredDocs = additionalDocs.filter(
+              (doc) => doc && doc.trim() !== "",
+            );
+
             let verified = 0;
             let incorrect = 0;
             let unverified = 0;
@@ -162,7 +178,7 @@ function VerificationStatus({ documentId, additionalDocs = [] }: VerificationSta
 
             // Count verification status for each additional document
             filteredDocs.forEach((_, index) => {
-              const file = files.find(f => f.itemIndex === index);
+              const file = files.find((f) => f.itemIndex === index);
               if (file) {
                 if (file.isVerified === true) {
                   verified++;
@@ -176,11 +192,12 @@ function VerificationStatus({ documentId, additionalDocs = [] }: VerificationSta
               }
             });
 
-            const allVerified = filteredDocs.length > 0 && 
-                               verified === filteredDocs.length && 
-                               incorrect === 0 && 
-                               unverified === 0 && 
-                               notUploaded === 0;
+            const allVerified =
+              filteredDocs.length > 0 &&
+              verified === filteredDocs.length &&
+              incorrect === 0 &&
+              unverified === 0 &&
+              notUploaded === 0;
 
             setVerificationData({
               verified,
@@ -188,12 +205,12 @@ function VerificationStatus({ documentId, additionalDocs = [] }: VerificationSta
               unverified,
               notUploaded,
               total: filteredDocs.length,
-              allVerified
+              allVerified,
             });
           }
         }
       } catch (error) {
-        console.error('Error fetching verification status:', error);
+        console.error("Error fetching verification status:", error);
       } finally {
         setLoading(false);
       }
@@ -206,43 +223,79 @@ function VerificationStatus({ documentId, additionalDocs = [] }: VerificationSta
     return null;
   }
 
+  const progressPercentage =
+    verificationData.total > 0
+      ? (verificationData.verified / verificationData.total) * 100
+      : 0;
+
   return (
-    <div className="text-right">
-      <div className="text-xs font-medium text-gray-600 mb-1">สถานะการตรวจเอกสารแนบ</div>
-      <div className="flex flex-col gap-1">
+    <div className="w-full">
+      <div className="text-sm font-medium text-gray-700 mb-2 flex items-center justify-between">
+        <span>สถานะการตรวจสอบ</span>
+        <span className="text-xs text-gray-500">
+          {verificationData.verified}/{verificationData.total}
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-3 overflow-hidden">
+        <div
+          className={`h-2 rounded-full transition-all duration-700 ease-out relative ${
+            progressPercentage === 100
+              ? "bg-gradient-to-r from-green-500 via-green-600 to-green-700"
+              : "bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700"
+          }`}
+          style={{ width: `${progressPercentage}%` }}
+        >
+          {progressPercentage > 0 && (
+            <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse"></div>
+          )}
+        </div>
+      </div>
+
+      {/* Status Indicators */}
+      <div className="space-y-2">
         {verificationData.verified > 0 && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded-md border border-green-200 justify-end">
-            <span className="text-sm font-medium text-green-700">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center justify-center w-5 h-5 bg-green-100 rounded-full">
+              <CheckCircle className="h-3 w-3 text-green-600" />
+            </div>
+            <span className="text-green-700 font-medium">
               ตรวจแล้ว {verificationData.verified} ฉบับ
             </span>
-            <CheckCircle className="h-4 w-4 text-green-600" />
           </div>
         )}
-        
+
         {verificationData.incorrect > 0 && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded-md border border-red-200 justify-end">
-            <span className="text-sm font-medium text-red-700">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center justify-center w-5 h-5 bg-red-100 rounded-full">
+              <AlertCircle className="h-3 w-3 text-red-600" />
+            </div>
+            <span className="text-red-700 font-medium">
               ต้องส่งใหม่ {verificationData.incorrect} ฉบับ
             </span>
-            <AlertCircle className="h-4 w-4 text-red-600" />
           </div>
         )}
-        
+
         {verificationData.unverified > 0 && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-yellow-50 rounded-md border border-yellow-200 justify-end">
-            <span className="text-sm font-medium text-yellow-700">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center justify-center w-5 h-5 bg-yellow-100 rounded-full">
+              <Clock className="h-3 w-3 text-yellow-600" />
+            </div>
+            <span className="text-yellow-700 font-medium">
               ยังไม่ตรวจสอบ {verificationData.unverified} ฉบับ
             </span>
-            <Clock className="h-4 w-4 text-yellow-600" />
           </div>
         )}
-        
+
         {verificationData.notUploaded > 0 && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-orange-50 rounded-md border border-orange-200 justify-end">
-            <span className="text-sm font-medium text-orange-700">
-              กรุณาแนบเอกสารเพื่อตรวจสอบ {verificationData.notUploaded} ฉบับ
+          <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center justify-center w-5 h-5 bg-orange-100 rounded-full animate-bounce">
+              <Clock className="h-3 w-3 text-orange-600" />
+            </div>
+            <span className="text-orange-700 font-medium animate-pulse">
+              ยังไม่ตรวจสอบ {verificationData.notUploaded} ฉบับ
             </span>
-            <Clock className="h-4 w-4 text-orange-600" />
           </div>
         )}
       </div>
@@ -250,65 +303,76 @@ function VerificationStatus({ documentId, additionalDocs = [] }: VerificationSta
   );
 }
 
-export function DocumentsList({ 
-  branchBaCode, 
-  title = 'เอกสารทั้งหมด',
-  showBranchFilter = true 
+export function DocumentsList({
+  branchBaCode,
+  title = "เอกสารทั้งหมด",
+  showBranchFilter = true,
 }: DocumentsListProps) {
-  const { hasRole, hasPermission, user } = useAuth();
+  const { hasRole, hasPermission, user, isLoading: authLoading } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(0);
   const [totalDocuments, setTotalDocuments] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState<{ [key: number]: boolean }>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<{
+    [key: number]: boolean;
+  }>({});
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-  const [deletedDocumentInfo, setDeletedDocumentInfo] = useState<{ mtNumber: string; subject: string } | null>(null);
-  const [sendBackDialogOpen, setSendBackDialogOpen] = useState<{ [key: number]: boolean }>({});
-  const [sendBackComment, setSendBackComment] = useState('');
+  const [deletedDocumentInfo, setDeletedDocumentInfo] = useState<{
+    mtNumber: string;
+    subject: string;
+  } | null>(null);
+  const [sendBackDialogOpen, setSendBackDialogOpen] = useState<{
+    [key: number]: boolean;
+  }>({});
+  const [sendBackComment, setSendBackComment] = useState("");
   const [sendingBackId, setSendingBackId] = useState<number | null>(null);
+  const [commentsDialogOpen, setCommentsDialogOpen] = useState<{
+    [key: number]: boolean;
+  }>({});
 
   const [filters, setFilters] = useState<Filters>({
-    search: '',
-    status: 'all',
-    dateFrom: '',
-    dateTo: '',
+    search: "",
+    status: "all",
+    dateFrom: "",
+    dateTo: "",
     page: 1,
-    limit: 20
+    limit: 20,
   });
 
   // Fetch documents
   const fetchDocuments = useCallback(async () => {
     setLoading(true);
-    
+
     try {
       const queryParams = new URLSearchParams();
-      
-      if (filters.search) queryParams.append('search', filters.search);
-      if (filters.status !== 'all') queryParams.append('status', filters.status);
-      if (filters.dateFrom) queryParams.append('dateFrom', filters.dateFrom);
-      if (filters.dateTo) queryParams.append('dateTo', filters.dateTo);
-      queryParams.append('page', filters.page.toString());
-      queryParams.append('limit', filters.limit.toString());
+
+      if (filters.search) queryParams.append("search", filters.search);
+      if (filters.status !== "all")
+        queryParams.append("status", filters.status);
+      if (filters.dateFrom) queryParams.append("dateFrom", filters.dateFrom);
+      if (filters.dateTo) queryParams.append("dateTo", filters.dateTo);
+      queryParams.append("page", filters.page.toString());
+      queryParams.append("limit", filters.limit.toString());
 
       // Add timestamp to prevent caching issues, especially for branch views
-      queryParams.append('_t', Date.now().toString());
+      queryParams.append("_t", Date.now().toString());
       // Add random parameter to defeat any client-side caching
-      queryParams.append('_r', Math.random().toString(36).substring(7));
-      
-      const endpoint = branchBaCode 
+      queryParams.append("_r", Math.random().toString(36).substring(7));
+
+      const endpoint = branchBaCode
         ? `/api/documents/branch/${branchBaCode}?${queryParams}`
         : `/api/documents?${queryParams}`;
 
       const response = await fetch(endpoint, {
-        credentials: 'include',
-        cache: 'no-store', // Ensure fresh data, especially important for branch views
+        credentials: "include",
+        cache: "no-store", // Ensure fresh data, especially important for branch views
         headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
       });
 
       if (!response.ok) {
@@ -316,17 +380,22 @@ export function DocumentsList({
       }
 
       const responseText = await response.text();
-      
+
       if (!responseText) {
-        throw new Error('Empty response from server');
+        throw new Error("Empty response from server");
       }
 
       let result;
       try {
         result = JSON.parse(responseText);
       } catch (parseError) {
-        console.error('JSON parse error:', parseError, 'Response text:', responseText);
-        throw new Error('Invalid JSON response from server');
+        console.error(
+          "JSON parse error:",
+          parseError,
+          "Response text:",
+          responseText,
+        );
+        throw new Error("Invalid JSON response from server");
       }
 
       if (result.success) {
@@ -334,10 +403,10 @@ export function DocumentsList({
         setTotalPages(result.data.totalPages || 0);
         setTotalDocuments(result.data.total || 0);
       } else {
-        throw new Error(result.error || 'Failed to fetch documents');
+        throw new Error(result.error || "Failed to fetch documents");
       }
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      console.error("Error fetching documents:", error);
       setDocuments([]);
     } finally {
       setLoading(false);
@@ -350,18 +419,21 @@ export function DocumentsList({
   }, [fetchDocuments]);
 
   // Handle filter changes
-  const handleFilterChange = useCallback((key: keyof Filters, value: string | number) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-      page: key !== 'page' ? 1 : value // Reset to page 1 when changing filters
-    }));
-  }, []);
+  const handleFilterChange = useCallback(
+    (key: keyof Filters, value: string | number) => {
+      setFilters((prev) => ({
+        ...prev,
+        [key]: value,
+        page: key !== "page" ? 1 : value, // Reset to page 1 when changing filters
+      }));
+    },
+    [],
+  );
 
   // Handle search with debounce
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
-      if (filters.search !== '') {
+      if (filters.search !== "") {
         fetchDocuments();
       }
     }, 500);
@@ -373,13 +445,13 @@ export function DocumentsList({
   const handleDownload = async (documentId: number, filename: string) => {
     try {
       const response = await fetch(`/api/documents/${documentId}/download`, {
-        credentials: 'include'
+        credentials: "include",
       });
 
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = filename;
         document.body.appendChild(a);
@@ -387,57 +459,62 @@ export function DocumentsList({
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        throw new Error('Download failed');
+        throw new Error("Download failed");
       }
     } catch (error) {
-      console.error('Download error:', error);
+      console.error("Download error:", error);
     }
   };
 
   // Delete document
   const handleDelete = async (documentId: number) => {
     setDeletingId(documentId);
-    
+
     // Find the document info for the success message
-    const docToDelete = documents.find(doc => doc.id === documentId);
-    
+    const docToDelete = documents.find((doc) => doc.id === documentId);
+
     try {
       const response = await fetch(`/api/documents/${documentId}`, {
-        method: 'DELETE',
-        credentials: 'include'
+        method: "DELETE",
+        credentials: "include",
       });
 
       if (response.ok) {
-        console.log('Delete API successful, updating UI...');
-        
+        console.log("Delete API successful, updating UI...");
+
         // Use flushSync to force immediate synchronous updates
         flushSync(() => {
           // Remove document from local state immediately
-          setDocuments(prev => {
-            const newDocs = prev.filter(doc => doc.id !== documentId);
-            console.log('Documents updated:', prev.length, '->', newDocs.length);
+          setDocuments((prev) => {
+            const newDocs = prev.filter((doc) => doc.id !== documentId);
+            console.log(
+              "Documents updated:",
+              prev.length,
+              "->",
+              newDocs.length,
+            );
             return newDocs;
           });
-          
-          setTotalDocuments(prev => {
+
+          setTotalDocuments((prev) => {
             const newTotal = prev - 1;
-            console.log('Total documents updated:', prev, '->', newTotal);
+            console.log("Total documents updated:", prev, "->", newTotal);
             return newTotal;
           });
-          
+
           // Close the delete confirmation dialog
-          setDeleteDialogOpen(prev => ({ ...prev, [documentId]: false }));
+          setDeleteDialogOpen((prev) => ({ ...prev, [documentId]: false }));
         });
-        
+
         // Set document info and show success dialog
         if (docToDelete) {
           setDeletedDocumentInfo({
             mtNumber: docToDelete.mtNumber,
-            subject: docToDelete.subject
+            subject: docToDelete.subject,
           });
         }
         setSuccessDialogOpen(true);
-        
+
         // Force refresh the data from server to ensure consistency
         // This is especially important for branch-specific views
         // Multiple refreshes to handle any backend delays and cache clearing
@@ -450,23 +527,23 @@ export function DocumentsList({
         setTimeout(() => {
           fetchDocuments();
         }, 1500);
-        
+
         // Also trigger a page refresh for branch views to clear any lingering cache
         if (branchBaCode) {
           setTimeout(() => {
             window.location.reload();
           }, 2000);
         }
-        
-        console.log('Document deleted successfully, UI should update now');
+
+        console.log("Document deleted successfully, UI should update now");
       } else {
         const error = await response.json();
-        console.error('Delete failed:', error.error);
+        console.error("Delete failed:", error.error);
         alert(`ลบเอกสารไม่สำเร็จ: ${error.error}`);
       }
     } catch (error) {
-      console.error('Delete error:', error);
-      alert('เกิดข้อผิดพลาดในการลบเอกสาร');
+      console.error("Delete error:", error);
+      alert("เกิดข้อผิดพลาดในการลบเอกสาร");
     } finally {
       setDeletingId(null);
     }
@@ -475,60 +552,67 @@ export function DocumentsList({
   // Check if user can delete document
   const canDeleteDocument = (doc: Document): boolean => {
     // Admin can delete any document
-    if (hasRole('admin')) return true;
-    
+    if (hasRole("admin")) return true;
+
     // Users with delete permission can delete any document
-    if (hasPermission('documents:delete')) return true;
-    
+    if (hasPermission("documents:delete")) return true;
+
     // Document owner can delete their own draft documents
-    if (user?.id === doc.uploaderId.toString() && doc.status === 'draft') return true;
-    
+    if (user?.id === doc.uploaderId.toString() && doc.status === "draft")
+      return true;
+
     return false;
   };
 
   // Send back to district handler
   const handleSendBackToDistrict = async (documentId: number) => {
     if (!sendBackComment.trim()) {
-      alert('กรุณาใส่ความคิดเห็น');
+      alert("กรุณาใส่ความคิดเห็น");
       return;
     }
 
     setSendingBackId(documentId);
-    
+
     try {
       const response = await fetch(`/api/documents/${documentId}/status`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
-          status: 'sent_back_to_district',
-          comment: sendBackComment
-        })
+          status: "sent_back_to_district",
+          comment: sendBackComment,
+        }),
       });
 
       if (response.ok) {
         // Close dialog and reset state
-        setSendBackDialogOpen(prev => ({ ...prev, [documentId]: false }));
-        setSendBackComment('');
-        
+        setSendBackDialogOpen((prev) => ({ ...prev, [documentId]: false }));
+        setSendBackComment("");
+
         // Refresh documents list
         fetchDocuments();
       } else {
         const error = await response.json();
-        alert(`เกิดข้อผิดพลาด: ${error.error || 'ไม่สามารถส่งเอกสารกลับเขตได้'}`);
+        alert(
+          `เกิดข้อผิดพลาด: ${error.error || "ไม่สามารถส่งเอกสารกลับเขตได้"}`,
+        );
       }
     } catch (error) {
-      console.error('Error sending document back to district:', error);
-      alert('เกิดข้อผิดพลาดในการส่งเอกสารกลับเขต');
+      console.error("Error sending document back to district:", error);
+      alert("เกิดข้อผิดพลาดในการส่งเอกสารกลับเขต");
     } finally {
       setSendingBackId(null);
     }
   };
 
   // SendBackButton component
-  const SendBackButton = ({ doc, onSendBack, disabled }: SendBackButtonProps) => {
+  const SendBackButton = ({
+    doc,
+    onSendBack,
+    disabled,
+  }: SendBackButtonProps) => {
     const [verificationStatus, setVerificationStatus] = useState<{
       verified: number;
       total: number;
@@ -544,39 +628,46 @@ export function DocumentsList({
         }
 
         try {
-          const response = await fetch(`/api/documents/${doc.id}/additional-files`, {
-            credentials: 'include'
-          });
+          const response = await fetch(
+            `/api/documents/${doc.id}/additional-files`,
+            {
+              credentials: "include",
+            },
+          );
 
           if (response.ok) {
             const result = await response.json();
             if (result.success && result.data) {
               const files: AdditionalFile[] = result.data;
-              const filteredDocs = doc.additionalDocs.filter(docItem => docItem && docItem.trim() !== '');
-              
+              const filteredDocs = doc.additionalDocs.filter(
+                (docItem) => docItem && docItem.trim() !== "",
+              );
+
               let verified = 0;
               let total = filteredDocs.length;
 
               filteredDocs.forEach((_, index) => {
-                const file = files.find(f => f.itemIndex === index);
+                const file = files.find((f) => f.itemIndex === index);
                 if (file && file.isVerified === true) {
                   verified++;
                 }
               });
 
-              const allVerified = total > 0 && verified === total && 
-                                files.filter(f => f.isVerified === false).length === 0 &&
-                                files.filter(f => f.isVerified === null).length === 0;
+              const allVerified =
+                total > 0 &&
+                verified === total &&
+                files.filter((f) => f.isVerified === false).length === 0 &&
+                files.filter((f) => f.isVerified === null).length === 0;
 
               setVerificationStatus({
                 verified,
                 total,
-                allVerified
+                allVerified,
               });
             }
           }
         } catch (error) {
-          console.error('Error checking verification status:', error);
+          console.error("Error checking verification status:", error);
         } finally {
           setLoading(false);
         }
@@ -586,21 +677,23 @@ export function DocumentsList({
     }, [doc.id, doc.additionalDocs]);
 
     // Only show button if document is acknowledged and all additional docs are verified
-    if (loading || !verificationStatus || 
-        doc.status !== 'acknowledged' || 
-        !verificationStatus.allVerified) {
+    if (
+      loading ||
+      !verificationStatus ||
+      doc.status !== "acknowledged" ||
+      !verificationStatus.allVerified
+    ) {
       return null;
     }
 
     return (
       <Button
-        variant="outline"
-        size="sm"
+        size="default"
         onClick={() => onSendBack(doc.id)}
         disabled={disabled}
-        className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300"
+        className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-200 border-0"
       >
-        <BadgeCheck className="h-4 w-4 mr-1" />
+        <BadgeCheck className="h-5 w-5 mr-2" />
         ส่งเอกสารต้นฉบับ
       </Button>
     );
@@ -608,11 +701,11 @@ export function DocumentsList({
 
   // Format file size
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   return (
@@ -621,11 +714,9 @@ export function DocumentsList({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-gray-600">
-            {totalDocuments} เอกสาร
-          </p>
+          <p className="text-gray-600">{totalDocuments} เอกสาร</p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -633,10 +724,12 @@ export function DocumentsList({
             onClick={fetchDocuments}
             disabled={loading}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
             รีเฟรช
           </Button>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -660,7 +753,9 @@ export function DocumentsList({
                   <Input
                     placeholder="เลขที่ มท หรือ เรื่อง"
                     value={filters.search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("search", e.target.value)
+                    }
                     className="pl-8"
                   />
                 </div>
@@ -670,7 +765,7 @@ export function DocumentsList({
                 <label className="text-sm font-medium">สถานะ</label>
                 <select
                   value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  onChange={(e) => handleFilterChange("status", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">ทั้งหมด</option>
@@ -686,7 +781,9 @@ export function DocumentsList({
                 <Input
                   type="date"
                   value={filters.dateFrom}
-                  onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange("dateFrom", e.target.value)
+                  }
                 />
               </div>
 
@@ -695,7 +792,7 @@ export function DocumentsList({
                 <Input
                   type="date"
                   value={filters.dateTo}
-                  onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                  onChange={(e) => handleFilterChange("dateTo", e.target.value)}
                 />
               </div>
             </div>
@@ -722,165 +819,280 @@ export function DocumentsList({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {console.log('Rendering documents:', documents.length)}
+        <div className="space-y-6">
+          {console.log("Rendering documents:", documents.length)}
           {documents.map((doc) => (
-            <Card key={`doc-${doc.id}-${doc.updatedAt}`} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  {/* Document Info */}
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="font-semibold text-lg">
-                          {doc.mtNumber}
-                        </h3>
-                        <p className="text-gray-600">
-                          {doc.subject}
-                        </p>
-                        {showBranchFilter && doc.branch && (
-                          <p className="text-sm text-blue-600">
-                            {doc.branch.name}
-                          </p>
-                        )}
+            <Card
+              key={`doc-${doc.id}-${doc.updatedAt}`}
+              className="group hover:shadow-xl transition-all duration-300 hover:border-gray-300 bg-white hover:-translate-y-1 border border-gray-200"
+            >
+              <CardContent className="p-0">
+                <div className="flex flex-col lg:flex-row">
+                  {/* Left Side - Document Information */}
+                  <div className="flex-1 p-6 border-r border-gray-100">
+                    {/* Header with Status */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="space-y-2">
+                        <Badge
+                          variant="outline"
+                          className={`${STATUS_COLORS[doc.status as keyof typeof STATUS_COLORS]} text-xs font-medium px-2 py-1`}
+                        >
+                          {
+                            STATUS_LABELS[
+                              doc.status as keyof typeof STATUS_LABELS
+                            ]
+                          }
+                        </Badge>
+                        <div className="text-sm text-gray-500">
+                          ประจำ: {doc.monthYear}
+                        </div>
                       </div>
-                      
-                      <Badge 
-                        variant="outline" 
-                        className={STATUS_COLORS[doc.status as keyof typeof STATUS_COLORS]}
-                      >
-                        {STATUS_LABELS[doc.status as keyof typeof STATUS_LABELS]}
-                      </Badge>
                     </div>
 
-                    {/* Metadata */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 flex-shrink-0" />
-                        <span>{format(new Date(doc.mtDate), 'dd/MM/yyyy', { locale: th })}</span>
+                    {/* Document Title and Subject */}
+                    <div className="mb-4">
+                      <h3 className="font-bold text-xl text-gray-900 mb-2">
+                        {doc.mtNumber}
+                      </h3>
+                      <p className="text-gray-700 text-base leading-relaxed">
+                        {doc.subject}
+                      </p>
+                      {showBranchFilter && doc.branch && (
+                        <p className="text-sm text-blue-600 mt-2 font-medium">
+                          {doc.branch.name}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Document Metadata with Icons */}
+                    <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600 pb-4 border-b border-gray-100">
+                      <div className="flex items-center gap-2 hover:text-gray-800 transition-colors">
+                        <div className="p-1 bg-blue-50 rounded-full">
+                          <Calendar className="h-3 w-3 text-blue-600" />
+                        </div>
+                        <span className="font-medium">
+                          {format(new Date(doc.mtDate), "dd/MM/yyyy", {
+                            locale: th,
+                          })}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 flex-shrink-0" />
-                        <span>{formatFileSize(doc.fileSize)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">ประจำ:</span>
-                        <span>{doc.monthYear}</span>
+                      <div className="flex items-center gap-2 hover:text-gray-800 transition-colors">
+                        <div className="p-1 bg-purple-50 rounded-full">
+                          <FileText className="h-3 w-3 text-purple-600" />
+                        </div>
+                        <span className="font-medium">
+                          {formatFileSize(doc.fileSize)}
+                        </span>
                       </div>
                     </div>
-                    
-                    {/* Uploader and Upload Date */}
+
+                    {/* Uploader Information */}
                     {doc.uploader && (
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-gray-600 pt-2 border-t border-gray-100">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">โดย:</span>
-                          <span>{doc.uploader.firstName} {doc.uploader.lastName}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">วันที่:</span>
-                          <span>{format(new Date(doc.createdAt), 'dd/MM/yyyy HH:mm', { locale: th })}</span>
+                      <div className="pt-4 text-sm text-gray-600">
+                        <div className="flex items-center justify-between">
+                          <span>
+                            โดย:{" "}
+                            <span className="font-medium text-gray-900">
+                              {doc.uploader.firstName} {doc.uploader.lastName}
+                            </span>
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {format(
+                              new Date(doc.createdAt),
+                              "dd/MM/yyyy HH:mm",
+                              { locale: th },
+                            )}
+                          </span>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Actions and Verification Status */}
-                  <div className="flex flex-col items-end gap-3">
-                    {/* Verification Status */}
-                    <VerificationStatus 
-                      documentId={doc.id} 
-                      additionalDocs={doc.additionalDocs}
-                    />
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-2">
-                        <SendBackButton
-                          doc={doc}
-                          onSendBack={(id) => setSendBackDialogOpen(prev => ({ ...prev, [id]: true }))}
-                          disabled={sendingBackId === doc.id}
+                  {/* Right Side - Status & Actions */}
+                  <div className="lg:w-80 p-6 bg-gradient-to-br from-gray-50 to-gray-100/50">
+                    {/* Verification Status with Progress */}
+                    {doc.additionalDocs && doc.additionalDocs.length > 0 && (
+                      <div className="mb-6 p-4 bg-white rounded-lg border">
+                        <VerificationStatus
+                          documentId={doc.id}
+                          additionalDocs={doc.additionalDocs}
                         />
-                        
-                        <Link href={`/documents/${doc.id}`}>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            ดู
+                      </div>
+                    )}
+
+                    {/* Primary Action Button */}
+                    <div className="space-y-3">
+                      <SendBackButton
+                        doc={doc}
+                        onSendBack={(id) =>
+                          setSendBackDialogOpen((prev) => ({
+                            ...prev,
+                            [id]: true,
+                          }))
+                        }
+                        disabled={sendingBackId === doc.id}
+                      />
+
+                      {/* Secondary Action Buttons */}
+                      <div className="flex flex-col gap-2">
+                        <Link href={`/documents/${doc.id}`} className="w-full">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-start hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all duration-200"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            ดูรายละเอียดเอกสาร
                           </Button>
                         </Link>
-                        
+
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDownload(doc.id, doc.originalFilename)}
+                          className="w-full justify-start hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-all duration-200"
+                          onClick={() =>
+                            handleDownload(doc.id, doc.originalFilename)
+                          }
                         >
-                          <Download className="h-4 w-4 mr-1" />
+                          <Download className="h-4 w-4 mr-2" />
                           ดาวน์โหลด
                         </Button>
 
-                    {canDeleteDocument(doc) && (
-                      <Dialog 
-                        open={deleteDialogOpen[doc.id] || false}
-                        onOpenChange={(open) => setDeleteDialogOpen(prev => ({ ...prev, [doc.id]: open }))}
-                      >
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            disabled={deletingId === doc.id}
-                            onClick={() => setDeleteDialogOpen(prev => ({ ...prev, [doc.id]: true }))}
-                          >
-                            {deletingId === doc.id ? (
-                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4 mr-1" />
-                            )}
-                            ลบ
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>ยืนยันการลบเอกสาร</DialogTitle>
-                            <DialogDescription>
-                              คุณแน่ใจหรือไม่ที่จะลบเอกสาร &quot;{doc.mtNumber}&quot; - {doc.subject}?
-                              <br />
-                              <strong className="text-red-600">การดำเนินการนี้ไม่สามารถยกเลิกได้</strong>
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <Button 
-                              variant="outline"
-                              onClick={() => setDeleteDialogOpen(prev => ({ ...prev, [doc.id]: false }))}
+                        {/* Comment Count Button - Always show for interactive purposes */}
+                        <Dialog 
+                          open={commentsDialogOpen[doc.id] || false}
+                          onOpenChange={(open) => setCommentsDialogOpen(prev => ({ ...prev, [doc.id]: open }))}
+                        >
+                          <DialogTrigger asChild>
+                            <div 
+                              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg border text-sm font-medium transition-all duration-200 cursor-pointer hover:shadow-md ${
+                                doc.commentCount && doc.commentCount > 0
+                                  ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100 text-blue-700 hover:from-blue-100 hover:to-indigo-100'
+                                  : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200 text-gray-600 hover:from-gray-100 hover:to-gray-200'
+                              }`}
+                              onClick={() => setCommentsDialogOpen(prev => ({ ...prev, [doc.id]: true }))}
                             >
-                              ยกเลิก
-                            </Button>
-                            <Button
-                              className="bg-red-600 hover:bg-red-700"
-                              onClick={() => handleDelete(doc.id)}
-                              disabled={deletingId === doc.id}
-                            >
-                              {deletingId === doc.id ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                  กำลังลบ...
-                                </>
+                              <div className={`p-1 rounded-full ${
+                                doc.commentCount && doc.commentCount > 0
+                                  ? 'bg-blue-100'
+                                  : 'bg-gray-200'
+                              }`}>
+                                <MessageSquare className={`h-3 w-3 ${
+                                  doc.commentCount && doc.commentCount > 0
+                                    ? 'text-blue-600'
+                                    : 'text-gray-500'
+                                }`} />
+                              </div>
+                              <span>
+                                {doc.commentCount && doc.commentCount > 0 
+                                  ? `${doc.commentCount} ความคิดเห็น`
+                                  : 'เพิ่มความคิดเห็น'
+                                }
+                              </span>
+                            </div>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2">
+                                <MessageSquare className="h-5 w-5 text-blue-600" />
+                                ความคิดเห็นของเอกสาร {doc.mtNumber}
+                              </DialogTitle>
+                              <DialogDescription>
+                                {doc.subject}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex-1 overflow-hidden">
+                              {user && !authLoading ? (
+                                <CommentSystem
+                                  documentId={doc.id}
+                                  userRoles={user?.pwa?.roles || []}
+                                  currentUserId={user?.id ? parseInt(user.id) : undefined}
+                                  refreshInterval={10000}
+                                />
                               ) : (
-                                'ลบเอกสาร'
+                                <div className="flex items-center justify-center py-8">
+                                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                  <span>กำลังโหลดความคิดเห็น...</span>
+                                </div>
                               )}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+
+                        {canDeleteDocument(doc) && (
+                          <Dialog
+                            open={deleteDialogOpen[doc.id] || false}
+                            onOpenChange={(open) =>
+                              setDeleteDialogOpen((prev) => ({
+                                ...prev,
+                                [doc.id]: open,
+                              }))
+                            }
+                          >
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                disabled={deletingId === doc.id}
+                                onClick={() =>
+                                  setDeleteDialogOpen((prev) => ({
+                                    ...prev,
+                                    [doc.id]: true,
+                                  }))
+                                }
+                              >
+                                {deletingId === doc.id ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                )}
+                                ลบ
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>ยืนยันการลบเอกสาร</DialogTitle>
+                                <DialogDescription>
+                                  คุณแน่ใจหรือไม่ที่จะลบเอกสาร &quot;
+                                  {doc.mtNumber}&quot; - {doc.subject}?
+                                  <br />
+                                  <strong className="text-red-600">
+                                    การดำเนินการนี้ไม่สามารถยกเลิกได้
+                                  </strong>
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button
+                                  variant="outline"
+                                  onClick={() =>
+                                    setDeleteDialogOpen((prev) => ({
+                                      ...prev,
+                                      [doc.id]: false,
+                                    }))
+                                  }
+                                >
+                                  ยกเลิก
+                                </Button>
+                                <Button
+                                  className="bg-red-600 hover:bg-red-700"
+                                  onClick={() => handleDelete(doc.id)}
+                                  disabled={deletingId === doc.id}
+                                >
+                                  {deletingId === doc.id ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                      กำลังลบ...
+                                    </>
+                                  ) : (
+                                    "ลบเอกสาร"
+                                  )}
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        )}
                       </div>
-                      
-                      {/* Comment Count */}
-                      {(doc.commentCount !== undefined && doc.commentCount > 0) && (
-                        <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                          <MessageSquare className="h-4 w-4" />
-                          <span>{doc.commentCount} ความคิดเห็น</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -896,18 +1108,18 @@ export function DocumentsList({
           <p className="text-sm text-gray-700">
             หน้า {filters.page} จาก {totalPages} ({totalDocuments} เอกสาร)
           </p>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleFilterChange('page', filters.page - 1)}
+              onClick={() => handleFilterChange("page", filters.page - 1)}
               disabled={filters.page <= 1}
             >
               <ChevronLeft className="h-4 w-4" />
               ก่อนหน้า
             </Button>
-            
+
             <div className="flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const page = i + 1;
@@ -916,18 +1128,18 @@ export function DocumentsList({
                     key={page}
                     variant={filters.page === page ? "default" : "outline"}
                     size="sm"
-                    onClick={() => handleFilterChange('page', page)}
+                    onClick={() => handleFilterChange("page", page)}
                   >
                     {page}
                   </Button>
                 );
               })}
             </div>
-            
+
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleFilterChange('page', filters.page + 1)}
+              onClick={() => handleFilterChange("page", filters.page + 1)}
               disabled={filters.page >= totalPages}
             >
               ถัดไป
@@ -948,7 +1160,9 @@ export function DocumentsList({
                 </div>
               </div>
               <div>
-                <DialogTitle className="text-green-800">ลบเอกสารสำเร็จ</DialogTitle>
+                <DialogTitle className="text-green-800">
+                  ลบเอกสารสำเร็จ
+                </DialogTitle>
                 <DialogDescription className="text-gray-600">
                   เอกสารถูกลบออกจากระบบเรียบร้อยแล้ว
                 </DialogDescription>
@@ -958,16 +1172,24 @@ export function DocumentsList({
           <div className="py-4">
             {deletedDocumentInfo && (
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-2">เอกสารที่ถูกลบ:</h4>
+                <h4 className="font-medium text-gray-900 mb-2">
+                  เอกสารที่ถูกลบ:
+                </h4>
                 <div className="space-y-1 text-sm">
-                  <p><span className="font-medium">เลขที่:</span> {deletedDocumentInfo.mtNumber}</p>
-                  <p><span className="font-medium">เรื่อง:</span> {deletedDocumentInfo.subject}</p>
+                  <p>
+                    <span className="font-medium">เลขที่:</span>{" "}
+                    {deletedDocumentInfo.mtNumber}
+                  </p>
+                  <p>
+                    <span className="font-medium">เรื่อง:</span>{" "}
+                    {deletedDocumentInfo.subject}
+                  </p>
                 </div>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button 
+            <Button
               onClick={() => {
                 setSuccessDialogOpen(false);
                 setDeletedDocumentInfo(null);
@@ -982,13 +1204,13 @@ export function DocumentsList({
 
       {/* Send Back to District Dialogs */}
       {documents.map((doc) => (
-        <Dialog 
+        <Dialog
           key={`sendback-${doc.id}`}
           open={sendBackDialogOpen[doc.id] || false}
           onOpenChange={(open) => {
-            setSendBackDialogOpen(prev => ({ ...prev, [doc.id]: open }));
+            setSendBackDialogOpen((prev) => ({ ...prev, [doc.id]: open }));
             if (!open) {
-              setSendBackComment('');
+              setSendBackComment("");
             }
           }}
         >
@@ -996,12 +1218,16 @@ export function DocumentsList({
             <DialogHeader>
               <DialogTitle>ส่งเอกสารเพิ่มเติมกลับเขต</DialogTitle>
               <DialogDescription>
-                คุณต้องการส่งเอกสาร &quot;{doc.mtNumber}&quot; - {doc.subject} กลับเขตหรือไม่?
+                คุณต้องการส่งเอกสาร &quot;{doc.mtNumber}&quot; - {doc.subject}{" "}
+                กลับเขตหรือไม่?
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="py-4">
-              <label htmlFor="sendBackComment" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="sendBackComment"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 ความคิดเห็น <span className="text-red-500">*</span>
               </label>
               <Textarea
@@ -1013,13 +1239,16 @@ export function DocumentsList({
                 className="w-full"
               />
             </div>
-            
+
             <DialogFooter>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => {
-                  setSendBackDialogOpen(prev => ({ ...prev, [doc.id]: false }));
-                  setSendBackComment('');
+                  setSendBackDialogOpen((prev) => ({
+                    ...prev,
+                    [doc.id]: false,
+                  }));
+                  setSendBackComment("");
                 }}
               >
                 ยกเลิก
@@ -1035,7 +1264,7 @@ export function DocumentsList({
                     กำลังส่ง...
                   </>
                 ) : (
-                  'ส่งกลับเขต'
+                  "ส่งกลับเขต"
                 )}
               </Button>
             </DialogFooter>

@@ -16,7 +16,9 @@ import {
   Minimize2,
   Loader2,
   AlertCircle,
-  FileText
+  FileText,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +39,7 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfInitialized, setPdfInitialized] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false); // Default state is open
 
   const pdfUrl = `/api/documents/${documentId}/download`;
   
@@ -124,6 +127,10 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
     setIsFullscreen(prev => !prev);
   }, []);
 
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed(prev => !prev);
+  }, []);
+
   const handleDownload = useCallback(() => {
     const link = document.createElement('a');
     link.href = pdfUrl;
@@ -137,9 +144,17 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
     return (
       <Card className={className}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle 
+            className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors"
+            onClick={toggleCollapse}
+          >
             <FileText className="h-5 w-5" />
             เอกสาร PDF
+            {isCollapsed ? (
+              <ChevronDown className="h-4 w-4 ml-1" />
+            ) : (
+              <ChevronUp className="h-4 w-4 ml-1" />
+            )}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleDownload}>
@@ -148,21 +163,23 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-            <p className="text-red-600 mb-2">{error}</p>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setError(null);
-                setLoading(true);
-              }}
-            >
-              ลองใหม่
-            </Button>
-          </div>
-        </CardContent>
+        {!isCollapsed && (
+          <CardContent className="p-0">
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+              <p className="text-red-600 mb-2">{error}</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setError(null);
+                  setLoading(true);
+                }}
+              >
+                ลองใหม่
+              </Button>
+            </div>
+          </CardContent>
+        )}
       </Card>
     );
   }
@@ -170,9 +187,17 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle 
+          className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors"
+          onClick={toggleCollapse}
+        >
           <FileText className="h-5 w-5" />
           เอกสาร PDF
+          {isCollapsed ? (
+            <ChevronDown className="h-4 w-4 ml-1" />
+          ) : (
+            <ChevronUp className="h-4 w-4 ml-1" />
+          )}
         </CardTitle>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleDownload}>
@@ -190,7 +215,7 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
         </div>
       </CardHeader>
 
-      {pdfInitialized && numPages > 0 && (
+      {!isCollapsed && pdfInitialized && numPages > 0 && (
         <div className="px-6 pb-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
@@ -239,7 +264,8 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
         </div>
       )}
 
-      <CardContent className="p-0">
+      {!isCollapsed && (
+        <CardContent className="p-0">
         <div className={`overflow-auto ${isFullscreen ? 'h-[calc(100vh-120px)]' : 'h-[600px]'} bg-gray-50`}>
           <div className="flex justify-center items-start p-4">
             {!pdfInitialized ? (
@@ -299,6 +325,7 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
           </div>
         </div>
       </CardContent>
+      )}
     </Card>
   );
 }

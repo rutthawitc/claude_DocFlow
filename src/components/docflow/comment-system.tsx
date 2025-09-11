@@ -130,6 +130,14 @@ export function CommentSystem({
             setTimeout(scrollToBottom, 100);
           }
         }
+      } else if (response.status === 401) {
+        // Authentication error - don't show error message in silent mode
+        if (!silent) {
+          console.error('Authentication required for comments');
+          toast.error('กรุณาเข้าสู่ระบบเพื่อดูความคิดเห็น');
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}`);
       }
     } catch (error) {
       if (!silent) {
@@ -140,6 +148,15 @@ export function CommentSystem({
       if (!silent) setIsLoading(false);
     }
   };
+
+  // Initial fetch with delay to ensure authentication
+  useEffect(() => {
+    const initialFetch = setTimeout(() => {
+      fetchComments(false);
+    }, 500); // 500ms delay to allow authentication to settle
+
+    return () => clearTimeout(initialFetch);
+  }, [documentId]);
 
   // Set up real-time refresh
   useEffect(() => {
