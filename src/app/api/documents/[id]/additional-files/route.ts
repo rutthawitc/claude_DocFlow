@@ -238,7 +238,7 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
           );
         }
 
-        const { itemIndex, isVerified } = await request.json();
+        const { itemIndex, isVerified, comment } = await request.json();
         
         if (typeof itemIndex !== 'number' || typeof isVerified !== 'boolean') {
           return NextResponse.json(
@@ -267,11 +267,13 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
           isVerified: true,
           verifiedBy: user.databaseId,
           verifiedAt: new Date(),
+          verificationComment: null, // Clear comment when marking as correct
           updatedAt: new Date()
         } : {
           isVerified: false,
-          verifiedBy: null,
-          verifiedAt: null,
+          verifiedBy: user.databaseId,
+          verifiedAt: new Date(),
+          verificationComment: comment || null, // Store comment when marking as incorrect
           updatedAt: new Date()
         };
 

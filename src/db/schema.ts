@@ -132,6 +132,7 @@ export const additionalDocumentFiles = pgTable('additional_document_files', {
   isVerified: boolean('is_verified'),
   verifiedBy: integer('verified_by').references(() => users.id),
   verifiedAt: timestamp('verified_at'),
+  verificationComment: text('verification_comment'), // Comment when marking as incorrect
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

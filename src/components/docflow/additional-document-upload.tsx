@@ -26,8 +26,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { AdditionalDocumentPDFModal } from './additional-document-pdf-modal';
 
 interface AdditionalFile {
@@ -42,6 +51,7 @@ interface AdditionalFile {
   isVerified: boolean | null;
   verifiedBy: number | null;
   verifiedAt: string | null;
+  verificationComment: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,6 +79,12 @@ export function AdditionalDocumentUpload({
     itemIndex: number;
     itemName: string;
     filename: string;
+  } | null>(null);
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [pendingIncorrectVerification, setPendingIncorrectVerification] = useState<{
+    itemIndex: number;
+    itemName: string;
   } | null>(null);
 
   // Check if user can upload files
@@ -254,21 +270,26 @@ export function AdditionalDocumentUpload({
   };
 
   // Handle verification status change
-  const handleVerificationChange = async (itemIndex: number, isVerified: boolean) => {
+  const handleVerificationChange = async (itemIndex: number, isVerified: boolean, comment?: string) => {
     try {
+      const body: any = { itemIndex, isVerified };
+      if (comment && !isVerified) {
+        body.comment = comment;
+      }
+
       const response = await fetch(`/api/documents/${documentId}/additional-files`, {
         method: 'PATCH',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ itemIndex, isVerified })
+        body: JSON.stringify(body)
       });
 
       const result = await response.json();
 
       if (response.ok && result.success) {
-        toast.success(isVerified ? 'ยืนยันเอกสารเรียบร้อย' : 'ยกเลิกการยืนยันเรียบร้อย');
+        toast.success(isVerified ? 'ยืนยันเอกสารเรียบร้อย' : 'ยกเลิกการยืนยันพร้อมความคิดเห็นเรียบร้อย');
         
         // Refresh existing files to get updated verification status
         const filesResponse = await fetch(`/api/documents/${documentId}/additional-files`, {
@@ -294,6 +315,29 @@ export function AdditionalDocumentUpload({
       console.error('Verification error:', error);
       toast.error('ไม่สามารถอัพเดทสถานะการยืนยันได้');
     }
+  };
+
+  // Handle opening comment dialog for incorrect verification
+  const handleIncorrectVerification = (itemIndex: number, itemName: string) => {
+    setPendingIncorrectVerification({ itemIndex, itemName });
+    setCommentDialogOpen(true);
+    setCommentText('');
+  };
+
+  // Handle submitting comment for incorrect verification
+  const handleSubmitIncorrectComment = async () => {
+    if (!pendingIncorrectVerification) return;
+
+    await handleVerificationChange(
+      pendingIncorrectVerification.itemIndex, 
+      false, 
+      commentText.trim() || undefined
+    );
+
+    // Close dialog and reset state
+    setCommentDialogOpen(false);
+    setCommentText('');
+    setPendingIncorrectVerification(null);
   };
 
   // Format file size
@@ -512,7 +556,8 @@ export function AdditionalDocumentUpload({
                                 if (value === "correct") {
                                   handleVerificationChange(index, true);
                                 } else if (value === "incorrect") {
-                                  handleVerificationChange(index, false);
+                                  // Open comment dialog for incorrect verification
+                                  handleIncorrectVerification(index, doc);
                                 }
                               }}
                               className="flex space-x-6"
@@ -536,6 +581,12 @@ export function AdditionalDocumentUpload({
                                 </Label>
                               </div>
                             </RadioGroup>
+                            {existingFile.isVerified === false && existingFile.verificationComment && (
+                              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
+                                <div className="font-medium text-red-700 mb-1">ความคิดเห็น:</div>
+                                <div className="text-red-600 break-words">{existingFile.verificationComment}</div>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           // Branch users - read-only status display
@@ -559,6 +610,12 @@ export function AdditionalDocumentUpload({
                                 </>
                               )}
                             </div>
+                            {existingFile.isVerified === false && existingFile.verificationComment && (
+                              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
+                                <div className="font-medium text-red-700 mb-1">ความคิดเห็น:</div>
+                                <div className="text-red-600 break-words">{existingFile.verificationComment}</div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -593,6 +650,54 @@ export function AdditionalDocumentUpload({
         )}
       </CardContent>
     </Card>
+
+    {/* Comment Dialog for Incorrect Verification */}
+    <Dialog open={commentDialogOpen} onOpenChange={setCommentDialogOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-red-700">
+            <AlertCircle className="h-5 w-5" />
+            เอกสารไม่ถูกต้อง
+          </DialogTitle>
+          <DialogDescription>
+            กรุณาระบุความคิดเห็นเกี่ยวกับเหตุผลที่เอกสาร{pendingIncorrectVerification?.itemName ? ` "${pendingIncorrectVerification.itemName}"` : ''} ไม่ถูกต้อง
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="py-4">
+          <Textarea
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            placeholder="เช่น ข้อมูลไม่ครบถ้วน, ไฟล์เสียหาย, รูปแบบไม่ถูกต้อง..."
+            className="min-h-[100px] resize-none"
+            maxLength={500}
+          />
+          <div className="text-right text-xs text-gray-500 mt-1">
+            {commentText.length}/500
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setCommentDialogOpen(false);
+              setCommentText('');
+              setPendingIncorrectVerification(null);
+            }}
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            onClick={handleSubmitIncorrectComment}
+            className="bg-red-600 hover:bg-red-700 text-white"
+            disabled={!commentText.trim()}
+          >
+            ยืนยันเอกสารไม่ถูกต้อง
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     {/* PDF Modal */}
     {selectedPdfFile && (

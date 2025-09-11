@@ -745,7 +745,7 @@ export function DocumentsList({
       {showFilters && (
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">ค้นหา</label>
                 <div className="relative">
@@ -827,9 +827,9 @@ export function DocumentsList({
               className="group hover:shadow-xl transition-all duration-300 hover:border-gray-300 bg-white hover:-translate-y-1 border border-gray-200"
             >
               <CardContent className="p-0">
-                <div className="flex flex-col lg:flex-row">
+                <div className="flex flex-col md:flex-row">
                   {/* Left Side - Document Information */}
-                  <div className="flex-1 p-6 border-r border-gray-100">
+                  <div className="flex-1 p-4 md:p-6 md:border-r border-gray-100">
                     {/* Header with Status */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="space-y-2">
@@ -909,10 +909,10 @@ export function DocumentsList({
                   </div>
 
                   {/* Right Side - Status & Actions */}
-                  <div className="lg:w-80 p-6 bg-gradient-to-br from-gray-50 to-gray-100/50">
+                  <div className="md:w-80 p-4 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100/50">
                     {/* Verification Status with Progress */}
                     {doc.additionalDocs && doc.additionalDocs.length > 0 && (
-                      <div className="mb-6 p-4 bg-white rounded-lg border">
+                      <div className="mb-6 p-3 md:p-4 bg-white rounded-lg border">
                         <VerificationStatus
                           documentId={doc.id}
                           additionalDocs={doc.additionalDocs}

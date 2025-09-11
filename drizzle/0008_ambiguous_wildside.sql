@@ -1,0 +1,1 @@
+ALTER TABLE "additional_document_files" ADD COLUMN "verification_comment" text;
