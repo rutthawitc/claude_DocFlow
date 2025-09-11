@@ -344,22 +344,22 @@ export function StatusManagement({
             })}
           </div>
         </div>
-        
-        {/* Verification Status Warning */}
-        {verificationStatus.hasAdditionalDocs && !verificationStatus.allVerified && !verificationStatus.loading && 
-         availableActions.some(action => action.status === DocumentStatus.SENT_BACK_TO_DISTRICT) && (
-          <div className="flex items-start gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
-            <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-orange-700 font-medium">
-                ไม่สามารถส่งกลับเขตได้ในขณะนี้
-              </p>
-              <p className="text-xs text-orange-600 mt-1">
-                กรุณาตรวจสอบเอกสารเพิ่มเติมให้ครบทุกฉบับก่อนส่งกลับเขต
-              </p>
-            </div>
+      )}
+
+      {/* Verification Status Warning */}
+      {verificationStatus.hasAdditionalDocs && !verificationStatus.allVerified && !verificationStatus.loading && 
+       availableActions.some(action => action.status === DocumentStatus.SENT_BACK_TO_DISTRICT) && (
+        <div className="flex items-start gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
+          <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-orange-700 font-medium">
+              ไม่สามารถส่งกลับเขตได้ในขณะนี้
+            </p>
+            <p className="text-xs text-orange-600 mt-1">
+              กรุณาตรวจสอบเอกสารเพิ่มเติมให้ครบทุกฉบับก่อนส่งกลับเขต
+            </p>
           </div>
-        )}
+        </div>
       )}
 
       <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
