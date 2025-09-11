@@ -90,6 +90,7 @@ export interface DocumentWithRelations extends Document {
   };
   comments?: Comment[];
   statusHistory?: DocumentStatusHistory[];
+  commentCount?: number;
 }
 
 export interface BranchWithDocumentCounts extends Branch {

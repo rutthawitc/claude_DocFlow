@@ -19,12 +19,15 @@ import {
   Trash2,
   CheckCircle,
   AlertCircle,
-  Clock
+  Clock,
+  MessageSquare,
+  BadgeCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import {
   Dialog,
@@ -52,6 +55,7 @@ interface Document {
   createdAt: string;
   updatedAt: string;
   additionalDocs?: string[];
+  commentCount?: number;
   branch?: {
     id: number;
     name: string;
@@ -84,6 +88,12 @@ interface AdditionalFile {
 interface VerificationStatusProps {
   documentId: number;
   additionalDocs?: string[];
+}
+
+interface SendBackButtonProps {
+  doc: Document;
+  onSendBack: (id: number) => void;
+  disabled: boolean;
 }
 
 interface DocumentsListProps {
@@ -123,7 +133,8 @@ function VerificationStatus({ documentId, additionalDocs = [] }: VerificationSta
     unverified: number;
     notUploaded: number;
     total: number;
-  }>({ verified: 0, incorrect: 0, unverified: 0, notUploaded: 0, total: 0 });
+    allVerified: boolean;
+  }>({ verified: 0, incorrect: 0, unverified: 0, notUploaded: 0, total: 0, allVerified: false });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -165,12 +176,19 @@ function VerificationStatus({ documentId, additionalDocs = [] }: VerificationSta
               }
             });
 
+            const allVerified = filteredDocs.length > 0 && 
+                               verified === filteredDocs.length && 
+                               incorrect === 0 && 
+                               unverified === 0 && 
+                               notUploaded === 0;
+
             setVerificationData({
               verified,
               incorrect,
               unverified,
               notUploaded,
-              total: filteredDocs.length
+              total: filteredDocs.length,
+              allVerified
             });
           }
         }
@@ -247,6 +265,9 @@ export function DocumentsList({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<{ [key: number]: boolean }>({});
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [deletedDocumentInfo, setDeletedDocumentInfo] = useState<{ mtNumber: string; subject: string } | null>(null);
+  const [sendBackDialogOpen, setSendBackDialogOpen] = useState<{ [key: number]: boolean }>({});
+  const [sendBackComment, setSendBackComment] = useState('');
+  const [sendingBackId, setSendingBackId] = useState<number | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
     search: '',
@@ -465,6 +486,126 @@ export function DocumentsList({
     return false;
   };
 
+  // Send back to district handler
+  const handleSendBackToDistrict = async (documentId: number) => {
+    if (!sendBackComment.trim()) {
+      alert('กรุณาใส่ความคิดเห็น');
+      return;
+    }
+
+    setSendingBackId(documentId);
+    
+    try {
+      const response = await fetch(`/api/documents/${documentId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          status: 'sent_back_to_district',
+          comment: sendBackComment
+        })
+      });
+
+      if (response.ok) {
+        // Close dialog and reset state
+        setSendBackDialogOpen(prev => ({ ...prev, [documentId]: false }));
+        setSendBackComment('');
+        
+        // Refresh documents list
+        fetchDocuments();
+      } else {
+        const error = await response.json();
+        alert(`เกิดข้อผิดพลาด: ${error.error || 'ไม่สามารถส่งเอกสารกลับเขตได้'}`);
+      }
+    } catch (error) {
+      console.error('Error sending document back to district:', error);
+      alert('เกิดข้อผิดพลาดในการส่งเอกสารกลับเขต');
+    } finally {
+      setSendingBackId(null);
+    }
+  };
+
+  // SendBackButton component
+  const SendBackButton = ({ doc, onSendBack, disabled }: SendBackButtonProps) => {
+    const [verificationStatus, setVerificationStatus] = useState<{
+      verified: number;
+      total: number;
+      allVerified: boolean;
+    } | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      const checkVerificationStatus = async () => {
+        if (!doc.additionalDocs || doc.additionalDocs.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/documents/${doc.id}/additional-files`, {
+            credentials: 'include'
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              const files: AdditionalFile[] = result.data;
+              const filteredDocs = doc.additionalDocs.filter(docItem => docItem && docItem.trim() !== '');
+              
+              let verified = 0;
+              let total = filteredDocs.length;
+
+              filteredDocs.forEach((_, index) => {
+                const file = files.find(f => f.itemIndex === index);
+                if (file && file.isVerified === true) {
+                  verified++;
+                }
+              });
+
+              const allVerified = total > 0 && verified === total && 
+                                files.filter(f => f.isVerified === false).length === 0 &&
+                                files.filter(f => f.isVerified === null).length === 0;
+
+              setVerificationStatus({
+                verified,
+                total,
+                allVerified
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error checking verification status:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      checkVerificationStatus();
+    }, [doc.id, doc.additionalDocs]);
+
+    // Only show button if document is acknowledged and all additional docs are verified
+    if (loading || !verificationStatus || 
+        doc.status !== 'acknowledged' || 
+        !verificationStatus.allVerified) {
+      return null;
+    }
+
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onSendBack(doc.id)}
+        disabled={disabled}
+        className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300"
+      >
+        <BadgeCheck className="h-4 w-4 mr-1" />
+        ส่งเอกสารต้นฉบับ
+      </Button>
+    );
+  };
+
   // Format file size
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -652,22 +793,29 @@ export function DocumentsList({
                     />
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2">
-                    <Link href={`/documents/${doc.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />
-                        ดู
-                      </Button>
-                    </Link>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(doc.id, doc.originalFilename)}
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      ดาวน์โหลด
-                    </Button>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-2">
+                        <SendBackButton
+                          doc={doc}
+                          onSendBack={(id) => setSendBackDialogOpen(prev => ({ ...prev, [id]: true }))}
+                          disabled={sendingBackId === doc.id}
+                        />
+                        
+                        <Link href={`/documents/${doc.id}`}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            ดู
+                          </Button>
+                        </Link>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(doc.id, doc.originalFilename)}
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          ดาวน์โหลด
+                        </Button>
 
                     {canDeleteDocument(doc) && (
                       <Dialog 
@@ -724,6 +872,15 @@ export function DocumentsList({
                         </DialogContent>
                       </Dialog>
                     )}
+                      </div>
+                      
+                      {/* Comment Count */}
+                      {(doc.commentCount !== undefined && doc.commentCount > 0) && (
+                        <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                          <MessageSquare className="h-4 w-4" />
+                          <span>{doc.commentCount} ความคิดเห็น</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -822,6 +979,69 @@ export function DocumentsList({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Send Back to District Dialogs */}
+      {documents.map((doc) => (
+        <Dialog 
+          key={`sendback-${doc.id}`}
+          open={sendBackDialogOpen[doc.id] || false}
+          onOpenChange={(open) => {
+            setSendBackDialogOpen(prev => ({ ...prev, [doc.id]: open }));
+            if (!open) {
+              setSendBackComment('');
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>ส่งเอกสารเพิ่มเติมกลับเขต</DialogTitle>
+              <DialogDescription>
+                คุณต้องการส่งเอกสาร &quot;{doc.mtNumber}&quot; - {doc.subject} กลับเขตหรือไม่?
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <label htmlFor="sendBackComment" className="block text-sm font-medium text-gray-700 mb-2">
+                ความคิดเห็น <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                id="sendBackComment"
+                placeholder="กรุณาใส่ความคิดเห็นเกี่ยวกับการส่งเอกสารกลับเขต"
+                value={sendBackComment}
+                onChange={(e) => setSendBackComment(e.target.value)}
+                rows={4}
+                className="w-full"
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setSendBackDialogOpen(prev => ({ ...prev, [doc.id]: false }));
+                  setSendBackComment('');
+                }}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                onClick={() => handleSendBackToDistrict(doc.id)}
+                disabled={sendingBackId === doc.id || !sendBackComment.trim()}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {sendingBackId === doc.id ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    กำลังส่ง...
+                  </>
+                ) : (
+                  'ส่งกลับเขต'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ))}
     </div>
   );
 }

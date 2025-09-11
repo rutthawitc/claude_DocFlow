@@ -50,6 +50,7 @@ interface AdditionalDocumentUploadProps {
   documentId: number;
   additionalDocs: string[];
   userRoles?: string[];
+  documentStatus?: string;
   onFileUploaded?: () => void;
 }
 
@@ -57,6 +58,7 @@ export function AdditionalDocumentUpload({
   documentId, 
   additionalDocs = [], 
   userRoles = [],
+  documentStatus = '',
   onFileUploaded 
 }: AdditionalDocumentUploadProps) {
   const [uploadingItems, setUploadingItems] = useState<Set<number>>(new Set());
@@ -79,9 +81,16 @@ export function AdditionalDocumentUpload({
                    userRoles.includes('district_manager') || 
                    userRoles.includes('uploader');
 
+  // Check if document status allows uploads (must be acknowledged)
+  const isDocumentAcknowledged = documentStatus === 'acknowledged';
+  const canUploadBasedOnStatus = canUpload && isDocumentAcknowledged;
+
   // Debug logging
   console.log('AdditionalDocumentUpload - userRoles:', userRoles);
   console.log('AdditionalDocumentUpload - canVerify:', canVerify);
+  console.log('AdditionalDocumentUpload - documentStatus:', documentStatus);
+  console.log('AdditionalDocumentUpload - isDocumentAcknowledged:', isDocumentAcknowledged);
+  console.log('AdditionalDocumentUpload - canUploadBasedOnStatus:', canUploadBasedOnStatus);
   console.log('AdditionalDocumentUpload - existingFiles:', existingFiles);
 
   // Fetch existing files
@@ -398,7 +407,7 @@ export function AdditionalDocumentUpload({
                             ดาวน์โหลด
                           </Button>
                           
-                          {canUpload && !existingFile.isVerified && (
+                          {canUploadBasedOnStatus && !existingFile.isVerified && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
@@ -437,9 +446,12 @@ export function AdditionalDocumentUpload({
                           <Button
                             variant={existingFile ? "outline" : "default"}
                             size="sm"
-                            disabled={isUploading || (existingFile?.isVerified || false)}
+                            disabled={isUploading || (existingFile?.isVerified || false) || !isDocumentAcknowledged}
                             className="h-8"
                             onClick={() => {
+                              if (!isDocumentAcknowledged) {
+                                return;
+                              }
                               const input = document.getElementById(`file-input-${index}`) as HTMLInputElement;
                               input?.click();
                             }}
@@ -462,7 +474,11 @@ export function AdditionalDocumentUpload({
                             type="file"
                             accept=".pdf"
                             className="hidden"
+                            disabled={!isDocumentAcknowledged}
                             onChange={(e) => {
+                              if (!isDocumentAcknowledged) {
+                                return;
+                              }
                               const file = e.target.files?.[0];
                               if (file) {
                                 handleFileUpload(file, index, doc);
@@ -549,6 +565,20 @@ export function AdditionalDocumentUpload({
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-700">
               คุณไม่มีสิทธิ์ในการอัปโหลดไฟล์ สามารถดาวน์โหลดไฟล์ที่มีอยู่ได้เท่านั้น
+            </p>
+          </div>
+        )}
+
+        {canUpload && !isDocumentAcknowledged && (
+          <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+              <p className="text-sm text-orange-700 font-medium">
+                กรุณารับทราบเอกสารก่อนอัปโหลดไฟล์เพิ่มเติม
+              </p>
+            </div>
+            <p className="text-xs text-orange-600 mt-1">
+              คลิกปุ่ม "รับทราบ" ในส่วนจัดการสถานะด้านข้าง เพื่อเปิดใช้งานการอัปโหลดไฟล์
             </p>
           </div>
         )}

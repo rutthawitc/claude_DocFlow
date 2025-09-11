@@ -442,6 +442,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
                 documentId={document.id}
                 additionalDocs={document.additionalDocs.filter(doc => doc && doc.trim() !== '')}
                 userRoles={userRoles}
+                documentStatus={document.status}
                 onFileUploaded={() => {
                   // Refresh document data if needed
                   console.log('File uploaded, refreshing...');

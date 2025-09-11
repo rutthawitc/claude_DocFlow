@@ -263,7 +263,7 @@ export class DocumentService {
         .from(documents)
         .where(whereClause);
 
-      // Get paginated results
+      // Get paginated results with comment counts
       const offset = (filters.page - 1) * filters.limit;
       const result = await db
         .select({
@@ -274,20 +274,24 @@ export class DocumentService {
             username: users.username,
             firstName: users.firstName,
             lastName: users.lastName
-          }
+          },
+          commentCount: count(comments.id)
         })
         .from(documents)
         .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
         .leftJoin(users, eq(documents.uploaderId, users.id))
+        .leftJoin(comments, eq(documents.id, comments.documentId))
         .where(whereClause)
+        .groupBy(documents.id, branches.id, users.id)
         .orderBy(desc(documents.createdAt))
         .limit(filters.limit)
         .offset(offset);
 
-      const documentsWithRelations = result.map(({ document, branch, uploader }) => ({
+      const documentsWithRelations = result.map(({ document, branch, uploader, commentCount }) => ({
         ...document,
         branch: branch || undefined,
-        uploader: uploader || undefined
+        uploader: uploader || undefined,
+        commentCount: commentCount || 0
       }));
 
       const response = {
@@ -682,7 +686,7 @@ export class DocumentService {
         .from(documents)
         .where(whereClause);
 
-      // Get paginated results
+      // Get paginated results with comment counts
       const offset = (filters.page - 1) * filters.limit;
       const result = await db
         .select({
@@ -693,20 +697,24 @@ export class DocumentService {
             username: users.username,
             firstName: users.firstName,
             lastName: users.lastName
-          }
+          },
+          commentCount: count(comments.id)
         })
         .from(documents)
         .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
         .leftJoin(users, eq(documents.uploaderId, users.id))
+        .leftJoin(comments, eq(documents.id, comments.documentId))
         .where(whereClause)
+        .groupBy(documents.id, branches.id, users.id)
         .orderBy(desc(documents.createdAt))
         .limit(filters.limit)
         .offset(offset);
 
-      const documentsWithRelations = result.map(({ document, branch, uploader }) => ({
+      const documentsWithRelations = result.map(({ document, branch, uploader, commentCount }) => ({
         ...document,
         branch: branch || undefined,
-        uploader: uploader || undefined
+        uploader: uploader || undefined,
+        commentCount: commentCount || 0
       }));
 
       return {
@@ -877,7 +885,7 @@ export class DocumentService {
         .from(documents)
         .where(whereClause);
 
-      // Get paginated results
+      // Get paginated results with comment counts
       const offset = (filters.page - 1) * filters.limit;
       const result = await db
         .select({
@@ -888,20 +896,24 @@ export class DocumentService {
             username: users.username,
             firstName: users.firstName,
             lastName: users.lastName
-          }
+          },
+          commentCount: count(comments.id)
         })
         .from(documents)
         .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
         .leftJoin(users, eq(documents.uploaderId, users.id))
+        .leftJoin(comments, eq(documents.id, comments.documentId))
         .where(whereClause)
+        .groupBy(documents.id, branches.id, users.id)
         .orderBy(desc(documents.createdAt))
         .limit(filters.limit)
         .offset(offset);
 
-      const documentsWithRelations = result.map(({ document, branch, uploader }) => ({
+      const documentsWithRelations = result.map(({ document, branch, uploader, commentCount }) => ({
         ...document,
         branch: branch || undefined,
-        uploader: uploader || undefined
+        uploader: uploader || undefined,
+        commentCount: commentCount || 0
       }));
 
       return {
