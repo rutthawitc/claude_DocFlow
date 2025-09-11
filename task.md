@@ -83,6 +83,16 @@
 
 ## 🕒 Last Updated: 2025-09-11
 
+### ✅ Comment System and Responsive Design Tasks
+
+1. [x] Add `verification_comment` field to additional document files
+2. [x] Create professional comment dialog with character limit
+3. [x] Enhance API endpoint for comment storage
+4. [x] Implement comment display for admin and branch user views
+5. [x] Fix responsive design breakpoints for progress bar
+6. [x] Resolve TypeScript compilation errors in document list components
+7. [x] Update documents list with improved responsive classes
+
 ### ✅ Send Document Original and Workflow Enhancement Tasks
 
 1. [x] Implement "ส่งเอกสารต้นฉบับ" button with:
@@ -123,6 +133,8 @@
 - [ ] Create real-time update mechanism for document verification
 - [ ] Performance optimization for verification status checks
 - [ ] Enhance error handling for status update operations
+- [ ] Complete styling and testing of new comment system
+- [ ] Improve responsive design for smaller screen breakpoints
 
 ### 🔧 Potential Future Enhancements
 

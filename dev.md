@@ -299,7 +299,25 @@ The DocFlow system is now fully functional:
 
 ### 🆕 Latest Updates (2025-09-11)
 
-#### ✅ **Send Document Original Feature and Workflow Enhancement**
+#### ✅ **Comment System and Responsive Design Enhancements**
+
+1. **Complete Comment System for Document Verification**
+   - Added `verification_comment` field to `additional_document_files` database table
+   - Implemented professional comment dialog with character limit (500 chars)
+   - Enhanced API endpoint to handle comment storage and retrieval
+   - Added UI components for comment display in admin and branch user views
+   - Comprehensive comment workflow with validation and submission
+
+2. **Responsive Design Improvements**
+   - Resolved progress bar visibility on 13" screens by updating responsive breakpoints
+   - Updated `documents-list.tsx` with better responsive classes for smaller screens
+
+3. **TypeScript Compilation Fixes**
+   - Corrected indeterminate checkbox property error in `drafted-documents-list.tsx`
+   - Fixed type mismatch in `handleFilterChange` function
+   - Resolved console.log JSX expression error
+
+#### ✅ **Previously Completed: Send Document Original Feature**
 
 1. **Send Original Document Functionality**
    - Added "ส่งเอกสารต้นฉบับ" button with green styling and BadgeCheck icon
