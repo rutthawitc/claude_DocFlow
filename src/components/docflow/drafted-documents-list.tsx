@@ -262,11 +262,9 @@ export function DraftedDocumentsList({ onEditDocument, refreshTrigger }: Drafted
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={isAllSelected}
-                  ref={(el) => {
-                    if (el) el.indeterminate = isPartiallySelected;
-                  }}
                   onCheckedChange={handleSelectAll}
                   id="select-all"
+                  className={isPartiallySelected ? 'data-[state=checked]:bg-blue-600' : ''}
                 />
                 <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
                   เลือกทั้งหมด

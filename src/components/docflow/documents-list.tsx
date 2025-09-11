@@ -424,7 +424,7 @@ export function DocumentsList({
       setFilters((prev) => ({
         ...prev,
         [key]: value,
-        page: key !== "page" ? 1 : value, // Reset to page 1 when changing filters
+        page: key !== "page" ? 1 : (value as number), // Reset to page 1 when changing filters
       }));
     },
     [],
@@ -820,8 +820,9 @@ export function DocumentsList({
         </Card>
       ) : (
         <div className="space-y-6">
-          {console.log("Rendering documents:", documents.length)}
-          {documents.map((doc) => (
+          {documents.map((doc) => {
+            console.log("Rendering documents:", documents.length);
+            return (
             <Card
               key={`doc-${doc.id}-${doc.updatedAt}`}
               className="group hover:shadow-xl transition-all duration-300 hover:border-gray-300 bg-white hover:-translate-y-1 border border-gray-200"
@@ -1098,7 +1099,8 @@ export function DocumentsList({
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
