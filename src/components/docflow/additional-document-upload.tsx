@@ -321,6 +321,12 @@ export function AdditionalDocumentUpload({
   // Check if all additional documents have been uploaded
   const filteredDocs = additionalDocs.filter(doc => doc && doc.trim() !== '');
   const allDocsUploaded = filteredDocs.length > 0 && filteredDocs.every((_, index) => existingFiles[index]);
+  
+  // Check if all documents are verified
+  const allDocsVerified = allDocsUploaded && filteredDocs.every((_, index) => {
+    const file = existingFiles[index];
+    return file && file.isVerified === true;
+  });
 
   return (
     <>
@@ -332,7 +338,10 @@ export function AdditionalDocumentUpload({
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
               <span className="text-sm font-medium text-green-700">
-                เอกสารแนบครบแล้วกำลังตรวจสอบ
+                {allDocsVerified 
+                  ? "ตรวจสอบเอกสารครบแล้ว กรุณาส่งต้นฉบับ"
+                  : "เอกสารแนบครบแล้วกำลังตรวจสอบ"
+                }
               </span>
             </div>
           </div>
