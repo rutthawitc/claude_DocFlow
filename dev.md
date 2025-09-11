@@ -297,6 +297,64 @@ The DocFlow system is now fully functional:
 
 ---
 
+### 🆕 Latest Updates (2025-09-11)
+
+#### ✅ **Send Document Original Feature and Workflow Enhancement**
+
+1. **Send Original Document Functionality**
+   - Added "ส่งเอกสารต้นฉบับ" button with green styling and BadgeCheck icon
+   - Smart visibility logic for button display:
+     - Only shows when document status is "acknowledged"
+     - Requires all additional documents to be verified
+   - Confirmation dialog with "ส่งเอกสารเพิ่มเติมกลับเขต" title
+   - Mandatory comment input for document return
+   - Document status updates to "sent_back_to_district" via API
+   - Universally accessible across all user roles
+
+2. **StatusManagement Component Enhancements**
+   - Integrated verification status checking logic
+   - Disable "ส่งกลับเขต" button when additional documents are not fully verified
+   - Orange warning message with detailed explanation
+   - Real-time verification status monitoring
+   - Added professional UI with AlertCircle icon and informative tooltips
+
+3. **Additional Document Upload Workflow**
+   - Enforced document acknowledgment before additional file uploads
+   - Dynamic warning messages for unacknowledged documents
+   - Enhanced status message evolution:
+     - Before verification: "เอกสารแนบครบแล้วกำลังตรวจสอบ"
+     - After verification: "ตรวจสอบเอกสารครบแล้ว กรุณาส่งต้นฉบับ"
+
+4. **Comment Count Integration**
+   - Added comment count display under View/Download buttons
+   - Implemented comment aggregation in DocumentService using SQL JOINs
+   - Integrated MessageSquare icon with dynamic count
+
+5. **PDF Viewer Technical Fixes**
+   - Resolved react-pdf console warnings
+   - Added correct CSS imports: AnnotationLayer.css and TextLayer.css
+   - Fixed import paths from esm/Page to dist/Page
+
+6. **Component and Service Updates**
+   - Modified `documents-list.tsx` with SendBackButton
+   - Updated `status-management.tsx` for verification monitoring
+   - Enhanced `additional-document-upload.tsx` with acknowledgment workflow
+   - Updated `document-service.ts` with comment count aggregation
+   - Corrected PDF viewer CSS import issues
+
+**Technical Highlights**:
+- Comprehensive error handling
+- Professional Thai-localized UI
+- Consistent code patterns
+- Enhanced user experience with informative status messages
+
+**Key Components Updated**:
+- `components/docflow/documents-list.tsx`
+- `components/docflow/status-management.tsx`
+- `components/docflow/additional-document-upload.tsx`
+- `lib/services/document-service.ts`
+- `components/docflow/pdf-viewer-client.tsx`
+
 ### 🆕 Latest Updates (2025-09-10)
 
 #### ✅ **Document Verification Status Indicators**
