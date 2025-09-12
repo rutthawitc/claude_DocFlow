@@ -301,6 +301,32 @@ The DocFlow system is now fully functional:
 
 ### 🆕 Latest Updates (2025-09-12)
 
+#### ✅ System Reset Script Development
+
+1. **Comprehensive System Reset Functionality**
+   - Created `scripts/reset-system.sh` for complete system restoration
+   - Preserves local admin users while wiping all other data
+   - Supports multiple safety confirmations and force mode
+   - Comprehensive logging with timestamped log files
+   - Supports both interactive and automated usage modes
+
+2. **Supporting Infrastructure**
+   - Added `scripts/test-reset-simple.sh` for basic script functionality testing
+   - Created `scripts/RESET_SYSTEM_GUIDE.md` with 285-line comprehensive documentation
+   - Updated `.claude/settings.local.json` with reset script execution permissions
+
+3. **Technical Implementation Details**
+   - Database reset logic respecting foreign key constraints
+   - Secure file deletion with size tracking and reporting
+   - Automatic system reinitialization using existing `init-docflow.ts` script
+   - Comprehensive error handling with graceful failures
+
+4. **Safety and Security**
+   - Multiple confirmation prompts preventing accidental data loss
+   - Database connection validation before reset
+   - Logging of all reset actions for audit trail
+   - Support for both development and production environments
+
 #### ✅ Document Upload Validation and Error Handling Improvements
 
 1. **Document Upload Validation Enhancements**
