@@ -35,6 +35,15 @@ export interface DocumentNotificationData {
   comment?: string;
 }
 
+// Bulk document notification data
+export interface BulkDocumentNotificationData {
+  totalDocuments: number;
+  branchNames: string[];
+  userName: string;
+  userFullName: string;
+  timestamp: Date;
+}
+
 export class NotificationService {
   private static settings: NotificationSettings | null = null;
   private static readonly SETTINGS_FILE = process.env.NODE_ENV === 'production' 
@@ -209,6 +218,54 @@ export class NotificationService {
   }
 
   /**
+   * Send bulk document notification
+   */
+  static async sendBulkDocumentNotification(data: BulkDocumentNotificationData): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      const settings = await this.getSettings();
+      
+      if (!settings || !settings.enabled) {
+        console.log('Telegram notifications disabled');
+        return { success: true }; // Not an error, just disabled
+      }
+
+      // Check if document sent notifications are enabled
+      if (!settings.notifications.documentSent) {
+        console.log('Document sent notifications are disabled');
+        return { success: true }; // Not an error, just disabled
+      }
+
+      // Build bulk notification message
+      const message = this.buildBulkDocumentMessage(data, settings.messageFormat);
+
+      // Send via Telegram
+      const result = await TelegramService.sendTestMessage(
+        settings.botToken,
+        settings.defaultChatId,
+        message
+      );
+
+      if (result.success) {
+        console.log(`Bulk document notification sent successfully: ${data.totalDocuments} documents`);
+        return { success: true };
+      } else {
+        console.error(`Failed to send bulk notification: ${result.error}`);
+        return { success: false, error: result.error };
+      }
+
+    } catch (error) {
+      console.error('Bulk notification service error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
    * Send system alert notification
    */
   static async sendSystemAlert(
@@ -336,6 +393,33 @@ export class NotificationService {
 
     // Add document link (future enhancement)
     message += `\n\n🔗 เอกสาร ID: ${data.documentId}`;
+
+    return message;
+  }
+
+  /**
+   * Build formatted message for bulk document notifications
+   */
+  private static buildBulkDocumentMessage(
+    data: BulkDocumentNotificationData,
+    format: NotificationSettings['messageFormat']
+  ): string {
+    let message = `🔔 DocFlow Notification\n\n📤 เอกสารถูกส่งไปยังสาขาจำนวน ${data.totalDocuments} ฉบับ`;
+    
+    // Add branch info
+    if (format.includeBranchName && data.branchNames.length > 0) {
+      message += `\n🏢 สาขา: ${data.branchNames.join(', ')}`;
+    }
+    
+    // Add user info
+    if (format.includeUserName && data.userFullName) {
+      message += `\n👤 โดย: ${data.userFullName}`;
+    }
+    
+    // Add timestamp
+    if (format.includeTimestamp) {
+      message += `\n🕒 เวลา: ${data.timestamp.toLocaleString('th-TH')}`;
+    }
 
     return message;
   }

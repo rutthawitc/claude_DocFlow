@@ -4,6 +4,7 @@ import { DOCFLOW_PERMISSIONS, DocFlowAuth } from '@/lib/auth/docflow-auth';
 import { DocumentService } from '@/lib/services/document-service';
 import { ActivityLogger } from '@/lib/services/activity-logger';
 import { NotificationService } from '@/lib/services/notification-service';
+import { AdminNotificationService } from '@/lib/services/admin-notification-service';
 import { z } from 'zod';
 
 const bulkSendSchema = z.object({
@@ -39,9 +40,10 @@ export const POST = withAuthHandler(
       // Get user roles for access control
       const { roles: userRoles } = await DocFlowAuth.getUserRolesAndPermissions(user.databaseId);
 
-      // Track successful sends
+      // Track successful sends and collect branch information
       let sentCount = 0;
       const results = [];
+      const branchNames = new Set<string>();
 
       // Process each document
       for (const documentId of documentIds) {
@@ -86,6 +88,11 @@ export const POST = withAuthHandler(
               success: true
             });
 
+            // Collect branch name for bulk notification
+            if (document.branch?.name) {
+              branchNames.add(document.branch.name);
+            }
+
             // Log activity
             const { ipAddress, userAgent } = ActivityLogger.extractRequestMetadata(request);
             await ActivityLogger.logActivity({
@@ -102,20 +109,6 @@ export const POST = withAuthHandler(
               ipAddress,
               userAgent
             });
-
-            // Send notification
-            try {
-              await NotificationService.sendDocumentNotification({
-                type: 'document_sent',
-                documentId,
-                mtNumber: document.mtNumber,
-                branchName: document.branch?.name || `BA ${document.branchBaCode}`,
-                uploaderName: `${user.firstName || ''} ${user.lastName || ''}`.trim()
-              });
-            } catch (notificationError) {
-              console.warn(`Failed to send notification for document ${documentId}:`, notificationError);
-              // Don't fail the entire operation for notification errors
-            }
           }
         } catch (docError) {
           console.error(`Error processing document ${documentId}:`, docError);
@@ -140,6 +133,51 @@ export const POST = withAuthHandler(
         ipAddress,
         userAgent
       });
+
+      // Send notifications for bulk document send
+      if (sentCount > 0) {
+        const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username;
+        
+        // Send user bulk notification
+        try {
+          await NotificationService.sendBulkDocumentNotification({
+            totalDocuments: sentCount,
+            branchNames: Array.from(branchNames),
+            userName: user.username,
+            userFullName: userName,
+            timestamp: new Date()
+          });
+        } catch (userNotificationError) {
+          console.warn('Failed to send user bulk notification:', userNotificationError);
+          // Don't fail the entire operation for notification errors
+        }
+
+        // Send admin notification
+        try {
+          const userRole = userRoles.includes('admin') ? 'admin' : 
+                          userRoles.includes('district_manager') ? 'district_manager' : 
+                          userRoles.includes('uploader') ? 'uploader' : 'user';
+          
+          const documentList = results
+            .filter(result => result.success)
+            .map(result => ({
+              mtNumber: result.mtNumber || `ID:${result.documentId}`,
+              branchName: 'Multiple Branches', // Bulk sends can go to multiple branches
+              branchCode: 'Various'
+            }));
+
+          await AdminNotificationService.notifyBulkDocumentsSent(
+            userName,
+            userRole,
+            documentIds.length,
+            sentCount,
+            documentList
+          );
+        } catch (adminNotificationError) {
+          console.warn('Failed to send admin notification for bulk send:', adminNotificationError);
+          // Don't fail the entire operation for admin notification errors
+        }
+      }
 
       if (sentCount === 0) {
         return ApiResponseHandler.error('No documents were sent. Please check if documents exist and are in draft status.');

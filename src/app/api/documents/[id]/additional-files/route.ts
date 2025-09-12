@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { getDb } from '@/db';
-import { additionalDocumentFiles, documents } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { additionalDocumentFiles, documents, branches, users } from '@/db/schema';
+import { eq, and, count, isNull, isNotNull } from 'drizzle-orm';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
 import { DocFlowAuth } from '@/lib/auth/docflow-auth';
+import { AdminNotificationService } from '@/lib/services/admin-notification-service';
 
 interface RouteParams {
   params: Promise<{
@@ -165,6 +166,67 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
           });
         }
 
+        // Check if all additional documents are now uploaded (completed)
+        try {
+          const doc = document[0];
+          
+          // Get required additional document count
+          const requiredDocsCount = doc.additionalDocsCount || 0;
+          
+          if (requiredDocsCount > 0) {
+            // Count uploaded additional documents
+            const [uploadedCount] = await db
+              .select({ count: count() })
+              .from(additionalDocumentFiles)
+              .where(eq(additionalDocumentFiles.documentId, documentId));
+
+            // If all additional documents are now uploaded, notify admins
+            if (uploadedCount.count >= requiredDocsCount) {
+              // Get document and branch details for notification
+              const docWithBranch = await db
+                .select({
+                  document: {
+                    mtNumber: documents.mtNumber,
+                    title: documents.title,
+                  },
+                  branch: {
+                    name: branches.name,
+                    baCode: branches.baCode,
+                  },
+                  user: {
+                    username: users.username,
+                    firstName: users.firstName,
+                    lastName: users.lastName,
+                  }
+                })
+                .from(documents)
+                .innerJoin(branches, eq(documents.branchBaCode, branches.baCode))
+                .innerJoin(users, eq(documents.uploaderId, users.id))
+                .where(eq(documents.id, documentId))
+                .limit(1);
+
+              if (docWithBranch.length > 0) {
+                const docData = docWithBranch[0];
+                const userName = `${docData.user.firstName} ${docData.user.lastName}`.trim() || docData.user.username;
+                
+                // Send admin notification for additional docs completion
+                await AdminNotificationService.notifyAdditionalDocsCompleted(
+                  docData.document.mtNumber,
+                  docData.document.title || undefined,
+                  docData.branch.name,
+                  docData.branch.baCode,
+                  userName,
+                  'branch_user', // Usually branch users upload additional docs
+                  uploadedCount.count
+                );
+              }
+            }
+          }
+        } catch (notificationError) {
+          // Log notification errors but don't fail the upload
+          console.error('Error sending admin notification for additional docs completion:', notificationError);
+        }
+
         return NextResponse.json({
           success: true,
           message: 'File uploaded successfully'
@@ -286,6 +348,77 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
               eq(additionalDocumentFiles.itemIndex, itemIndex)
             )
           );
+
+        // Send admin notification for document verification completion
+        try {
+          // Check if all additional documents are now verified
+          const [totalDocs] = await db
+            .select({ count: count() })
+            .from(additionalDocumentFiles)
+            .where(eq(additionalDocumentFiles.documentId, documentId));
+
+          const [verifiedDocs] = await db
+            .select({ count: count() })
+            .from(additionalDocumentFiles)
+            .where(
+              and(
+                eq(additionalDocumentFiles.documentId, documentId),
+                eq(additionalDocumentFiles.isVerified, true)
+              )
+            );
+
+          // If this was the last document to be verified, send completion notification
+          if (totalDocs.count > 0 && verifiedDocs.count === totalDocs.count) {
+            // Get document and branch details for notification
+            const docWithBranch = await db
+              .select({
+                document: {
+                  mtNumber: documents.mtNumber,
+                  title: documents.title,
+                },
+                branch: {
+                  name: branches.name,
+                  baCode: branches.baCode,
+                },
+                verifier: {
+                  username: users.username,
+                  firstName: users.firstName,
+                  lastName: users.lastName,
+                }
+              })
+              .from(documents)
+              .innerJoin(branches, eq(documents.branchBaCode, branches.baCode))
+              .innerJoin(users, eq(users.id, user.databaseId))
+              .where(eq(documents.id, documentId))
+              .limit(1);
+
+            if (docWithBranch.length > 0) {
+              const docData = docWithBranch[0];
+              const verifierName = `${docData.verifier.firstName} ${docData.verifier.lastName}`.trim() || docData.verifier.username;
+              
+              // Get user role for notification
+              const { roles } = await DocFlowAuth.getUserRolesAndPermissions(user.databaseId);
+              const userRole = roles.includes('admin') ? 'admin' : 
+                             roles.includes('district_manager') ? 'district_manager' : 
+                             roles.includes('uploader') ? 'uploader' : 'verifier';
+              
+              // Send admin notification for document verification completion
+              await AdminNotificationService.notifyDocumentVerificationCompleted(
+                docData.document.mtNumber,
+                docData.document.title || undefined,
+                docData.branch.name,
+                docData.branch.baCode,
+                verifierName,
+                userRole,
+                isVerified ? 'approved' : 'rejected',
+                comment
+              );
+            }
+          }
+        } catch (notificationError) {
+          // Log notification errors but don't fail the verification
+          console.error('Error sending admin notification for verification completion:', notificationError);
+        }
 
         return NextResponse.json({
           success: true,

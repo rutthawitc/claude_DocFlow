@@ -91,6 +91,28 @@ export default function SettingsPage() {
     },
   });
 
+  const [adminTelegramSettings, setAdminTelegramSettings] = useState({
+    enabled: false,
+    botToken: "",
+    defaultChatId: "",
+    notifications: {
+      documentAcknowledged: true,
+      additionalDocsCompleted: true,
+      documentSentBackToDistrict: true,
+      documentVerificationCompleted: true,
+      bulkDocumentsSent: true,
+      userRoleChanges: false,
+      workflowStatusChanges: true,
+    },
+    messageFormat: {
+      includeFullContext: true,
+      includeUserDetails: true,
+      includeBranchDetails: true,
+      includeDocumentDetails: true,
+      includeTimestamp: true,
+    },
+  });
+
   const [fileSettings, setFileSettings] = useState({
     maxFileSize: 10,
     retentionPeriod: 365,
@@ -120,6 +142,12 @@ export default function SettingsPage() {
   const fileManagementLoading = useLoadingState();
   const cleanupLoading = useLoadingState();
   const backupLoading = useLoadingState();
+  
+  // Admin notification loading states
+  const adminTestConnectionLoading = useLoadingState();
+  const adminTestMessageLoading = useLoadingState();
+  const adminSavingLoading = useLoadingState();
+  const adminSystemAlertLoading = useLoadingState();
 
   const [modalState, setModalState] = useState({
     cleanupModal: false,
@@ -141,6 +169,19 @@ export default function SettingsPage() {
           toast.error("❌ ไม่มีสิทธิ์ในการเข้าถึงการตั้งค่า Telegram");
         } else {
           console.log('No saved Telegram settings found, using defaults');
+        }
+
+        // Load Admin Telegram settings
+        const adminTelegramResponse = await fetch('/api/telegram/admin-settings');
+        const adminTelegramResult = await adminTelegramResponse.json();
+        
+        if (adminTelegramResult.success && adminTelegramResult.data) {
+          setAdminTelegramSettings(adminTelegramResult.data);
+          console.log('Admin Telegram settings loaded:', adminTelegramResult.data);
+        } else if (adminTelegramResponse.status === 403) {
+          toast.error("❌ ไม่มีสิทธิ์ในการเข้าถึงการตั้งค่า Telegram Admin");
+        } else {
+          console.log('No saved Admin Telegram settings found, using defaults');
         }
 
         // Load System settings
@@ -297,6 +338,142 @@ export default function SettingsPage() {
       toast.error("❌ เกิดข้อผิดพลาดในการบันทึกการตั้งค่า");
     } finally {
       // Loading handled by hook
+    }
+  };
+
+  // Admin Telegram handlers
+  const handleAdminTestConnection = async () => {
+    if (!adminTelegramSettings.botToken) {
+      toast.error("กรุณาใส่ Admin Bot Token");
+      return;
+    }
+
+    try {
+      const response = await adminTestConnectionLoading.execute(
+        fetch('/api/telegram/admin-test-connection', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            botToken: adminTelegramSettings.botToken,
+          }),
+        })
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`✅ Admin Bot เชื่อมต่อสำเร็จ!\nBot: ${result.botInfo?.name} (@${result.botInfo?.username})`);
+      } else {
+        toast.error(`❌ Admin Bot เชื่อมต่อล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Admin test connection error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการทดสอบการเชื่อมต่อ Admin Bot");
+    }
+  };
+
+  const handleAdminTestMessage = async () => {
+    if (!adminTelegramSettings.botToken) {
+      toast.error("กรุณาใส่ Admin Bot Token");
+      return;
+    }
+
+    if (!adminTelegramSettings.defaultChatId) {
+      toast.error("กรุณาใส่ Admin Chat ID");
+      return;
+    }
+
+    try {
+      const response = await adminTestMessageLoading.execute(
+        fetch('/api/telegram/admin-test-message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            botToken: adminTelegramSettings.botToken,
+            chatId: adminTelegramSettings.defaultChatId,
+          }),
+        })
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`✅ Admin ส่งข้อความทดสอบสำเร็จ!\nMessage ID: ${result.messageId}`);
+      } else {
+        toast.error(`❌ Admin ส่งข้อความล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Admin test message error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการส่งข้อความทดสอบ Admin");
+    }
+  };
+
+  const handleAdminSaveSettings = async () => {
+    try {
+      const response = await adminSavingLoading.execute(
+        fetch('/api/telegram/admin-settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(adminTelegramSettings),
+        })
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("✅ บันทึกการตั้งค่า Admin Telegram สำเร็จ!");
+        
+        // Reload settings to confirm they were saved
+        try {
+          const loadResponse = await fetch('/api/telegram/admin-settings');
+          const loadResult = await loadResponse.json();
+          if (loadResult.success && loadResult.data) {
+            console.log('Admin settings confirmed saved:', loadResult.data);
+          }
+        } catch (loadError) {
+          console.error('Error confirming admin settings save:', loadError);
+        }
+      } else {
+        toast.error(`❌ บันทึก Admin ล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Save admin settings error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการบันทึกการตั้งค่า Admin");
+    }
+  };
+
+  const handleAdminTestSystemAlert = async () => {
+    try {
+      const response = await adminSystemAlertLoading.execute(
+        fetch('/api/telegram/admin-system-alert', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: 'ทดสอบแจ้งเตือน Admin',
+            message: 'นี่เป็นการทดสอบการแจ้งเตือนสำหรับ Admin/Uploader/District Manager ของ DocFlow ณ วันที่ ' + new Date().toLocaleString('th-TH'),
+            severity: 'info'
+          }),
+        })
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("✅ ส่งการแจ้งเตือน Admin ทดสอบสำเร็จ!");
+      } else {
+        toast.error(`❌ ส่งการแจ้งเตือน Admin ล้มเหลว: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Admin test system alert error:', error);
+      toast.error("❌ เกิดข้อผิดพลาดในการส่งการแจ้งเตือน Admin ทดสอบ");
     }
   };
 
@@ -571,7 +748,11 @@ export default function SettingsPage() {
               <nav className="space-y-2">
                 <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium bg-primary/10 text-primary rounded-md">
                   <MessageSquare className="h-4 w-4" />
-                  Telegram
+                  Telegram ผู้ใช้
+                </button>
+                <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                  <Bot className="h-4 w-4" />
+                  Telegram Admin
                 </button>
                 <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
                   <Shield className="h-4 w-4" />
@@ -625,7 +806,7 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageSquare className="h-5 w-5" />
-                  การตั้งค่า Telegram
+                  การตั้งค่า Telegram ผู้ใช้
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1046,6 +1227,500 @@ export default function SettingsPage() {
                       <>
                         <Save className="h-4 w-4 mr-2" />
                         บันทึกการตั้งค่า Telegram
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            )}
+
+            {/* Admin Telegram Settings */}
+            {!mainLoading.loading && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5" />
+                  การตั้งค่า Telegram Admin
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Master Enable/Disable */}
+                <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <div className="space-y-0.5">
+                    <Label className="text-lg font-medium">
+                      เปิดใช้งาน Telegram Admin
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      เปิด/ปิดการแจ้งเตือนสำหรับ Admin/Uploader/District Manager
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        adminTelegramSettings.enabled ? "default" : "secondary"
+                      }
+                    >
+                      {adminTelegramSettings.enabled ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+                    </Badge>
+                    <Switch
+                      checked={adminTelegramSettings.enabled}
+                      onCheckedChange={(checked) =>
+                        setAdminTelegramSettings((prev) => ({
+                          ...prev,
+                          enabled: checked,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Bot Configuration */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5 text-purple-500" />
+                    <Label className="text-lg font-medium">
+                      การตั้งค่า Admin Bot
+                    </Label>
+                    <Badge variant="outline" className="text-xs">
+                      สำหรับ Admin/Uploader/District Manager
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="adminBotToken">Admin Bot Token</Label>
+                      <Input
+                        id="adminBotToken"
+                        type="password"
+                        placeholder="กรอก Admin Telegram Bot Token"
+                        value={adminTelegramSettings.botToken}
+                        onChange={(e) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            botToken: e.target.value,
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Bot Token แยกสำหรับการแจ้งเตือน Admin
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="adminChatId">Admin Chat ID</Label>
+                      <Input
+                        id="adminChatId"
+                        placeholder="กรอก Admin Chat ID หรือ Group ID"
+                        value={adminTelegramSettings.defaultChatId}
+                        onChange={(e) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            defaultChatId: e.target.value,
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Chat ID สำหรับส่งการแจ้งเตือนไปยัง Admin
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAdminTestConnection}
+                      disabled={
+                        !adminTelegramSettings.enabled || 
+                        !adminTelegramSettings.botToken ||
+                        adminTestConnectionLoading.loading ||
+                        adminTestMessageLoading.loading ||
+                        adminSystemAlertLoading.loading
+                      }
+                    >
+                      {adminTestConnectionLoading.loading ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <TestTube className="h-4 w-4 mr-2" />
+                      )}
+                      {adminTestConnectionLoading.loading ? "กำลังทดสอบ..." : "ทดสอบ Admin Bot"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAdminTestMessage}
+                      disabled={
+                        !adminTelegramSettings.enabled || 
+                        !adminTelegramSettings.botToken ||
+                        !adminTelegramSettings.defaultChatId ||
+                        adminTestConnectionLoading.loading ||
+                        adminTestMessageLoading.loading ||
+                        adminSystemAlertLoading.loading
+                      }
+                    >
+                      {adminTestMessageLoading.loading ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      {adminTestMessageLoading.loading ? "กำลังส่ง..." : "ส่งข้อความทดสอบ"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAdminTestSystemAlert}
+                      disabled={
+                        !adminTelegramSettings.enabled || 
+                        !adminTelegramSettings.botToken ||
+                        !adminTelegramSettings.defaultChatId ||
+                        adminTestConnectionLoading.loading ||
+                        adminTestMessageLoading.loading ||
+                        adminSystemAlertLoading.loading
+                      }
+                    >
+                      {adminSystemAlertLoading.loading ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                      )}
+                      {adminSystemAlertLoading.loading ? "กำลังส่ง..." : "ทดสอบแจ้งเตือน Admin"}
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Admin Notification Types */}
+                <div className="space-y-4">
+                  <Label className="text-lg font-medium">
+                    ประเภทการแจ้งเตือน Admin
+                  </Label>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>✅ สาขารับทราบเอกสาร</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อสาขารับทราบเอกสารเรียบร้อยแล้ว
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.notifications.documentAcknowledged}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              documentAcknowledged: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>📄 เอกสารเพิ่มเติมครบถ้วน</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อเอกสารเพิ่มเติมถูกอัปโหลดครบถ้วน
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.notifications.additionalDocsCompleted}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              additionalDocsCompleted: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>🔄 เอกสารส่งกลับเขต</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อเอกสารถูกส่งกลับจากสาขาไปยังเขต
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.notifications.documentSentBackToDistrict}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              documentSentBackToDistrict: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>🔍 การตรวจสอบเอกสารเสร็จสิ้น</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อการตรวจสอบเอกสารเสร็จสมบูรณ์
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.notifications.documentVerificationCompleted}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              documentVerificationCompleted: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>📤 เอกสารส่งเป็นชุด (Bulk Send)</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อมีการส่งเอกสารจาก Draft ไปยังสาขาหลายฉบับพร้อมกัน
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.notifications.bulkDocumentsSent}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              bulkDocumentsSent: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>👥 การเปลี่ยนแปลงบทบาทผู้ใช้</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อมีการเปลี่ยนแปลงสิทธิ์หรือบทบาทผู้ใช้
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.notifications.userRoleChanges}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              userRoleChanges: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>⚡ การเปลี่ยนแปลงสถานะ Workflow</Label>
+                        <p className="text-sm text-muted-foreground">
+                          แจ้งเตือนเมื่อมีการเปลี่ยนแปลงสถานะเอกสารที่สำคัญ
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.notifications.workflowStatusChanges}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            notifications: {
+                              ...prev.notifications,
+                              workflowStatusChanges: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Message Format */}
+                <div className="space-y-4">
+                  <Label className="text-lg font-medium">รูปแบบข้อความ Admin</Label>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>แสดงข้อมูลเต็มรูปแบบ</Label>
+                        <p className="text-sm text-muted-foreground">
+                          รวมรายละเอียดทั้งหมดในข้อความ
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.messageFormat.includeFullContext}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            messageFormat: {
+                              ...prev.messageFormat,
+                              includeFullContext: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>แสดงข้อมูลผู้ใช้</Label>
+                        <p className="text-sm text-muted-foreground">
+                          รวมชื่อ บทบาท และข้อมูลผู้ดำเนินการ
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.messageFormat.includeUserDetails}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            messageFormat: {
+                              ...prev.messageFormat,
+                              includeUserDetails: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>แสดงข้อมูลสาขา</Label>
+                        <p className="text-sm text-muted-foreground">
+                          รวมชื่อสาขา รหัสสาขา และที่ตั้ง
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.messageFormat.includeBranchDetails}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            messageFormat: {
+                              ...prev.messageFormat,
+                              includeBranchDetails: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>แสดงรายละเอียดเอกสาร</Label>
+                        <p className="text-sm text-muted-foreground">
+                          รวมหมายเลข MT สถานะ และข้อมูลเอกสาร
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.messageFormat.includeDocumentDetails}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            messageFormat: {
+                              ...prev.messageFormat,
+                              includeDocumentDetails: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>แสดงเวลา</Label>
+                        <p className="text-sm text-muted-foreground">
+                          รวมเวลาที่เกิดเหตุการณ์
+                        </p>
+                      </div>
+                      <Switch
+                        checked={adminTelegramSettings.messageFormat.includeTimestamp}
+                        onCheckedChange={(checked) =>
+                          setAdminTelegramSettings((prev) => ({
+                            ...prev,
+                            messageFormat: {
+                              ...prev.messageFormat,
+                              includeTimestamp: checked,
+                            },
+                          }))
+                        }
+                        disabled={!adminTelegramSettings.enabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview Message */}
+                {adminTelegramSettings.enabled && (
+                  <div className="space-y-2">
+                    <Label>ตัวอย่างข้อความ Admin</Label>
+                    <div className="p-4 bg-purple-50 rounded-lg border text-sm font-mono">
+                      <div className="text-purple-600 font-bold">
+                        🔔 DocFlow Admin Notification
+                      </div>
+                      <div className="mt-2">
+                        📤 มีการส่งเอกสารเป็นชุดไปยังสาขา
+                        {adminTelegramSettings.messageFormat.includeUserDetails && (
+                          <div>👤 ผู้ดำเนินการ: สมหมาย ใจดี (district_manager)</div>
+                        )}
+                        {adminTelegramSettings.messageFormat.includeFullContext && (
+                          <>
+                            <div>📊 จำนวนเอกสารทั้งหมด: 5</div>
+                            <div>✅ ส่งสำเร็จ: 5</div>
+                            <div>🏢 สาขาที่ได้รับเอกสาร:</div>
+                            <div>   กปภ.สาขาชัยภูมิ (1234): 3 ฉบับ</div>
+                            <div>   กปภ.สาขาขอนแก่น (5678): 2 ฉบับ</div>
+                          </>
+                        )}
+                        {adminTelegramSettings.messageFormat.includeTimestamp && (
+                          <div>🕒 เวลา: {new Date().toLocaleString("th-TH")}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Save Admin Telegram Settings Button */}
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={handleAdminSaveSettings}
+                    disabled={adminSavingLoading.loading}
+                    className="w-full"
+                  >
+                    {adminSavingLoading.loading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        กำลังบันทึก...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        บันทึกการตั้งค่า Telegram Admin
                       </>
                     )}
                   </Button>

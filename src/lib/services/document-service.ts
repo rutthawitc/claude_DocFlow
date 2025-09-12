@@ -14,6 +14,7 @@ import {
 import { FileValidationService, FileStorageService } from './file-service';
 import { BranchService } from './branch-service';
 import { CacheService } from '@/lib/cache/cache-service';
+import { AdminNotificationService } from './admin-notification-service';
 
 export class DocumentService {
   private static cache = CacheService.getInstance();
@@ -344,11 +345,52 @@ export class DocumentService {
     const db = await getDb();
 
     try {
-      // Get current document
-      const currentDoc = await this.getDocumentById(documentId);
-      if (!currentDoc) {
+      // Get current document with related data for notifications
+      const currentDocWithRelations = await db
+        .select({
+          document: {
+            id: documents.id,
+            mtNumber: documents.mtNumber,
+            title: documents.title,
+            status: documents.status,
+            branchBaCode: documents.branchBaCode,
+          },
+          branch: {
+            id: branches.id,
+            name: branches.name,
+            baCode: branches.baCode,
+          },
+          user: {
+            id: users.id,
+            username: users.username,
+            firstName: users.firstName,
+            lastName: users.lastName,
+          },
+        })
+        .from(documents)
+        .innerJoin(branches, eq(documents.branchBaCode, branches.baCode))
+        .innerJoin(users, eq(documents.uploaderId, users.id))
+        .where(eq(documents.id, documentId))
+        .limit(1);
+
+      if (currentDocWithRelations.length === 0) {
         throw new Error('Document not found');
       }
+
+      const currentDocData = currentDocWithRelations[0];
+      const currentDoc = currentDocData.document;
+
+      // Get user info for the one performing the status update
+      const [statusUpdaterUser] = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
 
       // Update document status
       const [updatedDocument] = await db
@@ -368,6 +410,59 @@ export class DocumentService {
         changedBy: userId,
         comment: comment || null
       });
+
+      // Send admin notifications for specific status changes
+      if (statusUpdaterUser) {
+        const userName = `${statusUpdaterUser.firstName} ${statusUpdaterUser.lastName}`.trim() || statusUpdaterUser.username;
+        const branchName = currentDocData.branch.name;
+        const branchCode = currentDocData.branch.baCode;
+        const documentMtNumber = currentDoc.mtNumber;
+        const documentTitle = currentDoc.title || undefined;
+
+        try {
+          // Send admin notification for acknowledged status
+          if (newStatus === 'acknowledged') {
+            await AdminNotificationService.notifyDocumentAcknowledged(
+              documentMtNumber,
+              documentTitle,
+              branchName,
+              branchCode,
+              userName,
+              'branch_user' // Most acknowledgments come from branch users
+            );
+          }
+
+          // Send admin notification for sent back to district
+          if (newStatus === 'sent_back_to_district') {
+            await AdminNotificationService.notifyDocumentSentBackToDistrict(
+              documentMtNumber,
+              documentTitle,
+              branchName,
+              branchCode,
+              userName,
+              'branch_manager', // Usually branch managers send back
+              comment
+            );
+          }
+
+          // Send admin notification for workflow status changes
+          if (currentDoc.status !== newStatus) {
+            await AdminNotificationService.notifyWorkflowStatusChange(
+              documentMtNumber,
+              documentTitle,
+              branchName,
+              branchCode,
+              userName,
+              'system_user', // Generic for any status change
+              currentDoc.status,
+              newStatus
+            );
+          }
+        } catch (notificationError) {
+          // Log notification errors but don't fail the status update
+          console.error('Error sending admin notification for status update:', notificationError);
+        }
+      }
 
       // Invalidate cache for this specific document and related data
       await this.cache.delete(`document:${documentId}`, 'documents');
