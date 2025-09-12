@@ -1,4 +1,4 @@
-import { eq, and, desc, gte, lte, count, ilike, or, ne } from 'drizzle-orm';
+import { eq, and, desc, gte, lte, count, ilike, or, ne, sql } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { documents, branches, users, comments, documentStatusHistory, activityLogs } from '@/db/schema';
 import { 
@@ -17,6 +17,18 @@ import { CacheService } from '@/lib/cache/cache-service';
 
 export class DocumentService {
   private static cache = CacheService.getInstance();
+
+  /**
+   * Get document ordering - completed documents appear at the bottom
+   */
+  private static getDocumentOrdering() {
+    return [
+      // First sort by completion status (non-complete first, complete last)
+      sql`CASE WHEN ${documents.status} = 'complete' THEN 1 ELSE 0 END`,
+      // Then by creation date (newest first within each group)
+      desc(documents.createdAt)
+    ];
+  }
   /**
    * Create a new document
    */
@@ -283,7 +295,7 @@ export class DocumentService {
         .leftJoin(comments, eq(documents.id, comments.documentId))
         .where(whereClause)
         .groupBy(documents.id, branches.id, users.id)
-        .orderBy(desc(documents.createdAt))
+        .orderBy(...this.getDocumentOrdering())
         .limit(filters.limit)
         .offset(offset);
 
@@ -706,7 +718,7 @@ export class DocumentService {
         .leftJoin(comments, eq(documents.id, comments.documentId))
         .where(whereClause)
         .groupBy(documents.id, branches.id, users.id)
-        .orderBy(desc(documents.createdAt))
+        .orderBy(...this.getDocumentOrdering())
         .limit(filters.limit)
         .offset(offset);
 
@@ -905,7 +917,7 @@ export class DocumentService {
         .leftJoin(comments, eq(documents.id, comments.documentId))
         .where(whereClause)
         .groupBy(documents.id, branches.id, users.id)
-        .orderBy(desc(documents.createdAt))
+        .orderBy(...this.getDocumentOrdering())
         .limit(filters.limit)
         .offset(offset);
 

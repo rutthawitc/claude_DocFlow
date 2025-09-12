@@ -439,7 +439,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
           </Card>
 
           {/* Additional Documents with Upload */}
-          {document.hasAdditionalDocs && document.additionalDocs && document.additionalDocs.length > 0 && (
+          {document.hasAdditionalDocs && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
@@ -448,7 +448,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
               
               <AdditionalDocumentUpload
                 documentId={document.id}
-                additionalDocs={document.additionalDocs.filter(doc => doc && doc.trim() !== '')}
+                additionalDocs={document.additionalDocs?.filter(doc => doc && doc.trim() !== '') || []}
                 userRoles={userRoles}
                 documentStatus={document.status}
                 onFileUploaded={() => {

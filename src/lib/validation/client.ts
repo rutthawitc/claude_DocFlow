@@ -49,6 +49,19 @@ export const clientDocumentUploadSchema = z.object({
     .max(10, 'ไม่สามารถมีเอกสารเพิ่มเติมมากกว่า 10 รายการ')
     .optional()
     .default([])
+}).refine((data) => {
+  // If hasAdditionalDocs is true, require enough non-empty additional document descriptions
+  if (data.hasAdditionalDocs) {
+    const nonEmptyDocs = data.additionalDocs?.filter(doc => doc && doc.trim() !== '') || [];
+    const requiredCount = data.additionalDocsCount || 1;
+    if (nonEmptyDocs.length < requiredCount) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'กรุณาระบุรายละเอียดเอกสารที่ต้องส่งเพิ่มเติมให้ครบทุกรายการ',
+  path: ['additionalDocs']
 });
 
 export const clientCommentCreateSchema = z.object({

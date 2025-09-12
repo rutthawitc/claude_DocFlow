@@ -115,7 +115,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         mtDate: '',
         subject: '',
         monthYear: getCurrentMonthYear(),
-        docReceivedDate: ''
+        docReceivedDate: '',
+        hasAdditionalDocs: false,
+        additionalDocsCount: 1,
+        additionalDocs: ['']
       });
     }
   }, [editDocument]);
@@ -180,15 +183,25 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
 
   // Field-level validation for real-time feedback (define first)
   const validateSingleField = useCallback((fieldName: keyof ClientDocumentUploadInput, value: string) => {
-    const fieldSchema = clientDocumentUploadSchema.shape[fieldName];
-    const fieldValidation = validateField(value, fieldSchema, fieldName);
-    
-    setFieldErrors(prev => ({
-      ...prev,
-      [fieldName]: fieldValidation.isValid ? '' : fieldValidation.error || ''
-    }));
-    
-    return fieldValidation.isValid;
+    try {
+      const fieldSchema = clientDocumentUploadSchema.shape[fieldName];
+      if (!fieldSchema) {
+        console.warn(`Field schema not found for: ${fieldName}`);
+        return true; // Skip validation if schema not found
+      }
+      
+      const fieldValidation = validateField(value, fieldSchema, fieldName);
+      
+      setFieldErrors(prev => ({
+        ...prev,
+        [fieldName]: fieldValidation.isValid ? '' : fieldValidation.error || ''
+      }));
+      
+      return fieldValidation.isValid;
+    } catch (error) {
+      console.warn(`Validation error for field ${fieldName}:`, error);
+      return true; // Skip validation on error
+    }
   }, []);
 
   // Form input change
@@ -202,7 +215,14 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     // Real-time validation with debounce
     if (value.trim()) {
       setTimeout(() => {
-        validateSingleField(field as keyof ClientDocumentUploadInput, value);
+        // Only validate fields that exist in the schema
+        const validationFields: (keyof ClientDocumentUploadInput)[] = [
+          'branchBaCode', 'mtNumber', 'mtDate', 'subject', 'monthYear', 'docReceivedDate'
+        ];
+        
+        if (validationFields.includes(field as keyof ClientDocumentUploadInput)) {
+          validateSingleField(field as keyof ClientDocumentUploadInput, value);
+        }
       }, 300);
     }
   }, [validateSingleField]);
@@ -307,9 +327,9 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           subject: formData.subject,
           monthYear: formData.monthYear,
           docReceivedDate: formData.docReceivedDate,
-          hasAdditionalDocs: formData.hasAdditionalDocs,
-          additionalDocsCount: formData.additionalDocsCount,
-          additionalDocs: formData.additionalDocs
+          hasAdditionalDocs: formData.hasAdditionalDocs || false,
+          additionalDocsCount: formData.additionalDocsCount || 1,
+          additionalDocs: formData.additionalDocs || ['']
         };
 
         let response;
@@ -324,8 +344,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           uploadFormData.append('monthYear', formData.monthYear);
           uploadFormData.append('docReceivedDate', formData.docReceivedDate);
           uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
-          uploadFormData.append('additionalDocsCount', formData.additionalDocsCount.toString());
-          uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs));
+          uploadFormData.append('additionalDocsCount', (formData.additionalDocsCount || 1).toString());
+          uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs || ['']));
 
           response = await fetch(`/api/documents/${editDocument.id}`, {
             method: 'PUT',
@@ -381,8 +401,8 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         uploadFormData.append('monthYear', formData.monthYear);
         uploadFormData.append('docReceivedDate', formData.docReceivedDate);
         uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
-        uploadFormData.append('additionalDocsCount', formData.additionalDocsCount.toString());
-        uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs));
+        uploadFormData.append('additionalDocsCount', (formData.additionalDocsCount || 1).toString());
+        uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs || ['']));
 
         const response = await fetch('/api/documents', {
           method: 'POST',
@@ -413,7 +433,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             mtNumber: '',
             mtDate: '',
             subject: '',
-            monthYear: '',
+            monthYear: getCurrentMonthYear(),
             docReceivedDate: '',
             hasAdditionalDocs: false,
             additionalDocsCount: 1,
@@ -684,11 +704,21 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                       value={doc || ''}
                       onChange={(e) => handleAdditionalDocChange(index, e.target.value)}
                       placeholder={`เอกสารเพิ่มเติมที่ ${index + 1}`}
-                      className="flex-1"
+                      className={`flex-1 ${(fieldErrors.additionalDocs || (errors.additionalDocs && errors.additionalDocs[0])) ? 'border-red-300' : ''}`}
                     />
                   </div>
                 ))}
               </div>
+            )}
+            
+            {(fieldErrors.additionalDocs || (errors.additionalDocs && errors.additionalDocs[0])) && (
+              <p className="text-sm text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {formData.hasAdditionalDocs 
+                  ? 'กรุณาระบุรายละเอียดเอกสารที่ต้องส่งเพิ่มเติมทุกรายการ'
+                  : (fieldErrors.additionalDocs || errors.additionalDocs[0])
+                }
+              </p>
             )}
           </div>
 
@@ -752,7 +782,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                     mtNumber: '',
                     mtDate: '',
                     subject: '',
-                    monthYear: '',
+                    monthYear: getCurrentMonthYear(),
                     docReceivedDate: '',
                     hasAdditionalDocs: false,
                     additionalDocsCount: 1,

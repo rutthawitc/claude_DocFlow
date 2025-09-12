@@ -143,7 +143,7 @@ export function validateFormData<T>(
     }
   }
   
-  // Handle special fields that need JSON parsing
+  // Handle special fields that need JSON parsing and type conversion
   if (data.additionalDocs && typeof data.additionalDocs === 'string') {
     try {
       data.additionalDocs = JSON.parse(data.additionalDocs);
@@ -153,7 +153,7 @@ export function validateFormData<T>(
     }
   }
   
-  // Convert boolean strings to booleans
+  // Convert string booleans to actual booleans
   if (data.hasAdditionalDocs && typeof data.hasAdditionalDocs === 'string') {
     data.hasAdditionalDocs = data.hasAdditionalDocs === 'true';
   }

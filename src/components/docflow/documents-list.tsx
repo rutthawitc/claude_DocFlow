@@ -153,7 +153,9 @@ function VerificationStatus({
 
   useEffect(() => {
     const fetchVerificationStatus = async () => {
-      if (!additionalDocs || additionalDocs.length === 0) {
+      // Check if there are any meaningful additional docs
+      const filteredDocs = additionalDocs.filter(doc => doc && doc.trim() !== '');
+      if (!additionalDocs || additionalDocs.length === 0 || filteredDocs.length === 0) {
         setLoading(false);
         return;
       }
@@ -625,7 +627,9 @@ export function DocumentsList({
 
     useEffect(() => {
       const checkVerificationStatus = async () => {
-        if (!doc.additionalDocs || doc.additionalDocs.length === 0) {
+        // Check if there are any meaningful additional docs
+        const filteredDocs = doc.additionalDocs?.filter(d => d && d.trim() !== '') || [];
+        if (!doc.hasAdditionalDocs || !doc.additionalDocs || doc.additionalDocs.length === 0 || filteredDocs.length === 0) {
           setLoading(false);
           return;
         }
@@ -1028,7 +1032,7 @@ export function DocumentsList({
                   {/* Right Side - Status & Actions */}
                   <div className="md:w-80 p-4 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100/50">
                     {/* Verification Status with Progress */}
-                    {doc.additionalDocs && doc.additionalDocs.length > 0 && (
+                    {doc.hasAdditionalDocs && doc.additionalDocs && doc.additionalDocs.filter(doc => doc && doc.trim() !== '').length > 0 && (
                       <div className="mb-6 p-3 md:p-4 bg-white rounded-lg border">
                         <VerificationStatus
                           documentId={doc.id}

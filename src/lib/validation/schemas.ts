@@ -52,6 +52,19 @@ export const documentUploadSchema = z.object({
     .max(10, 'Cannot have more than 10 additional documents')
     .optional()
     .default([])
+}).refine((data) => {
+  // If hasAdditionalDocs is true, require enough non-empty additional document descriptions
+  if (data.hasAdditionalDocs) {
+    const nonEmptyDocs = data.additionalDocs?.filter(doc => doc && doc.trim() !== '') || [];
+    const requiredCount = data.additionalDocsCount || 1;
+    if (nonEmptyDocs.length < requiredCount) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'All additional document descriptions must be provided',
+  path: ['additionalDocs']
 });
 
 export const documentUpdateSchema = z.object({
@@ -87,9 +100,35 @@ export const documentUpdateSchema = z.object({
 
   docReceivedDate: z.string()
     .optional()
-    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'Document received date must be in YYYY-MM-DD format')
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'Document received date must be in YYYY-MM-DD format'),
+
+  hasAdditionalDocs: z.boolean()
+    .optional(),
+
+  additionalDocsCount: z.coerce.number()
+    .int('Additional docs count must be an integer')
+    .min(0, 'Additional docs count must be at least 0')
+    .max(10, 'Additional docs count must be at most 10')
+    .optional(),
+
+  additionalDocs: z.array(z.string().trim())
+    .max(10, 'Cannot have more than 10 additional documents')
+    .optional()
 }).refine(data => Object.values(data).some(value => value !== undefined), {
   message: 'At least one field must be provided for update'
+}).refine((data) => {
+  // If hasAdditionalDocs is true, require enough non-empty additional document descriptions
+  if (data.hasAdditionalDocs) {
+    const nonEmptyDocs = data.additionalDocs?.filter(doc => doc && doc.trim() !== '') || [];
+    const requiredCount = data.additionalDocsCount || 1;
+    if (nonEmptyDocs.length < requiredCount) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'All additional document descriptions must be provided',
+  path: ['additionalDocs']
 });
 
 export const documentStatusUpdateSchema = z.object({
