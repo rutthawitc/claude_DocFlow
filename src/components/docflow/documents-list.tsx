@@ -23,6 +23,7 @@ import {
   MessageSquare,
   BadgeCheck,
   BookCheck,
+  ShieldX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -336,6 +337,8 @@ export function DocumentsList({
   const [commentsDialogOpen, setCommentsDialogOpen] = useState<{
     [key: number]: boolean;
   }>({});
+  const [error, setError] = useState<string | null>(null);
+  const [isForbidden, setIsForbidden] = useState(false);
 
   const [filters, setFilters] = useState<Filters>({
     search: "",
@@ -349,6 +352,8 @@ export function DocumentsList({
   // Fetch documents
   const fetchDocuments = useCallback(async () => {
     setLoading(true);
+    setError(null);
+    setIsForbidden(false);
 
     try {
       const queryParams = new URLSearchParams();
@@ -381,6 +386,13 @@ export function DocumentsList({
       });
 
       if (!response.ok) {
+        if (response.status === 403) {
+          setIsForbidden(true);
+          setError('คุณไม่มีสิทธิ์เข้าถึงเอกสารสาขานี้');
+          setDocuments([]);
+          setLoading(false);
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -412,6 +424,7 @@ export function DocumentsList({
       }
     } catch (error) {
       console.error("Error fetching documents:", error);
+      setError(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการโหลดเอกสาร');
       setDocuments([]);
     } finally {
       setLoading(false);
@@ -737,19 +750,21 @@ export function DocumentsList({
             รีเฟรช
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            ตัวกรอง
-          </Button>
+          {!isForbidden && !error && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              ตัวกรอง
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Filters */}
-      {showFilters && (
+      {showFilters && !isForbidden && !error && (
         <Card>
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -813,6 +828,33 @@ export function DocumentsList({
           <Loader2 className="h-8 w-8 animate-spin" />
           <span className="ml-2">กำลังโหลด...</span>
         </div>
+      ) : isForbidden ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <ShieldX className="h-12 w-12 mx-auto text-red-500 mb-4" />
+            <h3 className="text-lg font-medium text-red-600 mb-2">
+              ไม่อนุญาตให้เข้าถึง
+            </h3>
+            <p className="text-gray-600">
+              คุณไม่มีสิทธิ์เข้าถึงเอกสารของสาขานี้
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              กรุณาติดต่อผู้ดูแลระบบหากคุณควรมีสิทธิ์เข้าถึง
+            </p>
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" />
+            <h3 className="text-lg font-medium text-red-600 mb-2">
+              เกิดข้อผิดพลาด
+            </h3>
+            <p className="text-gray-600">
+              {error}
+            </p>
+          </CardContent>
+        </Card>
       ) : documents.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -1225,7 +1267,7 @@ export function DocumentsList({
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages > 1 && !isForbidden && !error && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-700">
             หน้า {filters.page} จาก {totalPages} ({totalDocuments} เอกสาร)
