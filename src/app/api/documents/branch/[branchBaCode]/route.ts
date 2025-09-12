@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { DocumentService } from '@/lib/services/document-service';
 import { DocFlowAuth } from '@/lib/auth/docflow-auth';
@@ -10,7 +10,7 @@ import {
 import { withCache } from '@/lib/cache/cache-middleware';
 
 // GET handler with authentication and validation
-const getHandler = withAuthHandler(async (request, { user, params, validatedData }) => {
+const getHandler = withAuthHandler(async (_, { user, validatedData }) => {
   const { branchBaCode } = validatedData.params;
   const { search, status, page, limit, dateFrom, dateTo } = validatedData.query;
   
@@ -38,7 +38,7 @@ const getHandler = withAuthHandler(async (request, { user, params, validatedData
 
   // For draft documents, only allow users with upload permissions to see them
   if (status === 'draft' && !canViewDrafts) {
-    const response: ApiResponse<any> = {
+    const response: ApiResponse<{ data: never[]; total: number; page: number; limit: number; totalPages: number }> = {
       success: true,
       data: {
         data: [],
@@ -55,7 +55,7 @@ const getHandler = withAuthHandler(async (request, { user, params, validatedData
   const effectiveStatus = (status === 'all' && !canViewDrafts) ? 'non-draft' : status;
   
   const result = await DocumentService.getDocumentsByBranch(branchBaCode, {
-    status: effectiveStatus as any,
+    status: effectiveStatus as 'all' | 'draft' | 'sent_to_branch' | 'acknowledged' | 'sent_back_to_district' | 'non-draft',
     dateFrom: dateFromObj,
     dateTo: dateToObj,
     search,

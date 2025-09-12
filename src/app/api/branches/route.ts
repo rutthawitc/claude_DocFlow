@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+// Removed unused NextRequest import
 import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { ApiResponseHandler } from '@/lib/middleware/api-responses';
 import { BranchService } from '@/lib/services/branch-service';

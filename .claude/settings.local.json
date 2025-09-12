@@ -76,7 +76,11 @@
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE additional_document_files ADD COLUMN IF NOT EXISTS verified_at timestamp;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"\\d additional_document_files\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE additional_document_files ALTER COLUMN is_verified DROP DEFAULT;\")",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE additional_document_files ADD COLUMN IF NOT EXISTS verification_comment text;\")",
+      "Bash(npx tsx:*)",
+      "Bash(./scripts/test-reset-dry-run.sh:*)",
+      "Bash(./scripts/test-reset-simple.sh:*)"
     ],
     "deny": []
   }

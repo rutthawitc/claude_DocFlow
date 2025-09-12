@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { LocalAdminService } from '@/lib/auth/local-admin';
 import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
@@ -24,7 +24,7 @@ async function getUserDatabaseId(username: string): Promise<number | null> {
 }
 
 // GET - Get all available roles
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth();
     

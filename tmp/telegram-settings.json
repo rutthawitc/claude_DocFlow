@@ -5,9 +5,9 @@
   "notifications": {
     "documentUploaded": false,
     "documentSent": true,
-    "documentAcknowledged": true,
-    "documentSentBack": true,
-    "systemAlerts": true,
+    "documentAcknowledged": false,
+    "documentSentBack": false,
+    "systemAlerts": false,
     "dailyReports": false
   },
   "messageFormat": {

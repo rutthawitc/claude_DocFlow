@@ -12,7 +12,7 @@ import { createSecureAPIResponse } from '@/lib/security/headers';
  * GET /api/csrf
  * Returns a new CSRF token for the authenticated user
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check if user is authenticated
     const session = await auth();

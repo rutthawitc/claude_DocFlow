@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { CacheService } from '@/lib/cache/cache-service';
 import { RedisService } from '@/lib/cache/redis-config';
 import { PDFStreamingService } from '@/lib/services/pdf-streaming-service';
-import { DocFlowAuth, DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
+import { DOCFLOW_PERMISSIONS } from '@/lib/auth/docflow-auth';
 
 export const GET = withAuthHandler(
-  async (request, { user }) => {
+  async () => {
 
     // Get cache service instance
     const cache = CacheService.getInstance();
@@ -73,7 +73,7 @@ export const GET = withAuthHandler(
 );
 
 export const DELETE = withAuthHandler(
-  async (request, { user }) => {
+  async (_, { user }) => {
     // Clear all cache
     const cache = CacheService.getInstance();
     const success = await cache.clear();
@@ -99,8 +99,17 @@ export const DELETE = withAuthHandler(
 );
 
 async function generateRecommendations(
-  cacheStats: any,
-  redisHealth: any
+  cacheStats: { 
+    hitRate: number; 
+    redisConnected: boolean; 
+    fallbackSize: number; 
+    hits: number; 
+    misses: number; 
+  },
+  redisHealth: { 
+    status: string; 
+    latency?: number; 
+  }
 ): Promise<string[]> {
   const recommendations: string[] = [];
 

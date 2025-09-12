@@ -97,6 +97,10 @@ CREATE TABLE IF NOT EXISTS documents (
     mt_date DATE NOT NULL,
     subject TEXT NOT NULL,
     month_year VARCHAR(20) NOT NULL,
+    doc_received_date DATE,
+    has_additional_docs BOOLEAN DEFAULT false,
+    additional_docs_count INTEGER DEFAULT 0,
+    additional_docs TEXT[],
     status VARCHAR(50) NOT NULL DEFAULT 'sent_to_branch',
     uploader_id INTEGER NOT NULL REFERENCES users(id),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -110,6 +114,24 @@ CREATE TABLE IF NOT EXISTS comments (
     user_id INTEGER NOT NULL REFERENCES users(id),
     content TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Additional document files table
+CREATE TABLE IF NOT EXISTS additional_document_files (
+    id SERIAL PRIMARY KEY,
+    document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    item_index INTEGER NOT NULL,
+    item_name TEXT NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    file_size INTEGER NOT NULL,
+    uploader_id INTEGER NOT NULL REFERENCES users(id),
+    is_verified BOOLEAN,
+    verified_by INTEGER REFERENCES users(id),
+    verified_at TIMESTAMP,
+    verification_comment TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Activity logs table

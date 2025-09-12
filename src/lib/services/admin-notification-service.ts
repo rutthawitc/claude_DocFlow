@@ -37,7 +37,7 @@ export interface AdminNotificationContext {
   userRole?: string;
   statusFrom?: string;
   statusTo?: string;
-  additionalContext?: Record<string, any>;
+  additionalContext?: Record<string, string | number | boolean>;
   timestamp?: Date;
 }
 
