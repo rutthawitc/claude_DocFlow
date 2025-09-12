@@ -60,6 +60,7 @@ interface CommentSystemProps {
   userRoles: string[];
   currentUserId?: number;
   refreshInterval?: number; // in milliseconds, default 10000 (10s)
+  documentStatus?: string; // Document status to check for read-only mode
 }
 
 // Helper functions to safely access comment data
@@ -89,7 +90,8 @@ export function CommentSystem({
   initialComments = [],
   userRoles,
   currentUserId,
-  refreshInterval = 10000
+  refreshInterval = 10000,
+  documentStatus
 }: CommentSystemProps) {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [newComment, setNewComment] = useState('');
@@ -293,6 +295,11 @@ export function CommentSystem({
   };
 
   const canAddComments = () => {
+    // Disable comments for completed documents
+    if (documentStatus === 'complete') {
+      return false;
+    }
+    
     return userRoles.some(role => 
       ['admin', 'uploader', 'branch_user', 'branch_manager', 'user'].includes(role)
     );

@@ -4,7 +4,8 @@ export enum DocumentStatus {
   DRAFT = "draft",
   SENT_TO_BRANCH = "sent_to_branch", 
   ACKNOWLEDGED = "acknowledged",
-  SENT_BACK_TO_DISTRICT = "sent_back_to_district"
+  SENT_BACK_TO_DISTRICT = "sent_back_to_district",
+  COMPLETE = "complete"
 }
 
 export enum LogAction {
@@ -100,6 +101,7 @@ export interface BranchWithDocumentCounts extends Branch {
     sent_to_branch: number;
     acknowledged: number;
     sent_back_to_district: number;
+    complete: number;
   };
 }
 
@@ -132,6 +134,7 @@ export interface DocumentCounts {
   sent_to_branch: number;
   acknowledged: number;
   sent_back_to_district: number;
+  complete: number;
 }
 
 // File Validation Types

@@ -10,6 +10,7 @@ export interface NotificationSettings {
     documentSent: boolean;
     documentAcknowledged: boolean;
     documentSentBack: boolean;
+    documentCompleted: boolean;
     systemAlerts: boolean;
     dailyReports: boolean;
   };
@@ -29,7 +30,7 @@ export interface DocumentNotificationData {
   branchName: string;
   userName: string;
   userFullName: string;
-  action: 'uploaded' | 'sent' | 'acknowledged' | 'sent_back';
+  action: 'uploaded' | 'sent' | 'acknowledged' | 'sent_back' | 'completed';
   timestamp: Date;
   comment?: string;
 }
@@ -80,6 +81,7 @@ export class NotificationService {
             documentSent: true,
             documentAcknowledged: true,
             documentSentBack: true,
+            documentCompleted: true,
             systemAlerts: true,
             dailyReports: false
           },
@@ -265,6 +267,8 @@ export class NotificationService {
         return 'documentAcknowledged';
       case 'sent_back':
         return 'documentSentBack';
+      case 'completed':
+        return 'documentCompleted';
       default:
         return 'documentUploaded';
     }
@@ -296,6 +300,10 @@ export class NotificationService {
       case 'sent_back':
         emoji = '🔄';
         actionText = 'ถูกส่งกลับจากสาขา';
+        break;
+      case 'completed':
+        emoji = '📋✅';
+        actionText = 'เสร็จสิ้นกระบวนการแล้ว';
         break;
     }
 

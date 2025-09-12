@@ -21,7 +21,8 @@ import {
   CheckCircle, 
   RotateCcw,
   AlertCircle,
-  Clock
+  Clock,
+  BookCheck
 } from 'lucide-react';
 
 interface StatusManagementProps {
@@ -145,6 +146,8 @@ export function StatusManagement({
         return <CheckCircle className="w-4 h-4" />;
       case DocumentStatus.SENT_BACK_TO_DISTRICT:
         return <RotateCcw className="w-4 h-4" />;
+      case DocumentStatus.COMPLETE:
+        return <BookCheck className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
     }
@@ -160,6 +163,8 @@ export function StatusManagement({
         return 'bg-green-100 text-green-800 border-green-300';
       case DocumentStatus.SENT_BACK_TO_DISTRICT:
         return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case DocumentStatus.COMPLETE:
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
@@ -175,6 +180,8 @@ export function StatusManagement({
         return 'รับทราบแล้ว';
       case DocumentStatus.SENT_BACK_TO_DISTRICT:
         return 'ส่งกลับเขต';
+      case DocumentStatus.COMPLETE:
+        return 'เสร็จสิ้น';
       default:
         return 'ไม่ทราบสถานะ';
     }
@@ -190,6 +197,7 @@ export function StatusManagement({
 
     const isUploader = userRoles.includes('uploader') || userRoles.includes('admin') || userRoles.includes('district_manager');
     const isBranchUser = userRoles.includes('branch_user') || userRoles.includes('branch_manager') || userRoles.includes('admin') || userRoles.includes('district_manager');
+    const canComplete = userRoles.includes('admin') || userRoles.includes('district_manager') || userRoles.includes('uploader');
 
     switch (currentStatus) {
       case DocumentStatus.DRAFT:
@@ -238,6 +246,18 @@ export function StatusManagement({
             requiresComment: true
           });
         }
+        if (canComplete) {
+          actions.push({
+            status: DocumentStatus.COMPLETE,
+            label: 'เสร็จสิ้น',
+            variant: 'outline',
+            requiresComment: true
+          });
+        }
+        break;
+      
+      case DocumentStatus.COMPLETE:
+        // No actions available for completed documents
         break;
     }
 
@@ -327,14 +347,20 @@ export function StatusManagement({
                 !verificationStatus.allVerified && 
                 !verificationStatus.loading;
 
+              // Special styling for complete button
+              const isCompleteAction = action.status === DocumentStatus.COMPLETE;
+              const completeButtonClasses = isCompleteAction 
+                ? "flex items-center gap-1 bg-orange-500 text-white hover:bg-orange-600 border-orange-500 hover:border-orange-600" 
+                : "flex items-center gap-1";
+
               return (
                 <Button
                   key={action.status}
-                  variant={action.variant}
+                  variant={isCompleteAction ? "default" : action.variant}
                   size="sm"
                   disabled={isUpdating || shouldDisableDueToVerification}
                   onClick={() => handleStatusUpdate(action.status, action.requiresComment)}
-                  className="flex items-center gap-1"
+                  className={completeButtonClasses}
                   title={shouldDisableDueToVerification ? 'กรุณาตรวจสอบเอกสารเพิ่มเติมให้ครบทุกฉบับก่อนส่งกลับเขต' : undefined}
                 >
                   {getStatusIcon(action.status)}

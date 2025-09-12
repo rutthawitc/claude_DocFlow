@@ -22,6 +22,7 @@ import {
   Clock,
   MessageSquare,
   BadgeCheck,
+  BookCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,6 +118,7 @@ const STATUS_COLORS = {
   sent_to_branch: "bg-orange-100 text-orange-700 border-orange-200",
   acknowledged: "bg-green-100 text-green-700 border-green-200",
   sent_back_to_district: "bg-blue-100 text-blue-700 border-blue-200",
+  complete: "bg-emerald-100 text-emerald-700 border-emerald-200",
 };
 
 const STATUS_LABELS = {
@@ -124,6 +126,7 @@ const STATUS_LABELS = {
   sent_to_branch: "เอกสารจากเขต",
   acknowledged: "รับทราบแล้ว",
   sent_back_to_district: "ส่งกลับเขต",
+  complete: "เสร็จสิ้น",
 };
 
 // Modern Verification Status Component with Progress Bar
@@ -822,6 +825,114 @@ export function DocumentsList({
         <div className="space-y-6">
           {documents.map((doc) => {
             console.log("Rendering documents:", documents.length);
+            
+            // Render compact format for completed documents
+            if (doc.status === 'complete') {
+              return (
+                <Card
+                  key={`doc-${doc.id}-${doc.updatedAt}`}
+                  className="group hover:shadow-lg transition-all duration-300 hover:border-emerald-300 bg-white hover:-translate-y-1 border border-emerald-200"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <BookCheck className="h-5 w-5 text-emerald-600" />
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {doc.mtNumber} - {doc.subject}
+                          </h3>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/documents/${doc.id}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            ดูรายละเอียดเอกสาร
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700"
+                          onClick={() => handleDownload(doc.id, doc.originalFilename)}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          ดาวน์โหลด
+                        </Button>
+                        {((user?.pwa?.roles || []).includes('admin') || (user?.pwa?.roles || []).includes('uploader') || (user?.pwa?.roles || []).includes('district_manager')) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="hover:bg-red-50 hover:border-red-200 hover:text-red-700"
+                            onClick={() => setDeleteDialogOpen((prev) => ({ ...prev, [doc.id]: true }))}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            ลบ
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                  
+                  {/* Delete Dialog for Completed Documents */}
+                  {((user?.pwa?.roles || []).includes('admin') || (user?.pwa?.roles || []).includes('uploader') || (user?.pwa?.roles || []).includes('district_manager')) && (
+                    <Dialog
+                      open={deleteDialogOpen[doc.id] || false}
+                      onOpenChange={(open) =>
+                        setDeleteDialogOpen((prev) => ({
+                          ...prev,
+                          [doc.id]: open,
+                        }))
+                      }
+                    >
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>ยืนยันการลบเอกสาร</DialogTitle>
+                          <DialogDescription>
+                            คุณแน่ใจหรือไม่ที่จะลบเอกสาร "{doc.mtNumber} - {doc.subject}"?
+                            <br />
+                            การดำเนินการนี้ไม่สามารถยกเลิกได้
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              setDeleteDialogOpen((prev) => ({
+                                ...prev,
+                                [doc.id]: false,
+                              }))
+                            }
+                          >
+                            ยกเลิก
+                          </Button>
+                          <Button
+                            className="bg-red-600 hover:bg-red-700"
+                            onClick={() => handleDelete(doc.id)}
+                            disabled={deletingId === doc.id}
+                          >
+                            {deletingId === doc.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                กำลังลบ...
+                              </>
+                            ) : (
+                              "ลบเอกสาร"
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </Card>
+              );
+            }
+            
+            // Render full format for non-completed documents
             return (
             <Card
               key={`doc-${doc.id}-${doc.updatedAt}`}
@@ -852,9 +963,14 @@ export function DocumentsList({
 
                     {/* Document Title and Subject */}
                     <div className="mb-4">
-                      <h3 className="font-bold text-xl text-gray-900 mb-2">
-                        {doc.mtNumber}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-bold text-xl text-gray-900">
+                          {doc.mtNumber}
+                        </h3>
+                        {doc.status === 'complete' && (
+                          <BookCheck className="h-5 w-5 text-emerald-600" />
+                        )}
+                      </div>
                       <p className="text-gray-700 text-base leading-relaxed">
                         {doc.subject}
                       </p>

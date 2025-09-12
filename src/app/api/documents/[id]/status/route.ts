@@ -72,6 +72,29 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       }
     }
 
+    // Validation for COMPLETE status transition
+    if (status === DocumentStatus.COMPLETE) {
+      // Only admin, district_manager, uploader can mark as complete
+      const canComplete = roles.includes('admin') || 
+                         roles.includes('district_manager') || 
+                         roles.includes('uploader');
+      
+      if (!canComplete) {
+        return NextResponse.json(
+          { success: false, error: 'Only admin, district manager, or uploader can mark documents as complete' },
+          { status: 403 }
+        );
+      }
+
+      // Can only mark as complete from sent_back_to_district status
+      if (currentDocument.status !== DocumentStatus.SENT_BACK_TO_DISTRICT) {
+        return NextResponse.json(
+          { success: false, error: 'Documents can only be marked as complete from sent_back_to_district status' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Update document status
     const updatedDocument = await DocumentService.updateDocumentStatus(
       documentId,
@@ -108,7 +131,7 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       });
       const userFullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username : 'Unknown User';
       
-      let notificationAction: 'sent' | 'acknowledged' | 'sent_back' | null = null;
+      let notificationAction: 'sent' | 'acknowledged' | 'sent_back' | 'completed' | null = null;
       
       if (status === DocumentStatus.SENT_TO_BRANCH) {
         notificationAction = 'sent';
@@ -116,6 +139,8 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
         notificationAction = 'acknowledged';
       } else if (status === DocumentStatus.SENT_BACK_TO_DISTRICT) {
         notificationAction = 'sent_back';
+      } else if (status === DocumentStatus.COMPLETE) {
+        notificationAction = 'completed';
       }
       
       if (notificationAction) {

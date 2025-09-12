@@ -97,9 +97,10 @@ export function AdditionalDocumentUpload({
                    userRoles.includes('district_manager') || 
                    userRoles.includes('uploader');
 
-  // Check if document status allows uploads (must be acknowledged)
+  // Check if document status allows uploads (must be acknowledged and not completed)
   const isDocumentAcknowledged = documentStatus === 'acknowledged';
-  const canUploadBasedOnStatus = canUpload && isDocumentAcknowledged;
+  const isDocumentCompleted = documentStatus === 'complete';
+  const canUploadBasedOnStatus = canUpload && isDocumentAcknowledged && !isDocumentCompleted;
 
   // Debug logging
   console.log('AdditionalDocumentUpload - userRoles:', userRoles);
@@ -460,7 +461,7 @@ export function AdditionalDocumentUpload({
                             ดาวน์โหลด
                           </Button>
                           
-                          {canUploadBasedOnStatus && !existingFile.isVerified && (
+                          {canUploadBasedOnStatus && existingFile.isVerified !== true && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
@@ -499,7 +500,12 @@ export function AdditionalDocumentUpload({
                           <Button
                             variant={existingFile ? "outline" : "default"}
                             size="sm"
-                            disabled={isUploading || (existingFile?.isVerified || false) || !isDocumentAcknowledged}
+                            disabled={
+                              isUploading || 
+                              (existingFile?.isVerified === true) || 
+                              (existingFile?.isVerified === false) || 
+                              !isDocumentAcknowledged
+                            }
                             className="h-8"
                             onClick={() => {
                               if (!isDocumentAcknowledged) {
@@ -635,7 +641,7 @@ export function AdditionalDocumentUpload({
           </div>
         )}
 
-        {canUpload && !isDocumentAcknowledged && (
+        {canUpload && !isDocumentAcknowledged && !isDocumentCompleted && (
           <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-orange-600" />
@@ -645,6 +651,20 @@ export function AdditionalDocumentUpload({
             </div>
             <p className="text-xs text-orange-600 mt-1">
               คลิกปุ่ม "รับทราบ" ในส่วนจัดการสถานะด้านข้าง เพื่อเปิดใช้งานการอัปโหลดไฟล์
+            </p>
+          </div>
+        )}
+
+        {canUpload && isDocumentCompleted && (
+          <div className="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-600" />
+              <p className="text-sm text-emerald-700 font-medium">
+                เอกสารเสร็จสิ้นแล้ว
+              </p>
+            </div>
+            <p className="text-xs text-emerald-600 mt-1">
+              เอกสารนี้ได้ดำเนินการครบถ้วนแล้ว ไม่สามารถแก้ไขหรือเพิ่มเติมได้อีก
             </p>
           </div>
         )}

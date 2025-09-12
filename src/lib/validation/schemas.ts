@@ -97,7 +97,8 @@ export const documentStatusUpdateSchema = z.object({
     DocumentStatus.DRAFT,
     DocumentStatus.SENT_TO_BRANCH, 
     DocumentStatus.ACKNOWLEDGED,
-    DocumentStatus.SENT_BACK_TO_DISTRICT
+    DocumentStatus.SENT_BACK_TO_DISTRICT,
+    DocumentStatus.COMPLETE
   ], {
     errorMap: () => ({ message: 'Invalid document status' })
   }),
@@ -148,7 +149,8 @@ export const documentSearchSchema = paginationSchema.extend({
     DocumentStatus.DRAFT,
     DocumentStatus.SENT_TO_BRANCH,
     DocumentStatus.ACKNOWLEDGED,
-    DocumentStatus.SENT_BACK_TO_DISTRICT
+    DocumentStatus.SENT_BACK_TO_DISTRICT,
+    DocumentStatus.COMPLETE
   ]).default('all'),
   
   dateFrom: z.string()

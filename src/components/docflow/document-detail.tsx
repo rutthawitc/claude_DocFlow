@@ -17,7 +17,8 @@ import {
   Edit3,
   Loader2,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  BookCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -113,14 +114,16 @@ const STATUS_COLORS = {
   draft: 'bg-gray-100 text-gray-700',
   sent_to_branch: 'bg-orange-100 text-orange-700',
   acknowledged: 'bg-green-100 text-green-700',
-  sent_back_to_district: 'bg-blue-100 text-blue-700'
+  sent_back_to_district: 'bg-blue-100 text-blue-700',
+  complete: 'bg-emerald-100 text-emerald-700'
 };
 
 const STATUS_LABELS = {
   draft: 'ร่าง',
   sent_to_branch: 'เอกสารจากเขต',
   acknowledged: 'รับทราบแล้ว',
-  sent_back_to_district: 'ส่งกลับเขต'
+  sent_back_to_district: 'ส่งกลับเขต',
+  complete: 'เสร็จสิ้น'
 };
 
 export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentDetailProps) {
@@ -356,7 +359,12 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between">
-                <CardTitle className="text-xl">{document.mtNumber}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-xl">{document.mtNumber}</CardTitle>
+                  {document.status === 'complete' && (
+                    <BookCheck className="h-5 w-5 text-emerald-600" />
+                  )}
+                </div>
                 <Badge 
                   variant="outline" 
                   className={STATUS_COLORS[document.status as keyof typeof STATUS_COLORS]}
@@ -464,6 +472,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
             userRoles={userRoles}
             currentUserId={userId}
             refreshInterval={10000}
+            documentStatus={document.status}
           />
         </div>
 
