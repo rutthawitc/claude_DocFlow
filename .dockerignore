@@ -1,18 +1,122 @@
+# Build files and tools
 Dockerfile*
 docker-compose*
 .dockerignore
+
+# Version control
 .git
 .gitignore
+.gitattributes
+
+# Documentation
 README*.md
+CHANGELOG*.md
+docs/
+instructions/
+*.md
+
+# Environment and configuration
 .env
 .env.*
 !.env.example
-.next
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Dependencies
 node_modules
+.pnpm-store
+.npm
+.yarn
+
+# Build outputs
+.next
+dist/
+build/
+out/
+
+# Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
 
-# Keep .pnpmrc for configuration
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.*
+*.spec.*
+jest.config.*
+cypress/
+
+# Development files (keep build-essential files)
+.eslintrc.*
+.prettierrc*
+# tsconfig.json - KEEP for TypeScript build
+# next.config.js - KEEP for Next.js build
+
+# Keep essential configuration files
 !.pnpmrc
+!package.json
+!pnpm-lock.yaml
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Cache directories
+.cache/
+.parcel-cache/
+.turbo/
+
+# Uploads and user data (should be mounted as volumes)
+uploads/
+tmp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Security files
+*.pem
+*.key
+*.crt

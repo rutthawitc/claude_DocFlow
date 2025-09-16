@@ -307,14 +307,22 @@ docker-compose logs app  # View app logs
    - Use SQL seed script instead of TypeScript version
    - Ensure all dependencies are installed: `pnpm install`
 
-## Documentation
+## 📚 Documentation
 
-Detailed documentation available in the `instructions/` folder:
+### User Documentation
+- [📖 User Guide](./docs/USER_GUIDE.md) - Complete user manual in Thai
+- [🛠️ Admin Guide](./docs/ADMIN_GUIDE.md) - Administrator and system management guide
+- [🔧 Troubleshooting Guide](./docs/TROUBLESHOOTING_GUIDE.md) - Common issues and solutions
 
+### Technical Documentation
+- [🚀 Deployment Guide](./docs/DEPLOYMENT_GUIDE.md) - Production deployment and setup
+- [🔗 API Reference](./docs/API_REFERENCE.md) - Complete API documentation for developers
+- [⚙️ CLAUDE.md](./CLAUDE.md) - Development and system architecture guide
+
+### Legacy Documentation
 - [System Design](./instructions/system-design.md)
 - [Database Design](./instructions/database-design.md)
 - [Authentication Flow](./instructions/authentication-flow.md)
-- [API Documentation](./instructions/api-documentation.md)
 - [User Stories](./instructions/user-stories.md)
 
 ## License
