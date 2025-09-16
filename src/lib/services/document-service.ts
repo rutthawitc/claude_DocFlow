@@ -153,7 +153,7 @@ export class DocumentService {
         .from(comments)
         .leftJoin(users, eq(comments.userId, users.id))
         .where(eq(comments.documentId, id))
-        .orderBy(desc(comments.createdAt));
+        .orderBy(comments.createdAt);
 
       // Get status history
       const statusHistory = await db

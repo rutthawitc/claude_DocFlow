@@ -239,11 +239,27 @@ export function CommentSystem({
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setComments(prev => prev.map(comment => 
-          comment.id === commentId 
-            ? { ...comment, content: editText.trim() }
-            : comment
-        ));
+        setComments(prev => prev.map(comment => {
+          const commentId_check = getCommentId(comment);
+          if (commentId_check === commentId) {
+            // Handle both nested and flat structures
+            if (comment.comment) {
+              return { 
+                ...comment, 
+                comment: { 
+                  ...comment.comment, 
+                  content: editText.trim() 
+                } 
+              };
+            } else {
+              return { 
+                ...comment, 
+                content: editText.trim() 
+              };
+            }
+          }
+          return comment;
+        }));
         setEditingCommentId(null);
         setEditText('');
         toast.success('แก้ไขความคิดเห็นเรียบร้อย');
@@ -329,11 +345,7 @@ export function CommentSystem({
               <span>กำลังโหลดความคิดเห็น...</span>
             </div>
           ) : comments.length > 0 ? (
-            comments.map((comment, index) => {
-              // Debug: Log comment structure
-              console.log(`💬 Frontend - Comment ${index + 1}:`, comment);
-              console.log(`💬 Frontend - Comment ID: ${getCommentId(comment)}, Content: "${getCommentContent(comment)}"`);
-              return (
+            comments.map((comment, index) => (
               <div key={getCommentId(comment) || `comment-${index}`} className="space-y-2 group">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
@@ -350,7 +362,6 @@ export function CommentSystem({
                             // Check if createdAt exists
                             const createdAt = getCommentCreatedAt(comment);
                             if (!createdAt) {
-                              console.warn('Missing createdAt for comment ID:', getCommentId(comment), comment);
                               return 'ไม่ระบุเวลา';
                             }
                             
@@ -361,13 +372,12 @@ export function CommentSystem({
                             
                             // Check if date is valid
                             if (!date || isNaN(date.getTime())) {
-                              console.warn('Invalid date for comment ID:', getCommentId(comment), 'createdAt:', createdAt);
                               return 'วันที่ไม่ถูกต้อง';
                             }
                             
                             return format(date, 'dd/MM/yyyy HH:mm', { locale: th });
                           } catch (error) {
-                            console.error('Date formatting error for comment ID:', getCommentId(comment), error, 'createdAt:', createdAt);
+                            console.error('Date formatting error for comment:', error);
                             return 'ข้อผิดพลาดวันที่';
                           }
                         })()}
@@ -432,8 +442,7 @@ export function CommentSystem({
 
                 {index < comments.length - 1 && <Separator />}
               </div>
-              );
-            })
+            ))
           ) : (
             <div className="text-center py-8 text-gray-500">
               <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />

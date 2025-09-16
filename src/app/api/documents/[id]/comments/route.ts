@@ -114,8 +114,6 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
     }
 
     const documentId = validatedParams.id;
-    console.log('📄 Comments API - Document ID:', documentId);
-    console.log('👤 Comments API - User ID:', user.databaseId);
 
     // Get user roles for access check
     const { DocFlowAuth } = await import('@/lib/auth/docflow-auth');
@@ -133,12 +131,8 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
       return ApiResponseHandler.notFound('Document not found');
     }
 
-    console.log('💬 Comments API - Found comments:', document.comments?.length || 0);
-    console.log('💬 Comments API - Sample comment structure:', document.comments?.[0]);
-    
     // Ensure we return the comments array
     const comments = document.comments || [];
-    console.log('💬 Comments API - Returning comments:', comments);
 
     return ApiResponseHandler.success(comments);
 
