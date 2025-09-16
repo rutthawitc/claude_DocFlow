@@ -92,7 +92,10 @@ export default function DocumentUploadPage() {
       monthYear: document.monthYear,
       branchBaCode: document.branchBaCode,
       originalFilename: document.originalFilename,
-      docReceivedDate: document.docReceivedDate
+      docReceivedDate: document.docReceivedDate,
+      hasAdditionalDocs: document.hasAdditionalDocs,
+      additionalDocsCount: document.additionalDocsCount,
+      additionalDocs: document.additionalDocs
     });
   };
 
