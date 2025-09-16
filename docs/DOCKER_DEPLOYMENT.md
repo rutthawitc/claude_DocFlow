@@ -9,9 +9,10 @@ This guide covers the complete workflow for deploying DocFlow from Docker Hub, i
 ## 🚀 **Quick Start Deployment**
 
 ### **Step 1: Pull and Run Container**
+
 ```bash
 # Pull the latest DocFlow image
-docker pull rutthawaitc/docflow:latest
+docker pull rutthawitc/docflow:latest
 
 # Run with basic configuration
 docker run -d \
@@ -21,10 +22,11 @@ docker run -d \
   -e PWA_AUTH_URL="https://your-pwa-auth.com/api/login" \
   -e NEXTAUTH_SECRET="your-secret-key" \
   -e NEXTAUTH_URL="https://your-domain.com" \
-  rutthawaitc/docflow:latest
+  rutthawitc/docflow:latest
 ```
 
 ### **Step 2: Database Schema Setup** ⚠️ **REQUIRED**
+
 ```bash
 # Push database schema (creates all tables)
 docker exec -it docflow_app pnpm db:push
@@ -34,6 +36,7 @@ docker exec -it docflow_app pnpm db:push
 ```
 
 ### **Step 3: Initialize DocFlow Data** ⚠️ **REQUIRED**
+
 ```bash
 # Initialize branches, roles, and permissions
 docker exec -it docflow_app pnpm docflow:init
@@ -45,6 +48,7 @@ docker exec -it docflow_app pnpm docflow:init
 ```
 
 ### **Step 4: Verify Deployment**
+
 ```bash
 # Check application health
 curl http://localhost:3000/api/health
@@ -59,7 +63,7 @@ curl http://localhost:3000/login
 
 ## 📋 **Production Checklist**
 
-- [ ] Pull Docker image: `docker pull rutthawaitc/docflow:latest`
+- [ ] Pull Docker image: `docker pull rutthawitc/docflow:latest`
 - [ ] Run container with proper environment variables
 - [ ] **Run `pnpm db:push`** (creates database tables)
 - [ ] **Run `pnpm docflow:init`** (creates branches, roles, permissions)
@@ -72,12 +76,13 @@ curl http://localhost:3000/login
 ## 🐳 **Production Docker Compose Deployment**
 
 ### **docker-compose.yml**
+
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   app:
-    image: rutthawaitc/docflow:latest
+    image: rutthawitc/docflow:latest
     container_name: docflow_app
     ports:
       - "3000:3000"
@@ -148,6 +153,7 @@ volumes:
 ```
 
 ### **Environment File (.env)**
+
 ```env
 # Database Configuration
 POSTGRES_PASSWORD=your_secure_db_password
@@ -171,6 +177,7 @@ SESSION_WARNING_TIME_SECONDS=300        # 5 minutes
 ```
 
 ### **Deploy with Docker Compose**
+
 ```bash
 # 1. Create environment file
 cp .env.example .env
@@ -197,6 +204,7 @@ curl http://localhost:3000/api/health
 ## ⚡ **Automated Initialization Script**
 
 ### **init-docflow.sh**
+
 ```bash
 #!/bin/bash
 set -e
@@ -229,7 +237,7 @@ if ! docker ps | grep -q docflow_app; then
     echo "Please start the container first:"
     echo "  docker-compose up -d"
     echo "  # or"
-    echo "  docker run -d --name docflow_app -p 3000:3000 rutthawaitc/docflow:latest"
+    echo "  docker run -d --name docflow_app -p 3000:3000 rutthawitc/docflow:latest"
     exit 1
 fi
 
@@ -278,6 +286,7 @@ fi
 ```
 
 ### **Make script executable and run:**
+
 ```bash
 # Make executable
 chmod +x init-docflow.sh
@@ -291,12 +300,14 @@ chmod +x init-docflow.sh
 ## 🔐 **Security Considerations**
 
 ### **Environment Variables**
+
 - **Never commit `.env` files** to version control
 - **Use strong passwords** for database and Redis
 - **Generate secure secrets**: `openssl rand -base64 32`
 - **Use HTTPS** in production with valid SSL certificates
 
 ### **Network Security**
+
 ```bash
 # Create isolated network for production
 docker network create docflow_network
@@ -306,6 +317,7 @@ docker-compose up -d --network docflow_network
 ```
 
 ### **File Permissions**
+
 ```bash
 # Set proper permissions for upload directories
 mkdir -p uploads tmp
@@ -318,6 +330,7 @@ chown -R 1001:1001 uploads tmp  # nextjs user in container
 ## 📊 **Monitoring and Health Checks**
 
 ### **Health Check Script**
+
 ```bash
 #!/bin/bash
 # health-check.sh
@@ -367,9 +380,10 @@ echo "=========================="
 ## 🔄 **Updates and Maintenance**
 
 ### **Update to New Version**
+
 ```bash
 # 1. Pull latest image
-docker pull rutthawaitc/docflow:latest
+docker pull rutthawitc/docflow:latest
 
 # 2. Stop current container
 docker-compose down
@@ -384,6 +398,7 @@ docker-compose exec app pnpm db:push
 ```
 
 ### **Backup Database**
+
 ```bash
 # Create backup
 docker exec docflow_db pg_dump -U postgres docflow_db > backup_$(date +%Y%m%d_%H%M%S).sql
@@ -399,6 +414,7 @@ docker exec -i docflow_db psql -U postgres -d docflow_db < backup_20250916_15000
 ### **Common Issues**
 
 #### **Database Connection Failed**
+
 ```bash
 # Check database container
 docker logs docflow_db
@@ -408,6 +424,7 @@ docker exec -it docflow_db psql -U postgres -d docflow_db
 ```
 
 #### **Application Not Starting**
+
 ```bash
 # Check application logs
 docker logs docflow_app
@@ -419,6 +436,7 @@ docker logs docflow_app
 ```
 
 #### **Health Check Failing**
+
 ```bash
 # Check if port is accessible
 curl -v http://localhost:3000/api/health
@@ -428,6 +446,7 @@ docker stats docflow_app
 ```
 
 ### **Log Locations**
+
 ```bash
 # Application logs
 docker logs docflow_app
@@ -447,10 +466,11 @@ docker stats --no-stream
 ## 📞 **Support**
 
 For issues and support:
+
 - **GitHub Issues**: Create issues in the DocFlow repository
 - **Documentation**: Check `docs/` directory for additional guides
 - **Production Support**: Ensure you have proper monitoring and backup procedures
 
 ---
 
-*DocFlow Docker Deployment Guide - Updated: September 2025*
+_DocFlow Docker Deployment Guide - Updated: September 2025_
