@@ -47,6 +47,9 @@ interface DraftDocument {
   branchBaCode: number;
   originalFilename: string;
   docReceivedDate?: string;
+  hasAdditionalDocs?: boolean;
+  additionalDocsCount?: number;
+  additionalDocs?: string[];
 }
 
 export default function DocumentUploadPage() {

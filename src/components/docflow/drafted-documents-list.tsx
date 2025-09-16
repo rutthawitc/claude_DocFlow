@@ -34,6 +34,9 @@ interface DraftDocument {
   createdAt: string;
   filePath: string;
   originalFilename: string;
+  hasAdditionalDocs?: boolean;
+  additionalDocsCount?: number;
+  additionalDocs?: string[];
 }
 
 interface DraftedDocumentsListProps {

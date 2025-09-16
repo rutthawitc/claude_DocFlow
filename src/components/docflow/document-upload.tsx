@@ -48,6 +48,9 @@ interface DocumentUploadProps {
     branchBaCode: number;
     originalFilename: string;
     docReceivedDate?: string;
+    hasAdditionalDocs?: boolean;
+    additionalDocsCount?: number;
+    additionalDocs?: string[];
   };
   onEditComplete?: () => void;
 }
@@ -78,9 +81,9 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     subject: editDocument?.subject || '',
     monthYear: editDocument?.monthYear || getCurrentMonthYear(),
     docReceivedDate: editDocument?.docReceivedDate || '',
-    hasAdditionalDocs: false,
-    additionalDocsCount: 1,
-    additionalDocs: ['']
+    hasAdditionalDocs: editDocument?.hasAdditionalDocs || false,
+    additionalDocsCount: editDocument?.additionalDocsCount || 1,
+    additionalDocs: editDocument?.additionalDocs || ['']
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -97,9 +100,9 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         subject: editDocument.subject,
         monthYear: editDocument.monthYear,
         docReceivedDate: editDocument.docReceivedDate || '',
-        hasAdditionalDocs: false,
-        additionalDocsCount: 1,
-        additionalDocs: ['']
+        hasAdditionalDocs: editDocument.hasAdditionalDocs || false,
+        additionalDocsCount: editDocument.additionalDocsCount || 1,
+        additionalDocs: editDocument.additionalDocs || ['']
       });
       // Clear any existing file selection when switching to edit mode
       setSelectedFile(null);
