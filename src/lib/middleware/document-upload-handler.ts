@@ -9,7 +9,7 @@ import { ActivityLogger } from '@/lib/services/activity-logger';
 import { NotificationService } from '@/lib/services/notification-service';
 import { BranchService } from '@/lib/services/branch-service';
 import { validateBranchAccess } from '@/lib/middleware/api-auth';
-import { DocumentUploadData, DocumentUploadError } from '@/lib/types';
+import { DocumentUploadData, DocumentUploadError, DocumentStatus } from '@/lib/types';
 import { documentUploadSchema } from '@/lib/validation/schemas';
 import { 
   ValidationError,
@@ -93,11 +93,14 @@ export async function handleDocumentUpload(request: NextRequest): Promise<NextRe
       additionalDocs: validatedData.additionalDocs
     };
 
+    // Determine initial status based on action
+    const initialStatus = validatedData.action === 'send' ? DocumentStatus.SENT_TO_BRANCH : DocumentStatus.DRAFT;
+    
     // Create document
-    console.log('Documents API - Creating document...');
+    console.log('Documents API - Creating document with status:', initialStatus);
     let document;
     try {
-      document = await DocumentService.createDocument(file, metadata, user.databaseId);
+      document = await DocumentService.createDocument(file, metadata, user.databaseId, initialStatus);
       console.log('Documents API - Document created successfully:', document.id);
     } catch (createError) {
       console.error('Documents API - Document creation error:', createError);
@@ -132,7 +135,7 @@ export async function handleDocumentUpload(request: NextRequest): Promise<NextRe
         branchName: branch?.name || `BA ${validatedData.branchBaCode}`,
         userName: user.user.username,
         userFullName: userFullName,
-        action: 'uploaded',
+        action: initialStatus === DocumentStatus.SENT_TO_BRANCH ? 'sent' : 'uploaded',
         timestamp: new Date()
       });
     } catch (notificationError) {

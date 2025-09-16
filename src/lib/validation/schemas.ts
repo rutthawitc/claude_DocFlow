@@ -51,7 +51,11 @@ export const documentUploadSchema = z.object({
   additionalDocs: z.array(z.string().trim())
     .max(10, 'Cannot have more than 10 additional documents')
     .optional()
-    .default([])
+    .default([]),
+
+  action: z.enum(['save', 'send'])
+    .optional()
+    .default('save')
 }).refine((data) => {
   // If hasAdditionalDocs is true, require enough non-empty additional document descriptions
   if (data.hasAdditionalDocs) {

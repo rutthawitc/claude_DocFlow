@@ -346,6 +346,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
           uploadFormData.append('additionalDocsCount', (formData.additionalDocsCount || 1).toString());
           uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs || ['']));
+          uploadFormData.append('action', action);
 
           response = await fetch(`/api/documents/${editDocument.id}`, {
             method: 'PUT',
@@ -369,21 +370,6 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         if (response.ok && result.success) {
           toast.success('อัปเดตเอกสารสำเร็จ');
           
-          // Update status if sending
-          if (action === 'send' && result.data) {
-            await fetch(`/api/documents/${result.data.id}/status`, {
-              method: 'PATCH',
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ 
-                status: 'sent_to_branch',
-                comment: 'Document sent to branch'
-              })
-            });
-          }
-
           onEditComplete?.();
           onUploadSuccess?.(result.data);
           router.push('/documents');
@@ -403,6 +389,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
         uploadFormData.append('additionalDocsCount', (formData.additionalDocsCount || 1).toString());
         uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs || ['']));
+        uploadFormData.append('action', action);
 
         const response = await fetch('/api/documents', {
           method: 'POST',
@@ -442,21 +429,6 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
-          }
-
-          // Update status if sending
-          if (action === 'send' && result.data) {
-            await fetch(`/api/documents/${result.data.id}/status`, {
-              method: 'PATCH',
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ 
-                status: 'sent_to_branch',
-                comment: 'Document sent to branch'
-              })
-            });
           }
 
           onUploadSuccess?.(result.data);

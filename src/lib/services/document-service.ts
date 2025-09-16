@@ -36,7 +36,8 @@ export class DocumentService {
   static async createDocument(
     file: File,
     metadata: DocumentUploadData,
-    uploaderId: number
+    uploaderId: number,
+    initialStatus: DocumentStatus = DocumentStatus.DRAFT
   ): Promise<Document> {
     const db = await getDb();
 
@@ -68,7 +69,7 @@ export class DocumentService {
         hasAdditionalDocs: metadata.hasAdditionalDocs || false,
         additionalDocsCount: metadata.additionalDocsCount || 0,
         additionalDocs: metadata.additionalDocs || [],
-        status: DocumentStatus.DRAFT,
+        status: initialStatus,
         uploaderId: uploaderId
       };
 
