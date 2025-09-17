@@ -1,124 +1,178 @@
 services:
-  # PostgreSQL database for development
-  db:
-    image: postgres:17.5-alpine3.20
-    container_name: docflow-db-dev
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: docflow-nginx
     restart: unless-stopped
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=docflow_db
-      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
-      - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-      - ./scripts:/scripts:ro
-      - ./backups:/backups
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     ports:
-      - "5432:5432"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certs:/etc/nginx/certs:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      app:
+        condition: service_healthy
     networks:
-      - dev-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d docflow_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      - app-network
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
-  # Redis cache for development
-  redis:
-    image: redis:7.4-alpine
-    container_name: docflow-redis-dev
+  # Next.js application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod.simple
+    container_name: docflow-app
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - AUTH_TRUST_HOST=${AUTH_TRUST_HOST}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - PWA_AUTH_URL=${PWA_AUTH_URL}
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB}
+      - REDIS_KEY_PREFIX=${REDIS_KEY_PREFIX}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # PostgreSQL database
+  db:
+    image: postgres:17.5-alpine3.20
+    container_name: docflow-db
     restart: unless-stopped
     environment:
-      - REDIS_PASSWORD=redis123
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
     volumes:
-      - redis_dev_data:/data
-      - ./docker/redis/redis-dev.conf:/usr/local/etc/redis/redis.conf:ro
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts:/scripts:ro
+      - ./backups:/backups
     ports:
-      - "6379:6379"
+      - "5432:5432"  # Expose for initialization
     networks:
-      - dev-network
+      - app-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "redis123", "ping"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
+    logging:
+      driver: "json-file" 
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Redis cache
+  redis:
+    image: redis:7.4-alpine
+    container_name: docflow-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     command: redis-server /usr/local/etc/redis/redis.conf
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
 
-  # pgAdmin for database management (development only)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: docflow-pgadmin-dev
-    restart: unless-stopped
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@example.com
-      - PGADMIN_DEFAULT_PASSWORD=admin123
-      - PGADMIN_CONFIG_SERVER_MODE=False
-      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
-    ports:
-      - "5050:80"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - dev-network
-    volumes:
-      - pgadmin_dev_data:/var/lib/pgadmin
-      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # Redis Commander for Redis management
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: docflow-redis-commander-dev
-    restart: unless-stopped
-    environment:
-      - REDIS_HOSTS=local:redis:6379:0:redis123
-      - HTTP_USER=admin
-      - HTTP_PASSWORD=admin123
-    ports:
-      - "8081:8081"
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - dev-network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
+  # pgAdmin (disabled in production by default)
+  # pgadmin:
+  #   image: elestio/pgadmin:latest
+  #   container_name: docflow-pgadmin
+  #   restart: unless-stopped
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+  #     - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+  #   ports:
+  #     - "127.0.0.1:5050:80"
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   networks:
+  #     - app-network
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
 
 networks:
-  dev-network:
+  app-network:
     driver: bridge
-    name: docflow-dev-network
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
 volumes:
-  postgres_dev_data:
+  postgres_data:
     driver: local
-    name: docflow-postgres-dev-data
-  redis_dev_data:
+  redis_data:
     driver: local
-    name: docflow-redis-dev-data
-  pgadmin_dev_data:
+  pgadmin_data:
     driver: local
-    name: docflow-pgadmin-dev-data
+  nginx_cache:
+    driver: local
