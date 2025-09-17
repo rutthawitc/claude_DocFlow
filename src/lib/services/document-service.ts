@@ -15,6 +15,7 @@ import { FileValidationService, FileStorageService } from './file-service';
 import { BranchService } from './branch-service';
 import { CacheService } from '@/lib/cache/cache-service';
 import { AdminNotificationService } from './admin-notification-service';
+import { DatabaseErrorHandler, withDatabaseErrorHandling } from '@/lib/utils/database-error-handler';
 
 export class DocumentService {
   private static cache = CacheService.getInstance();
@@ -347,51 +348,79 @@ export class DocumentService {
 
     try {
       // Get current document with related data for notifications
-      const currentDocWithRelations = await db
-        .select({
-          document: {
-            id: documents.id,
-            mtNumber: documents.mtNumber,
-            title: documents.title,
-            status: documents.status,
-            branchBaCode: documents.branchBaCode,
-          },
-          branch: {
-            id: branches.id,
-            name: branches.name,
-            baCode: branches.baCode,
-          },
-          user: {
-            id: users.id,
-            username: users.username,
-            firstName: users.firstName,
-            lastName: users.lastName,
-          },
-        })
-        .from(documents)
-        .innerJoin(branches, eq(documents.branchBaCode, branches.baCode))
-        .innerJoin(users, eq(documents.uploaderId, users.id))
-        .where(eq(documents.id, documentId))
-        .limit(1);
+      const queryResult = await DatabaseErrorHandler.safeQuery(
+        async () => {
+          return db
+            .select({
+              document: {
+                id: documents.id,
+                mtNumber: documents.mtNumber,
+                subject: documents.subject,
+                status: documents.status,
+                branchBaCode: documents.branchBaCode,
+              },
+              branch: {
+                id: branches.id,
+                name: branches.name,
+                baCode: branches.baCode,
+              },
+              user: {
+                id: users.id,
+                username: users.username,
+                firstName: users.firstName,
+                lastName: users.lastName,
+              },
+            })
+            .from(documents)
+            .leftJoin(branches, eq(documents.branchBaCode, branches.baCode))
+            .leftJoin(users, eq(documents.uploaderId, users.id))
+            .where(eq(documents.id, documentId))
+            .limit(1);
+        },
+        'fetchDocumentWithRelations'
+      );
 
-      if (currentDocWithRelations.length === 0) {
+      if (!queryResult.success) {
+        throw new Error(`Failed to fetch document: ${queryResult.error}`);
+      }
+
+      const currentDocWithRelations = queryResult.data;
+      const currentDocData = DatabaseErrorHandler.safeFirst(currentDocWithRelations, 'updateDocumentStatus');
+
+      if (!currentDocData) {
         throw new Error('Document not found');
       }
 
-      const currentDocData = currentDocWithRelations[0];
       const currentDoc = currentDocData.document;
+      if (!currentDoc) {
+        throw new Error('Document data not found');
+      }
+
+      // Validate essential fields
+      if (!DatabaseErrorHandler.validateQueryResult(currentDoc, ['id', 'status', 'branchBaCode', 'mtNumber'])) {
+        throw new Error('Document missing required fields');
+      }
 
       // Get user info for the one performing the status update
-      const [statusUpdaterUser] = await db
-        .select({
-          id: users.id,
-          username: users.username,
-          firstName: users.firstName,
-          lastName: users.lastName,
-        })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
+      const userQueryResult = await DatabaseErrorHandler.safeQuery(
+        async () => {
+          return db
+            .select({
+              id: users.id,
+              username: users.username,
+              firstName: users.firstName,
+              lastName: users.lastName,
+            })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+        },
+        'fetchStatusUpdaterUser'
+      );
+
+      const statusUpdaterUser = userQueryResult.success ?
+        DatabaseErrorHandler.safeFirst(userQueryResult.data, 'statusUpdaterUser') :
+        null;
 
       // Update document status
       const [updatedDocument] = await db
@@ -414,11 +443,14 @@ export class DocumentService {
 
       // Send admin notifications for specific status changes
       if (statusUpdaterUser) {
-        const userName = `${statusUpdaterUser.firstName} ${statusUpdaterUser.lastName}`.trim() || statusUpdaterUser.username;
-        const branchName = currentDocData.branch.name;
-        const branchCode = currentDocData.branch.baCode;
-        const documentMtNumber = currentDoc.mtNumber;
-        const documentTitle = currentDoc.title || undefined;
+        const userName = DatabaseErrorHandler.safeAccess(statusUpdaterUser, 'firstName', '') + ' ' +
+                        DatabaseErrorHandler.safeAccess(statusUpdaterUser, 'lastName', '') ||
+                        DatabaseErrorHandler.safeAccess(statusUpdaterUser, 'username', 'Unknown User');
+
+        const branchName = DatabaseErrorHandler.safeAccess(currentDocData, 'branch.name', 'Unknown Branch');
+        const branchCode = DatabaseErrorHandler.safeAccess(currentDocData, 'branch.baCode', currentDoc.branchBaCode);
+        const documentMtNumber = DatabaseErrorHandler.safeAccess(currentDoc, 'mtNumber', 'Unknown');
+        const documentTitle = DatabaseErrorHandler.safeAccess(currentDoc, 'subject', undefined);
 
         try {
           // Send admin notification for acknowledged status

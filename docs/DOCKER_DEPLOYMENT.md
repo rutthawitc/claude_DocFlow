@@ -389,6 +389,91 @@ chmod +x deploy.sh
 
 ---
 
+## 🔄 **Image Update Workflow**
+
+### **For Development (Build & Push)**
+
+```bash
+# Navigate to project directory
+cd /path/to/claude_DocFlow
+
+# Build new image with version tag
+docker build -t rutthawitc/docflow:v1.0.1 -f Dockerfile.prod.simple .
+docker tag rutthawitc/docflow:v1.0.1 rutthawitc/docflow:latest
+
+# Push to Docker Hub
+docker push rutthawitc/docflow:v1.0.1
+docker push rutthawitc/docflow:latest
+```
+
+### **For Production (Pull & Update)**
+
+#### **Method 1: Zero-Downtime Rolling Update (Recommended)**
+```bash
+cd /opt/docflow
+
+# Pull latest image
+docker-compose pull app
+
+# Update with zero downtime
+docker-compose up -d --no-deps app
+
+# Verify deployment
+docker-compose ps
+curl http://localhost:3004/api/health
+```
+
+#### **Method 2: Complete Service Restart**
+```bash
+cd /opt/docflow
+
+# Stop services
+docker-compose down
+
+# Pull latest images
+docker-compose pull
+
+# Start services with new images
+docker-compose up -d
+
+# Verify deployment
+docker-compose ps
+```
+
+### **Automated Update Script**
+
+Use the provided automated script for streamlined updates:
+
+```bash
+# On development machine (build and push)
+./scripts/deploy-update.sh v1.0.1 build
+
+# On production machine (update deployment)
+./scripts/deploy-update.sh v1.0.1 production
+
+# Update to latest image
+./scripts/deploy-update.sh latest production
+```
+
+### **Version Tagging Best Practices**
+
+```bash
+# Semantic versioning
+docker tag rutthawitc/docflow:latest rutthawitc/docflow:v1.0.1
+docker tag rutthawitc/docflow:latest rutthawitc/docflow:v1.0
+docker tag rutthawitc/docflow:latest rutthawitc/docflow:v1
+
+# Feature-based tagging
+docker tag rutthawitc/docflow:latest rutthawitc/docflow:fix-status-update
+docker tag rutthawitc/docflow:latest rutthawitc/docflow:2025-09-17
+
+# Environment-specific tagging
+docker tag rutthawitc/docflow:latest rutthawitc/docflow:production-stable
+docker tag rutthawitc/docflow:latest rutthawitc/docflow:staging
+```
+
+---
+
 ## 🔄 **Management Commands**
 
 ### **Daily Operations:**
