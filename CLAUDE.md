@@ -329,6 +329,33 @@ The dropdown will show months from 2567 to 2571 (Buddhist era).
 - **Upload**: 10 uploads per hour per user
 - **API**: 100 requests per 15 minutes per IP
 
+## Production Deployment Notes
+
+### Docker Image Updates
+- **Automated Script**: Use `./scripts/deploy-update.sh v1.0.1 production` for streamlined updates
+- **Zero-Downtime Updates**: `docker-compose up -d --no-deps app` maintains service availability
+- **Version Tagging**: Always tag with versions (e.g., v1.0.1) for rollback capability
+- **Build Process**: Build on development machine, push to Docker Hub, pull on production
+
+### Development vs Production Differences
+- **Data Consistency**: Production may have data inconsistencies not present in development
+- **Database Joins**: Always use `leftJoin` instead of `innerJoin` for optional relationships
+- **Error Handling**: Implement comprehensive error handling using `DatabaseErrorHandler` utility
+- **Field Validation**: Field references must match actual database schema exactly
+- **Query Safety**: Validate all database query results before accessing nested properties
+
+### Production Deployment Workflow
+1. **Build**: `docker build -t rutthawitc/docflow:v1.0.1 -f Dockerfile.prod.simple .`
+2. **Push**: `docker push rutthawitc/docflow:v1.0.1` and `docker push rutthawitc/docflow:latest`
+3. **Deploy**: `docker-compose pull app && docker-compose up -d --no-deps app`
+4. **Verify**: `curl http://localhost:3004/api/health` and test critical functionality
+
+### Common Production Issues
+- **Field Reference Errors**: Ensure field names match database schema (`subject` not `title`)
+- **Null Relationships**: Handle missing foreign key relationships gracefully
+- **Query Timeouts**: Use appropriate database connection pooling and query optimization
+- **Data Integrity**: Validate data consistency between development and production
+
 ### Testing Setup
 
 No test framework currently configured. When implementing tests:
@@ -340,6 +367,8 @@ No test framework currently configured. When implementing tests:
 - Test Telegram notification integration
 - Test rate limiting functionality
 - Test maintenance mode functionality and system settings management
+- **Add Production-like Testing**: Include tests with missing/null relationships
+- **Database Query Testing**: Test both `innerJoin` and `leftJoin` scenarios
 
 ### Maintenance Mode System
 
