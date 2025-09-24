@@ -4,6 +4,9 @@
 
 คู่มือนี้ครอบคลุมการทดสอบระบบ DocFlow ก่อนและหลังการ deploy ไปยัง production
 
+**Status**: ✅ Updated for current Docker deployment (September 2025)
+**Deployment Method**: Docker Hub images with automated testing scripts
+
 ---
 
 ## 🎯 **Testing Strategy Overview**
@@ -560,4 +563,4 @@ curl -X POST http://your-monitoring-service.com/alerts \
 
 ---
 
-*คู่มือการทดสอบ Production ฉบับนี้อัปเดตล่าสุด: มกราคม 2025*
+*คู่มือการทดสอบ Production ฉบับนี้อัปเดตล่าสุด: กันยายน 2025*

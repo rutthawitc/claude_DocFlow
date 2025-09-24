@@ -1,8 +1,12 @@
-# 🐳 DocFlow Docker Hub Deployment
+# 🐳 DocFlow Production Deployment Guide
 
-## Quick deployment guide using pre-built Docker images from Docker Hub
+## Complete Docker deployment guide for DocFlow
 
-This is the fastest way to deploy DocFlow using pre-built images. Perfect for production deployments without needing to build from source.
+This guide covers both deployment methods:
+1. **Docker Hub** - Fast deployment using pre-built images (recommended)
+2. **From Source** - Build and deploy from GitHub source code
+
+Perfect for production deployments with comprehensive configuration options.
 
 ---
 
@@ -819,4 +823,55 @@ Consider setting up:
 
 ---
 
-*DocFlow Docker Hub Deployment Guide - Updated: September 2025*
+## 📦 **Alternative: Deploy from Source Code**
+
+For customizations or when you want to build from source:
+
+### **Prerequisites:**
+- Linux server (Ubuntu 20.04+ recommended)
+- Docker and Docker Compose installed
+- Git installed
+- Minimum 4GB RAM, 2 CPU cores
+
+### **Step 1: Clone Repository**
+```bash
+# Create deployment directory
+sudo mkdir -p /opt/docflow
+cd /opt/docflow
+sudo chown $USER:$USER /opt/docflow
+
+# Clone repository
+git clone https://github.com/rutthawit/claude_DocFlow.git .
+```
+
+### **Step 2: Build Docker Image**
+```bash
+# Build production Docker image
+docker build -t docflow:local .
+
+# Verify image was built
+docker images | grep docflow
+```
+
+### **Step 3: Update Docker Compose**
+```bash
+# Edit docker-compose.yml to use local image
+sed -i 's/rutthawitc\/docflow:latest/docflow:local/' docker-compose.yml
+```
+
+### **Step 4: Deploy**
+```bash
+# Create environment file
+cp .env.example .env
+nano .env
+
+# Start services
+docker-compose up -d
+
+# Verify deployment
+curl http://localhost:3000/api/health
+```
+
+---
+
+*DocFlow Production Deployment Guide - Updated: September 2025*

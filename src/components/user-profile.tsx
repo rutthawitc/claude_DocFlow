@@ -30,9 +30,13 @@ export function UserProfile() {
               </div>
               <div>
                 <h3 className="font-semibold">ชื่อ-นามสกุล</h3>
-                <p className="text-right">
+                <p className="text-left">
                   {session.user.pwa.firstName} {session.user.pwa.lastName}
                 </p>
+              </div>
+              <div>
+                <h3 className="font-semibold">รหัสศูนย์ต้นทุน</h3>
+                <p>{session.user.pwa.costCenter}</p>
               </div>
               <div>
                 <h3 className="font-semibold">BA</h3>
@@ -49,6 +53,10 @@ export function UserProfile() {
               <div>
                 <h3 className="font-semibold">ตำแหน่ง</h3>
                 <p>{session.user.pwa.position}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold">งาน</h3>
+                <p>{session.user.pwa.jobName}</p>
               </div>
               <div>
                 <h3 className="font-semibold">หน่วยงาน</h3>
