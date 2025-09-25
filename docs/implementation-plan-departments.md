@@ -24,9 +24,9 @@ Each department within BA1059 will have:
 
 ## Implementation Tasks
 
-### Phase 1: Database Schema Changes
+### Phase 1: Database Schema Changes ✅ **COMPLETED**
 
-#### Task 1.1: Extend Branches Table
+#### Task 1.1: Extend Branches Table ✅ **COMPLETED**
 
 ```sql
 -- Add department_name column
@@ -37,29 +37,37 @@ ALTER TABLE branches ADD CONSTRAINT branches_ba_dept_unique
 UNIQUE (ba_code, department_name);
 ```
 
-#### Task 1.2: Insert Department Records
+**Status**: ✅ Completed - Column added successfully with unique constraint
+
+#### Task 1.2: Insert Department Records ✅ **COMPLETED**
 
 ```sql
--- Insert departments based on common job_name patterns
+-- Insert departments with unique ba_codes (adjusted approach)
 INSERT INTO branches (ba_code, branch_code, name, department_name, region_id, region_code, is_active) VALUES
-(1059, 105901, 'กปภ.เขต 6 - งานพัสดุ', 'งานพัสดุ', 6, 'R6', true),
-(1059, 105902, 'กปภ.เขต 6 - งานธุรการ', 'งานธุรการ', 6, 'R6', true),
-(1059, 105903, 'กปภ.เขต 6 - งานบัญชีเจ้าหนี้', 'งานบัญชีเจ้าหนี้', 6, 'R6', true),
-(1059, 105904, 'กปภ.เขต 6 - งานการเงิน', 'งานการเงิน', 6, 'R6', true),
-(1059, 105905, 'กปภ.เขต 6 - งานบุคคล', 'งานบุคคล', 6, 'R6', true);
+(105901, 105901, 'กปภ.เขต 6 - งานพัสดุ', 'งานพัสดุ', 6, 'R6', true),
+(105902, 105902, 'กปภ.เขต 6 - งานธุรการ', 'งานธุรการ', 6, 'R6', true),
+(105903, 105903, 'กปภ.เขต 6 - งานบัญชีเจ้าหนี้', 'งานบัญชีเจ้าหนี้', 6, 'R6', true),
+(105904, 105904, 'กปภ.เขต 6 - งานการเงิน', 'งานการเงิน', 6, 'R6', true),
+(105905, 105905, 'กปภ.เขต 6 - งานบุคคล', 'งานบุคคล', 6, 'R6', true);
 ```
 
-### Phase 2: Authentication & Authorization Updates
+**Status**: ✅ Completed - 5 department records inserted successfully
+**Note**: Used unique ba_codes (105901-105905) instead of shared 1059 due to existing foreign key constraints
 
-#### Task 2.1: Update DocFlow Auth Logic
+### Phase 2: Authentication & Authorization Updates ✅ **COMPLETED**
+
+#### Task 2.1: Update DocFlow Auth Logic ✅ **COMPLETED**
 
 **File**: `src/lib/auth/docflow-auth.ts`
 
-- Extend BA1059 handling logic (around line 478)
-- Add job_name to department branch mapping
-- Assign users to specific department branches based on job_name
+- ✅ Extended BA1059 handling logic to include department mapping
+- ✅ Added job_name to department branch mapping integration
+- ✅ Added getUserDepartmentBranch() helper method for department access
+- ✅ Enhanced user assignment with department-specific logging
 
-#### Task 2.2: Create Department Mapping Service
+**Status**: ✅ Completed - BA1059 users now automatically mapped to departments based on job_name
+
+#### Task 2.2: Create Department Mapping Service ✅ **COMPLETED**
 
 **File**: `src/lib/services/department-mapping-service.ts`
 
@@ -68,18 +76,22 @@ interface DepartmentMapping {
   jobName: string;
   departmentName: string;
   branchCode: number;
+  baCode: number;
 }
 
-// Map job_name to department branches
+// Map job_name to department branches - 5 core departments
 const BA1059_DEPARTMENT_MAPPING: DepartmentMapping[] = [
   {
-    jobName: "งานประมาณซ่อมูล",
-    departmentName: "งานประมาณซ่อมูล",
+    jobName: "งานพัสดุ",
+    departmentName: "งานพัสดุ",
     branchCode: 105901,
+    baCode: 105901,
   },
-  // ... other mappings
+  // ... 4 other department mappings
 ];
 ```
+
+**Status**: ✅ Completed - Full department mapping service with utility functions created
 
 ### Phase 3: UI Component Updates
 

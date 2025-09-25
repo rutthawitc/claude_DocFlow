@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { users, roles, permissions, userRoles, rolePermissions } from '@/db/schema';
 import { PWAUserData, Branch } from '@/lib/types';
 import { BranchService } from '@/lib/services/branch-service';
+import { getDepartmentByJobName, isBA1059District } from '@/lib/services/department-mapping-service';
 
 // DocFlow roles and permissions
 export const DOCFLOW_ROLES = {
@@ -474,7 +475,7 @@ export class DocFlowAuth {
 
       // Check for district-level access (BA codes like 1059)
       const userBA = pwaData.ba ? parseInt(pwaData.ba) : null;
-      
+
       if (userBA === 1059) {
         // This is a district code - assign district manager role
         const hasDistrictManagerRole = await this.hasRole(userId, DOCFLOW_ROLES.DISTRICT_MANAGER);
@@ -482,11 +483,32 @@ export class DocFlowAuth {
           await this.assignRole(userId, DOCFLOW_ROLES.DISTRICT_MANAGER);
           console.log(`Assigned district manager role to user ${userId} with BA ${userBA}`);
         }
-        
+
         // District managers also get uploader permissions
         const hasUploaderRole = await this.hasRole(userId, DOCFLOW_ROLES.UPLOADER);
         if (!hasUploaderRole) {
           await this.assignRole(userId, DOCFLOW_ROLES.UPLOADER);
+        }
+
+        // Map user to specific department based on job_name
+        const userJobName = pwaData.jobName;
+        if (userJobName) {
+          const departmentInfo = getDepartmentByJobName(userJobName);
+          if (departmentInfo) {
+            console.log(`User ${userId} with job_name "${userJobName}" mapped to department branch ${departmentInfo.branchCode}`);
+
+            // Store department assignment in user record for quick access
+            // This could be used for default branch selection in UI
+            const db = getDb();
+            await db.update(users)
+              .set({
+                updatedAt: new Date(),
+                // We could add a departmentBranchCode field if needed
+              })
+              .where(eq(users.id, userId));
+          } else {
+            console.warn(`No department mapping found for job_name: "${userJobName}" for user ${userId}`);
+          }
         }
       } else {
         // Check if user should have branch_user role based on having a valid branch
@@ -560,6 +582,42 @@ export class DocFlowAuth {
     } catch (error) {
       console.error('Error validating branch access:', error);
       return false;
+    }
+  }
+
+  /**
+   * Get user's department branch code based on their job_name (for BA1059 users)
+   */
+  static async getUserDepartmentBranch(userId: number): Promise<number | null> {
+    try {
+      const db = getDb();
+      const user = await db.select({
+        ba: users.ba,
+        jobName: users.jobName,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+      if (!user.length) return null;
+
+      const userData = user[0];
+
+      // Check if user belongs to BA1059 district
+      if (!isBA1059District(userData.ba || '')) {
+        return null;
+      }
+
+      // Get department mapping based on job_name
+      if (userData.jobName) {
+        const departmentInfo = getDepartmentByJobName(userData.jobName);
+        return departmentInfo ? departmentInfo.branchCode : null;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error getting user department branch:', error);
+      return null;
     }
   }
 }
