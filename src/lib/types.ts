@@ -44,6 +44,9 @@ export interface Document {
   subject: string;
   monthYear: string;
   docReceivedDate?: Date;
+  sendBackOriginalDocument?: boolean;
+  sendBackDate?: Date;
+  deadlineDate?: Date;
   status: string;
   uploaderId: number;
   createdAt: Date;
@@ -116,6 +119,9 @@ export interface DocumentUploadData {
   hasAdditionalDocs?: boolean;
   additionalDocsCount?: number;
   additionalDocs?: string[];
+  sendBackOriginalDocument?: boolean;
+  sendBackDate?: string;
+  deadlineDate?: string;
 }
 
 export interface DocumentFilters {

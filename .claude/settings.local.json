@@ -91,7 +91,12 @@
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT ba_code, branch_code, name, department_name FROM branches WHERE ba_code >= 105901 ORDER BY ba_code;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT ba_code, name, department_name FROM branches WHERE ba_code BETWEEN 105901 AND 105905 ORDER BY ba_code;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"\n-- Clean up test data\nDELETE FROM branches WHERE ba_code IN (105910, 105911);\n\")",
-      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -f test-branch-integration.sql)"
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -f test-branch-integration.sql)",
+      "Bash(printf \"\\n\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/docflow_db\" npx drizzle-kit push)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS send_back_original_document boolean DEFAULT false;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS send_back_date date;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS deadline_date date;\")"
     ],
     "deny": []
   }

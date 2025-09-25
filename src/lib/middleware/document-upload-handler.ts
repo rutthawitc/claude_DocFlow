@@ -90,7 +90,10 @@ export async function handleDocumentUpload(request: NextRequest): Promise<NextRe
       docReceivedDate: validatedData.docReceivedDate,
       hasAdditionalDocs: validatedData.hasAdditionalDocs,
       additionalDocsCount: validatedData.additionalDocsCount,
-      additionalDocs: validatedData.additionalDocs
+      additionalDocs: validatedData.additionalDocs,
+      sendBackOriginalDocument: validatedData.sendBackOriginalDocument,
+      sendBackDate: validatedData.sendBackDate,
+      deadlineDate: validatedData.deadlineDate
     };
 
     // Determine initial status based on action

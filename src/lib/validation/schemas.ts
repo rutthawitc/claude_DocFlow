@@ -53,6 +53,24 @@ export const documentUploadSchema = z.object({
     .optional()
     .default([]),
 
+  sendBackOriginalDocument: z.union([z.boolean(), z.string()])
+    .transform((val) => {
+      if (typeof val === 'string') {
+        return val === 'true';
+      }
+      return Boolean(val);
+    })
+    .optional()
+    .default(false),
+
+  sendBackDate: z.string()
+    .optional()
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'Send back date must be in YYYY-MM-DD format'),
+
+  deadlineDate: z.string()
+    .optional()
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'Deadline date must be in YYYY-MM-DD format'),
+
   action: z.enum(['save', 'send'])
     .optional()
     .default('save')
@@ -69,6 +87,24 @@ export const documentUploadSchema = z.object({
 }, {
   message: 'All additional document descriptions must be provided',
   path: ['additionalDocs']
+}).refine((data) => {
+  // If sendBackOriginalDocument is true, validate dates
+  if (data.sendBackOriginalDocument) {
+    // Both dates should be provided
+    if (!data.sendBackDate || !data.deadlineDate) {
+      return false;
+    }
+    // Deadline date should be after send back date
+    const sendBackDate = new Date(data.sendBackDate);
+    const deadlineDate = new Date(data.deadlineDate);
+    if (deadlineDate <= sendBackDate) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'When sending original document back, both dates are required and deadline must be after send back date',
+  path: ['deadlineDate']
 });
 
 export const documentUpdateSchema = z.object({
@@ -117,7 +153,18 @@ export const documentUpdateSchema = z.object({
 
   additionalDocs: z.array(z.string().trim())
     .max(10, 'Cannot have more than 10 additional documents')
+    .optional(),
+
+  sendBackOriginalDocument: z.boolean()
+    .optional(),
+
+  sendBackDate: z.string()
     .optional()
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'Send back date must be in YYYY-MM-DD format'),
+
+  deadlineDate: z.string()
+    .optional()
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'Deadline date must be in YYYY-MM-DD format')
 }).refine(data => Object.values(data).some(value => value !== undefined), {
   message: 'At least one field must be provided for update'
 }).refine((data) => {
@@ -133,6 +180,24 @@ export const documentUpdateSchema = z.object({
 }, {
   message: 'All additional document descriptions must be provided',
   path: ['additionalDocs']
+}).refine((data) => {
+  // If sendBackOriginalDocument is true, validate dates
+  if (data.sendBackOriginalDocument) {
+    // Both dates should be provided
+    if (!data.sendBackDate || !data.deadlineDate) {
+      return false;
+    }
+    // Deadline date should be after send back date
+    const sendBackDate = new Date(data.sendBackDate);
+    const deadlineDate = new Date(data.deadlineDate);
+    if (deadlineDate <= sendBackDate) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'When sending original document back, both dates are required and deadline must be after send back date',
+  path: ['deadlineDate']
 });
 
 export const documentStatusUpdateSchema = z.object({

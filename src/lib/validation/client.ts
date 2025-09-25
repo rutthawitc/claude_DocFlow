@@ -7,7 +7,7 @@ export const clientDocumentUploadSchema = z.object({
   branchBaCode: z.coerce.number()
     .int('กรุณาเลือกสาขา')
     .min(1000, 'รหัสสาขาไม่ถูกต้อง')
-    .max(9999, 'รหัสสาขาไม่ถูกต้อง'),
+    .max(999999, 'รหัสสาขาไม่ถูกต้อง'),
   
   mtNumber: z.string()
     .min(1, 'กรุณาระบุเลขที่ มท.')
@@ -48,7 +48,19 @@ export const clientDocumentUploadSchema = z.object({
   additionalDocs: z.array(z.string().trim())
     .max(10, 'ไม่สามารถมีเอกสารเพิ่มเติมมากกว่า 10 รายการ')
     .optional()
-    .default([])
+    .default([]),
+
+  sendBackOriginalDocument: z.boolean()
+    .optional()
+    .default(false),
+
+  sendBackDate: z.string()
+    .optional()
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'รูปแบบวันที่ส่งกลับไม่ถูกต้อง'),
+
+  deadlineDate: z.string()
+    .optional()
+    .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), 'รูปแบบวันที่กำหนดส่งกลับไม่ถูกต้อง')
 }).refine((data) => {
   // If hasAdditionalDocs is true, require enough non-empty additional document descriptions
   if (data.hasAdditionalDocs) {
@@ -62,6 +74,24 @@ export const clientDocumentUploadSchema = z.object({
 }, {
   message: 'กรุณาระบุรายละเอียดเอกสารที่ต้องส่งเพิ่มเติมให้ครบทุกรายการ',
   path: ['additionalDocs']
+}).refine((data) => {
+  // If sendBackOriginalDocument is true, validate dates
+  if (data.sendBackOriginalDocument) {
+    // Both dates should be provided
+    if (!data.sendBackDate || !data.deadlineDate) {
+      return false;
+    }
+    // Deadline date should be after send back date
+    const sendBackDate = new Date(data.sendBackDate);
+    const deadlineDate = new Date(data.deadlineDate);
+    if (deadlineDate <= sendBackDate) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'กรุณากำหนดวันที่ส่งกลับและกำหนดส่งกลับให้ครบถ้วน และกำหนดส่งกลับต้องหลังจากวันที่ส่งกลับ',
+  path: ['deadlineDate']
 });
 
 export const clientCommentCreateSchema = z.object({

@@ -57,6 +57,9 @@ interface DraftDocument {
   hasAdditionalDocs?: boolean;
   additionalDocsCount?: number;
   additionalDocs?: string[];
+  sendBackOriginalDocument?: boolean;
+  sendBackDate?: string;
+  deadlineDate?: string;
 }
 
 export default function DocumentUploadPage() {
@@ -102,7 +105,10 @@ export default function DocumentUploadPage() {
       docReceivedDate: document.docReceivedDate,
       hasAdditionalDocs: document.hasAdditionalDocs,
       additionalDocsCount: document.additionalDocsCount,
-      additionalDocs: document.additionalDocs
+      additionalDocs: document.additionalDocs,
+      sendBackOriginalDocument: document.sendBackOriginalDocument,
+      sendBackDate: document.sendBackDate,
+      deadlineDate: document.deadlineDate
     });
   };
 

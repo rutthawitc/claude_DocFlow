@@ -29,6 +29,7 @@ import {
   type ClientDocumentUploadInput
 } from '@/lib/validation/client';
 import { generateMonthYearOptions, getCurrentMonthYear } from '@/lib/utils/month-year-generator';
+import { getDefaultReturnDates, isSecondDateAfterFirst } from '@/lib/utils/business-days';
 
 interface Branch {
   id: number;
@@ -51,6 +52,9 @@ interface DocumentUploadProps {
     hasAdditionalDocs?: boolean;
     additionalDocsCount?: number;
     additionalDocs?: string[];
+    sendBackOriginalDocument?: boolean;
+    sendBackDate?: string;
+    deadlineDate?: string;
   };
   onEditComplete?: () => void;
 }
@@ -65,6 +69,9 @@ interface FormData {
   hasAdditionalDocs: boolean;
   additionalDocsCount: number;
   additionalDocs: string[];
+  sendBackOriginalDocument: boolean;
+  sendBackDate: string;
+  deadlineDate: string;
 }
 
 export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEditComplete }: DocumentUploadProps) {
@@ -74,16 +81,22 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    branchBaCode: editDocument?.branchBaCode.toString() || '',
-    mtNumber: editDocument?.mtNumber || '',
-    mtDate: editDocument?.mtDate || '',
-    subject: editDocument?.subject || '',
-    monthYear: editDocument?.monthYear || getCurrentMonthYear(),
-    docReceivedDate: editDocument?.docReceivedDate || '',
-    hasAdditionalDocs: editDocument?.hasAdditionalDocs || false,
-    additionalDocsCount: editDocument?.additionalDocsCount || 1,
-    additionalDocs: editDocument?.additionalDocs || ['']
+  const [formData, setFormData] = useState<FormData>(() => {
+    const defaultDates = getDefaultReturnDates();
+    return {
+      branchBaCode: editDocument?.branchBaCode.toString() || '',
+      mtNumber: editDocument?.mtNumber || '',
+      mtDate: editDocument?.mtDate || '',
+      subject: editDocument?.subject || '',
+      monthYear: editDocument?.monthYear || getCurrentMonthYear(),
+      docReceivedDate: editDocument?.docReceivedDate || '',
+      hasAdditionalDocs: editDocument?.hasAdditionalDocs || false,
+      additionalDocsCount: editDocument?.additionalDocsCount || 1,
+      additionalDocs: editDocument?.additionalDocs || [''],
+      sendBackOriginalDocument: false,
+      sendBackDate: defaultDates.sendBackDate,
+      deadlineDate: defaultDates.deadlineDate
+    };
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -92,6 +105,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
   // Update form data when editDocument prop changes
   useEffect(() => {
     if (editDocument) {
+      const defaultDates = getDefaultReturnDates();
       setIsEditMode(true);
       setFormData({
         branchBaCode: editDocument.branchBaCode.toString(),
@@ -102,7 +116,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         docReceivedDate: editDocument.docReceivedDate || '',
         hasAdditionalDocs: editDocument.hasAdditionalDocs || false,
         additionalDocsCount: editDocument.additionalDocsCount || 1,
-        additionalDocs: editDocument.additionalDocs || ['']
+        additionalDocs: editDocument.additionalDocs || [''],
+        sendBackOriginalDocument: editDocument.sendBackOriginalDocument || false,
+        sendBackDate: editDocument.sendBackDate || defaultDates.sendBackDate,
+        deadlineDate: editDocument.deadlineDate || defaultDates.deadlineDate
       });
       // Clear any existing file selection when switching to edit mode
       setSelectedFile(null);
@@ -112,6 +129,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
     } else {
       setIsEditMode(false);
       // Reset form data to defaults when not in edit mode
+      const defaultDates = getDefaultReturnDates();
       setFormData({
         branchBaCode: '',
         mtNumber: '',
@@ -121,7 +139,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         docReceivedDate: '',
         hasAdditionalDocs: false,
         additionalDocsCount: 1,
-        additionalDocs: ['']
+        additionalDocs: [''],
+        sendBackOriginalDocument: false,
+        sendBackDate: defaultDates.sendBackDate,
+        deadlineDate: defaultDates.deadlineDate
       });
     }
   }, [editDocument]);
@@ -187,23 +208,40 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
   // Field-level validation for real-time feedback (define first)
   const validateSingleField = useCallback((fieldName: keyof ClientDocumentUploadInput, value: string) => {
     try {
-      const fieldSchema = clientDocumentUploadSchema.shape[fieldName];
-      if (!fieldSchema) {
-        console.warn(`Field schema not found for: ${fieldName}`);
-        return true; // Skip validation if schema not found
+      // Create a partial object with just this field for validation
+      const partialData = { [fieldName]: value };
+      const result = clientDocumentUploadSchema.safeParse(partialData);
+
+      // Extract any error for this specific field
+      if (!result.success) {
+        const fieldError = result.error.errors.find(err =>
+          err.path.length === 0 || err.path.includes(fieldName)
+        );
+
+        if (fieldError) {
+          setFieldErrors(prev => ({
+            ...prev,
+            [fieldName]: fieldError.message
+          }));
+          return false;
+        }
       }
-      
-      const fieldValidation = validateField(value, fieldSchema, fieldName);
-      
+
+      // Clear error if validation passed
       setFieldErrors(prev => ({
         ...prev,
-        [fieldName]: fieldValidation.isValid ? '' : fieldValidation.error || ''
+        [fieldName]: ''
       }));
-      
-      return fieldValidation.isValid;
+
+      return true;
     } catch (error) {
       console.warn(`Validation error for field ${fieldName}:`, error);
-      return true; // Skip validation on error
+      // Clear error on exception and allow form to proceed
+      setFieldErrors(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+      return true;
     }
   }, []);
 
@@ -220,7 +258,9 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
       setTimeout(() => {
         // Only validate fields that exist in the schema
         const validationFields: (keyof ClientDocumentUploadInput)[] = [
-          'branchBaCode', 'mtNumber', 'mtDate', 'subject', 'monthYear', 'docReceivedDate'
+          'branchBaCode', 'mtNumber', 'mtDate', 'subject', 'monthYear', 'docReceivedDate',
+          'hasAdditionalDocs', 'additionalDocsCount', 'sendBackOriginalDocument',
+          'sendBackDate', 'deadlineDate'
         ];
         
         if (validationFields.includes(field as keyof ClientDocumentUploadInput)) {
@@ -260,6 +300,67 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
       ...prev,
       additionalDocs: (prev.additionalDocs || []).map((doc, i) => i === index ? value : doc)
     }));
+  }, []);
+
+  // Handle original document return checkbox
+  const handleSendBackOriginalDocumentToggle = useCallback((checked: boolean) => {
+    const defaultDates = getDefaultReturnDates();
+    setFormData(prev => ({
+      ...prev,
+      sendBackOriginalDocument: checked,
+      sendBackDate: checked ? prev.sendBackDate || defaultDates.sendBackDate : defaultDates.sendBackDate,
+      deadlineDate: checked ? prev.deadlineDate || defaultDates.deadlineDate : defaultDates.deadlineDate
+    }));
+  }, []);
+
+  // Handle send back date change
+  const handleSendBackDateChange = useCallback((value: string) => {
+    setFormData(prev => {
+      const newFormData = {
+        ...prev,
+        sendBackDate: value
+      };
+
+      // Validate that deadline is after send back date
+      if (value && prev.deadlineDate && !isSecondDateAfterFirst(value, prev.deadlineDate)) {
+        setFieldErrors(prevErrors => ({
+          ...prevErrors,
+          deadlineDate: 'กำหนดส่งกลับต้องหลังจากวันที่ส่งกลับ'
+        }));
+      } else {
+        setFieldErrors(prevErrors => {
+          const { deadlineDate, ...rest } = prevErrors;
+          return rest;
+        });
+      }
+
+      return newFormData;
+    });
+  }, []);
+
+  // Handle deadline date change
+  const handleDeadlineDateChange = useCallback((value: string) => {
+    setFormData(prev => {
+      const newFormData = {
+        ...prev,
+        deadlineDate: value
+      };
+
+      // Validate that deadline is after send back date
+      if (prev.sendBackDate && value && !isSecondDateAfterFirst(prev.sendBackDate, value)) {
+        setFieldErrors(prevErrors => ({
+          ...prevErrors,
+          deadlineDate: 'กำหนดส่งกลับต้องหลังจากวันที่ส่งกลับ'
+        }));
+      } else {
+        setFieldErrors(prevErrors => {
+          const { deadlineDate, ...rest } = prevErrors;
+          return rest;
+        });
+      }
+
+      return newFormData;
+    });
   }, []);
 
   // Validate file
@@ -332,7 +433,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           docReceivedDate: formData.docReceivedDate,
           hasAdditionalDocs: formData.hasAdditionalDocs || false,
           additionalDocsCount: formData.additionalDocsCount || 1,
-          additionalDocs: formData.additionalDocs || ['']
+          additionalDocs: formData.additionalDocs || [''],
+          sendBackOriginalDocument: formData.sendBackOriginalDocument || false,
+          sendBackDate: formData.sendBackDate || '',
+          deadlineDate: formData.deadlineDate || ''
         };
 
         let response;
@@ -349,6 +453,9 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
           uploadFormData.append('additionalDocsCount', (formData.additionalDocsCount || 1).toString());
           uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs || ['']));
+          uploadFormData.append('sendBackOriginalDocument', formData.sendBackOriginalDocument.toString());
+          uploadFormData.append('sendBackDate', formData.sendBackDate || '');
+          uploadFormData.append('deadlineDate', formData.deadlineDate || '');
           uploadFormData.append('action', action);
 
           response = await fetch(`/api/documents/${editDocument.id}`, {
@@ -392,6 +499,9 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
         uploadFormData.append('additionalDocsCount', (formData.additionalDocsCount || 1).toString());
         uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs || ['']));
+        uploadFormData.append('sendBackOriginalDocument', formData.sendBackOriginalDocument.toString());
+        uploadFormData.append('sendBackDate', formData.sendBackDate || '');
+        uploadFormData.append('deadlineDate', formData.deadlineDate || '');
         uploadFormData.append('action', action);
 
         const response = await fetch('/api/documents', {
@@ -418,6 +528,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           
           // Reset form
           setSelectedFile(null);
+          const defaultDates = getDefaultReturnDates();
           setFormData({
             branchBaCode: '',
             mtNumber: '',
@@ -427,7 +538,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             docReceivedDate: '',
             hasAdditionalDocs: false,
             additionalDocsCount: 1,
-            additionalDocs: ['']
+            additionalDocs: [''],
+            sendBackOriginalDocument: false,
+            sendBackDate: defaultDates.sendBackDate,
+            deadlineDate: defaultDates.deadlineDate
           });
           
           if (fileInputRef.current) {
@@ -639,6 +753,58 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             />
             {(fieldErrors.subject || (errors.subject && errors.subject[0])) && (
               <p className="text-sm text-red-600">{fieldErrors.subject || errors.subject[0]}</p>
+            )}
+          </div>
+
+          {/* Original Document Return */}
+          <div className="space-y-4 border rounded-lg p-4 bg-blue-50">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="sendBackOriginalDocument"
+                checked={formData.sendBackOriginalDocument}
+                onCheckedChange={handleSendBackOriginalDocumentToggle}
+              />
+              <Label htmlFor="sendBackOriginalDocument" className="cursor-pointer font-medium">
+                ส่งเอกสารต้นฉบับกับสาขา
+              </Label>
+            </div>
+
+            {formData.sendBackOriginalDocument && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sendBackDate">วันที่ส่งกลับ</Label>
+                  <ThaiDatePicker
+                    id="sendBackDate"
+                    value={formData.sendBackDate}
+                    onChange={handleSendBackDateChange}
+                    placeholder="dd/mm/yyyy"
+                    className={fieldErrors.sendBackDate ? 'border-red-300' : ''}
+                  />
+                  {fieldErrors.sendBackDate && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {fieldErrors.sendBackDate}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deadlineDate">กำหนดสาขาส่งกลับเขต</Label>
+                  <ThaiDatePicker
+                    id="deadlineDate"
+                    value={formData.deadlineDate}
+                    onChange={handleDeadlineDateChange}
+                    placeholder="dd/mm/yyyy"
+                    className={fieldErrors.deadlineDate ? 'border-red-300' : ''}
+                  />
+                  {fieldErrors.deadlineDate && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {fieldErrors.deadlineDate}
+                    </p>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 
