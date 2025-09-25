@@ -52,6 +52,13 @@ class RedisService {
       return false;
     }
 
+    // Skip Redis in development if no Redis environment variables are set
+    const isRedisConfigured = process.env.REDIS_HOST || process.env.NODE_ENV === 'production';
+    if (!isRedisConfigured && process.env.NODE_ENV !== 'production') {
+      console.log('🔄 Redis not configured for development, using fallback cache');
+      return false;
+    }
+
     try {
       // Check if caching is enabled in system settings
       const isCacheEnabled = await this.isCacheEnabled();

@@ -96,7 +96,8 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/docflow_db\" npx drizzle-kit push)",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS send_back_original_document boolean DEFAULT false;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS send_back_date date;\")",
-      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS deadline_date date;\")"
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS deadline_date date;\")",
+      "Bash(env)"
     ],
     "deny": []
   }
