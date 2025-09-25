@@ -25,6 +25,7 @@ const THAI_MONTHS_SHORT = [
 ]
 
 interface ThaiDatePickerProps {
+  id?: string
   value?: string
   onChange?: (value: string) => void
   placeholder?: string
@@ -33,6 +34,7 @@ interface ThaiDatePickerProps {
 }
 
 export function ThaiDatePicker({
+  id,
   value,
   onChange,
   placeholder = "เลือกวันที่",
@@ -74,6 +76,7 @@ export function ThaiDatePicker({
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal",

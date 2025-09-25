@@ -185,7 +185,7 @@ export function DocumentUpload({
       }
 
       setSelectedFile(file);
-      setErrors((prev) => ({ ...prev, file: "" }));
+      setErrors((prev) => ({ ...prev, file: [] }));
     },
     [validateFile],
   );
@@ -443,8 +443,7 @@ export function DocumentUpload({
   );
 
   // Form validation with Zod
-  const validateFormData =
-    useCallback((): ValidationResult<ClientDocumentUploadInput> => {
+  const validateFormData = useCallback((): ValidationResult<ClientDocumentUploadInput> => {
       // Sanitize form data
       const sanitizedData = sanitizeFormData(formData);
 
@@ -475,7 +474,7 @@ export function DocumentUpload({
         ),
       );
 
-      return validation;
+      return validation as ValidationResult<ClientDocumentUploadInput>;
     }, [formData, selectedFile, validateFileSelection]);
 
   // Get month/year options using the utility function
@@ -1087,6 +1086,7 @@ export function DocumentUpload({
                 onClick={() => {
                   setIsEditMode(false);
                   setSelectedFile(null);
+                  const defaultDates = getDefaultReturnDates();
                   setFormData({
                     branchBaCode: "",
                     mtNumber: "",
@@ -1097,6 +1097,9 @@ export function DocumentUpload({
                     hasAdditionalDocs: false,
                     additionalDocsCount: 1,
                     additionalDocs: [""],
+                    sendBackOriginalDocument: false,
+                    sendBackDate: defaultDates.sendBackDate,
+                    deadlineDate: defaultDates.deadlineDate,
                   });
                   onEditComplete?.();
                 }}
