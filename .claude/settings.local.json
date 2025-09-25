@@ -88,7 +88,10 @@
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"\nINSERT INTO branches (ba_code, branch_code, name, department_name, region_id, region_code, is_active) VALUES\n(1059, 105901, ''กปภ.เขต 6 - งานพัสดุ'', ''งานพัสดุ'', 6, ''R6'', true),\n(1059, 105902, ''กปภ.เขต 6 - งานธุรการ'', ''งานธุรการ'', 6, ''R6'', true),\n(1059, 105903, ''กปภ.เขต 6 - งานบัญชีเจ้าหนี้'', ''งานบัญชีเจ้าหนี้'', 6, ''R6'', true),\n(1059, 105904, ''กปภ.เขต 6 - งานการเงิน'', ''งานการเงิน'', 6, ''R6'', true),\n(1059, 105905, ''กปภ.เขต 6 - งานบุคคล'', ''งานบุคคล'', 6, ''R6'', true);\n\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"\\d branches\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE branches DROP CONSTRAINT branches_ba_code_key;\")",
-      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT ba_code, branch_code, name, department_name FROM branches WHERE ba_code >= 105901 ORDER BY ba_code;\")"
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT ba_code, branch_code, name, department_name FROM branches WHERE ba_code >= 105901 ORDER BY ba_code;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT ba_code, name, department_name FROM branches WHERE ba_code BETWEEN 105901 AND 105905 ORDER BY ba_code;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"\n-- Clean up test data\nDELETE FROM branches WHERE ba_code IN (105910, 105911);\n\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -f test-branch-integration.sql)"
     ],
     "deny": []
   }

@@ -10,7 +10,7 @@ export const documentUploadSchema = z.object({
   branchBaCode: z.coerce.number()
     .int('Branch BA code must be an integer')
     .min(1000, 'Branch BA code must be at least 1000')
-    .max(9999, 'Branch BA code must be at most 9999'),
+    .max(999999, 'Branch BA code must be at most 999999'),
   
   mtNumber: z.string()
     .min(1, 'MT number is required')
@@ -99,7 +99,7 @@ export const documentUpdateSchema = z.object({
   branchBaCode: z.coerce.number()
     .int('Branch BA code must be an integer')
     .min(1000, 'Branch BA code must be at least 1000')
-    .max(9999, 'Branch BA code must be at most 9999')
+    .max(999999, 'Branch BA code must be at most 999999')
     .optional(),
 
   docReceivedDate: z.string()
@@ -242,7 +242,7 @@ export const branchBaCodeSchema = z.object({
   branchBaCode: z.coerce.number()
     .int('Branch BA code must be an integer')
     .min(1000, 'Branch BA code must be at least 1000')
-    .max(9999, 'Branch BA code must be at most 9999')
+    .max(999999, 'Branch BA code must be at most 999999')
 });
 
 // Security validation schemas
@@ -261,6 +261,102 @@ export const safeHtmlSchema = z.string()
   .refine(val => !/on\w+\s*=/gi.test(val), {
     message: 'Event handlers are not allowed'
   });
+
+// Department management validation schemas
+export const departmentCreateSchema = z.object({
+  baCode: z.coerce.number()
+    .int('BA code must be an integer')
+    .min(1000, 'BA code must be at least 1000')
+    .max(999999, 'BA code must be at most 999999'),
+
+  branchCode: z.coerce.number()
+    .int('Branch code must be an integer')
+    .min(1000, 'Branch code must be at least 1000')
+    .max(999999, 'Branch code must be at most 999999')
+    .optional(),
+
+  name: z.string()
+    .min(3, 'Department name must be at least 3 characters')
+    .max(255, 'Department name must be less than 255 characters')
+    .trim(),
+
+  departmentName: z.string()
+    .max(255, 'Department type name must be less than 255 characters')
+    .trim()
+    .optional()
+    .nullable(),
+
+  regionId: z.coerce.number()
+    .int('Region ID must be an integer')
+    .min(1, 'Region ID must be at least 1')
+    .max(20, 'Region ID must be at most 20'),
+
+  regionCode: z.string()
+    .regex(/^R\d+$/, 'Region code must be in format R{number}')
+    .max(10, 'Region code must be less than 10 characters'),
+
+  isActive: z.boolean()
+    .optional()
+    .default(true)
+});
+
+export const departmentUpdateSchema = z.object({
+  name: z.string()
+    .min(3, 'Department name must be at least 3 characters')
+    .max(255, 'Department name must be less than 255 characters')
+    .trim()
+    .optional(),
+
+  departmentName: z.string()
+    .max(255, 'Department type name must be less than 255 characters')
+    .trim()
+    .optional()
+    .nullable(),
+
+  regionId: z.coerce.number()
+    .int('Region ID must be an integer')
+    .min(1, 'Region ID must be at least 1')
+    .max(20, 'Region ID must be at most 20')
+    .optional(),
+
+  regionCode: z.string()
+    .regex(/^R\d+$/, 'Region code must be in format R{number}')
+    .max(10, 'Region code must be less than 10 characters')
+    .optional(),
+
+  isActive: z.boolean().optional()
+}).refine(data => Object.values(data).some(value => value !== undefined), {
+  message: 'At least one field must be provided for update'
+});
+
+export const departmentSearchSchema = z.object({
+  search: z.string()
+    .max(100, 'Search term must be less than 100 characters')
+    .optional(),
+
+  region: z.string()
+    .regex(/^R\d+$/, 'Region code must be in format R{number}')
+    .optional(),
+
+  isActive: z.coerce.boolean().optional(),
+
+  departmentName: z.string()
+    .max(100, 'Department name filter must be less than 100 characters')
+    .optional(),
+
+  limit: z.coerce.number()
+    .int('Limit must be an integer')
+    .min(1, 'Limit must be at least 1')
+    .max(100, 'Limit must be at most 100')
+    .optional()
+    .default(50),
+
+  offset: z.coerce.number()
+    .int('Offset must be an integer')
+    .min(0, 'Offset must be non-negative')
+    .optional()
+    .default(0)
+});
 
 // File metadata validation
 export const fileMetadataSchema = z.object({

@@ -75,12 +75,13 @@ export const sessions = pgTable('sessions', {
 
 // DocFlow Tables
 
-// Branches table (22 R6 branches)
+// Branches table (22 R6 branches + BA1059 departments)
 export const branches = pgTable('branches', {
   id: serial('id').primaryKey(),
   baCode: integer('ba_code').notNull().unique(),
   branchCode: bigint('branch_code', { mode: 'number' }).notNull().unique(),
   name: varchar('name', { length: 255 }).notNull(),
+  departmentName: varchar('department_name', { length: 255 }), // Added for BA1059 departments
   regionId: integer('region_id').notNull().default(6),
   regionCode: varchar('region_code', { length: 10 }).notNull().default('R6'),
   isActive: boolean('is_active').default(true),

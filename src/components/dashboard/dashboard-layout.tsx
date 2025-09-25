@@ -22,6 +22,7 @@ import {
   X,
   Shield,
   Upload,
+  Building2,
 } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
@@ -152,6 +153,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             title: "จัดการระบบ",
             href: "/admin",
             icon: <Shield className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
+          },
+          {
+            title: "จัดการแผนก",
+            href: "/admin/departments",
+            icon: <Building2 className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
           },
         ]
       : []),
