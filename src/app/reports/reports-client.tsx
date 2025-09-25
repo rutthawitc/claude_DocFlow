@@ -22,11 +22,19 @@ export function ReportsClient() {
   };
 
   const branchStats = [
+    // Regular R6 branches
     { branchName: "กปภ.สาขาขอนแก่น(ชั้นพิเศษ)", baCode: "1060", documents: 89, pending: 5 },
     { branchName: "กปภ.สาขาบ้านไผ่", baCode: "1061", documents: 67, pending: 2 },
     { branchName: "กปภ.สาขาชุมแพ", baCode: "1062", documents: 45, pending: 1 },
     { branchName: "กปภ.สาขาน้ำพอง", baCode: "1063", documents: 52, pending: 3 },
     { branchName: "กปภ.สาขาชนบท", baCode: "1064", documents: 38, pending: 0 },
+
+    // BA1059 Department branches
+    { branchName: "กปภ.เขต 6 - งานพัสดุ", baCode: "105901", documents: 12, pending: 1 },
+    { branchName: "กปภ.เขต 6 - งานธุรการ", baCode: "105902", documents: 8, pending: 0 },
+    { branchName: "กปภ.เขต 6 - งานบัญชีเจ้าหนี้", baCode: "105903", documents: 15, pending: 2 },
+    { branchName: "กปภ.เขต 6 - งานการเงิน", baCode: "105904", documents: 9, pending: 1 },
+    { branchName: "กปภ.เขต 6 - งานบุคคล", baCode: "105905", documents: 6, pending: 0 },
   ];
 
   const monthlyData = [

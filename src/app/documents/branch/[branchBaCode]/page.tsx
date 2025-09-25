@@ -12,6 +12,7 @@ interface BranchDocumentsPageProps {
 async function getBranchName(branchBaCode: number) {
   // Map of branch codes to names
   const branchMap: Record<number, string> = {
+    // Regular R6 branches
     1060: "กปภ.สาขาขอนแก่น(ชั้นพิเศษ)",
     1061: "กปภ.สาขาบ้านไผ่",
     1062: "กปภ.สาขาชุมแพ",
@@ -33,7 +34,14 @@ async function getBranchName(branchBaCode: number) {
     1133: "กปภ.สาขาร้อยเอ็ด",
     1134: "กปภ.สาขาโพนทอง",
     1135: "กปภ.สาขาสุวรรณภูมิ",
-    1245: "กปภ.สาขาบำเหน็จณรงค์"
+    1245: "กปภ.สาขาบำเหน็จณรงค์",
+
+    // BA1059 Department branches
+    105901: "กปภ.เขต 6 - งานพัสดุ",
+    105902: "กปภ.เขต 6 - งานธุรการ",
+    105903: "กปภ.เขต 6 - งานบัญชีเจ้าหนี้",
+    105904: "กปภ.เขต 6 - งานการเงิน",
+    105905: "กปภ.เขต 6 - งานบุคคล",
   };
 
   return branchMap[branchBaCode] || `สาขา BA: ${branchBaCode}`;

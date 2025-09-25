@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS branches (
     ba_code INTEGER NOT NULL UNIQUE,
     branch_code BIGINT NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
+    department_name VARCHAR(255),
     region_id INTEGER NOT NULL DEFAULT 6,
     region_code VARCHAR(10) NOT NULL DEFAULT 'R6',
     is_active BOOLEAN DEFAULT true,
@@ -328,29 +329,38 @@ ON CONFLICT (role_id, permission_id) DO NOTHING;
 -- 5. Insert R6 Branches Data (from CSV)
 -- =====================================================
 
-INSERT INTO branches (ba_code, branch_code, name, region_id, region_code, is_active, created_at, updated_at) VALUES
-(1060, 5521011, 'กปภ.สาขาขอนแก่น(ชั้นพิเศษ)', 6, 'R6', true, NOW(), NOW()),
-(1061, 5521012, 'กปภ.สาขาบ้านไผ่', 6, 'R6', true, NOW(), NOW()),
-(1062, 5521013, 'กปภ.สาขาชุมแพ', 6, 'R6', true, NOW(), NOW()),
-(1063, 5521014, 'กปภ.สาขาน้ำพอง', 6, 'R6', true, NOW(), NOW()),
-(1064, 5521015, 'กปภ.สาขาชนบท', 6, 'R6', true, NOW(), NOW()),
-(1065, 5521016, 'กปภ.สาขากระนวน', 6, 'R6', true, NOW(), NOW()),
-(1066, 5521017, 'กปภ.สาขาหนองเรือ', 6, 'R6', true, NOW(), NOW()),
-(1067, 5521018, 'กปภ.สาขาเมืองพล', 6, 'R6', true, NOW(), NOW()),
-(1068, 5521019, 'กปภ.สาขากาฬสินธุ์', 6, 'R6', true, NOW(), NOW()),
-(1069, 5521020, 'กปภ.สาขากุฉินารายณ์', 6, 'R6', true, NOW(), NOW()),
-(1070, 5521021, 'กปภ.สาขาสมเด็จ', 6, 'R6', true, NOW(), NOW()),
-(1071, 5521022, 'กปภ.สาขามหาสารคาม', 6, 'R6', true, NOW(), NOW()),
-(1072, 5521023, 'กปภ.สาขาพยัคฆภูมิพิสัย', 6, 'R6', true, NOW(), NOW()),
-(1073, 5521024, 'กปภ.สาขาชัยภูมิ', 6, 'R6', true, NOW(), NOW()),
-(1074, 5521025, 'กปภ.สาขาแก้งคร้อ', 6, 'R6', true, NOW(), NOW()),
-(1075, 5521026, 'กปภ.สาขาจัตุรัส', 6, 'R6', true, NOW(), NOW()),
-(1076, 5521027, 'กปภ.สาขาหนองบัวแดง', 6, 'R6', true, NOW(), NOW()),
-(1077, 5521028, 'กปภ.สาขาภูเขียว', 6, 'R6', true, NOW(), NOW()),
-(1133, 5521029, 'กปภ.สาขาร้อยเอ็ด', 6, 'R6', true, NOW(), NOW()),
-(1134, 5521030, 'กปภ.สาขาโพนทอง', 6, 'R6', true, NOW(), NOW()),
-(1135, 5521031, 'กปภ.สาขาสุวรรณภูมิ', 6, 'R6', true, NOW(), NOW()),
-(1245, 5521032, 'กปภ.สาขาบำเหน็จณรงค์', 6, 'R6', true, NOW(), NOW())
+INSERT INTO branches (ba_code, branch_code, name, department_name, region_id, region_code, is_active, created_at, updated_at) VALUES
+(1060, 5521011, 'กปภ.สาขาขอนแก่น(ชั้นพิเศษ)', NULL, 6, 'R6', true, NOW(), NOW()),
+(1061, 5521012, 'กปภ.สาขาบ้านไผ่', NULL, 6, 'R6', true, NOW(), NOW()),
+(1062, 5521013, 'กปภ.สาขาชุมแพ', NULL, 6, 'R6', true, NOW(), NOW()),
+(1063, 5521014, 'กปภ.สาขาน้ำพอง', NULL, 6, 'R6', true, NOW(), NOW()),
+(1064, 5521015, 'กปภ.สาขาชนบท', NULL, 6, 'R6', true, NOW(), NOW()),
+(1065, 5521016, 'กปภ.สาขากระนวน', NULL, 6, 'R6', true, NOW(), NOW()),
+(1066, 5521017, 'กปภ.สาขาหนองเรือ', NULL, 6, 'R6', true, NOW(), NOW()),
+(1067, 5521018, 'กปภ.สาขาเมืองพล', NULL, 6, 'R6', true, NOW(), NOW()),
+(1068, 5521019, 'กปภ.สาขากาฬสินธุ์', NULL, 6, 'R6', true, NOW(), NOW()),
+(1069, 5521020, 'กปภ.สาขากุฉินารายณ์', NULL, 6, 'R6', true, NOW(), NOW()),
+(1070, 5521021, 'กปภ.สาขาสมเด็จ', NULL, 6, 'R6', true, NOW(), NOW()),
+(1071, 5521022, 'กปภ.สาขามหาสารคาม', NULL, 6, 'R6', true, NOW(), NOW()),
+(1072, 5521023, 'กปภ.สาขาพยัคฆภูมิพิสัย', NULL, 6, 'R6', true, NOW(), NOW()),
+(1073, 5521024, 'กปภ.สาขาชัยภูมิ', NULL, 6, 'R6', true, NOW(), NOW()),
+(1074, 5521025, 'กปภ.สาขาแก้งคร้อ', NULL, 6, 'R6', true, NOW(), NOW()),
+(1075, 5521026, 'กปภ.สาขาจัตุรัส', NULL, 6, 'R6', true, NOW(), NOW()),
+(1076, 5521027, 'กปภ.สาขาหนองบัวแดง', NULL, 6, 'R6', true, NOW(), NOW()),
+(1077, 5521028, 'กปภ.สาขาภูเขียว', NULL, 6, 'R6', true, NOW(), NOW()),
+(1133, 5521029, 'กปภ.สาขาร้อยเอ็ด', NULL, 6, 'R6', true, NOW(), NOW()),
+(1134, 5521030, 'กปภ.สาขาโพนทอง', NULL, 6, 'R6', true, NOW(), NOW()),
+(1135, 5521031, 'กปภ.สาขาสุวรรณภูมิ', NULL, 6, 'R6', true, NOW(), NOW()),
+(1245, 5521032, 'กปภ.สาขาบำเหน็จณรงค์', NULL, 6, 'R6', true, NOW(), NOW())
+ON CONFLICT (ba_code) DO NOTHING;
+
+-- Insert BA1059 Department branches
+INSERT INTO branches (ba_code, branch_code, name, department_name, region_id, region_code, is_active, created_at, updated_at) VALUES
+(105901, 105901, 'กปภ.เขต 6 - งานพัสดุ', 'งานพัสดุ', 6, 'R6', true, NOW(), NOW()),
+(105902, 105902, 'กปภ.เขต 6 - งานธุรการ', 'งานธุรการ', 6, 'R6', true, NOW(), NOW()),
+(105903, 105903, 'กปภ.เขต 6 - งานบัญชีเจ้าหนี้', 'งานบัญชีเจ้าหนี้', 6, 'R6', true, NOW(), NOW()),
+(105904, 105904, 'กปภ.เขต 6 - งานการเงิน', 'งานการเงิน', 6, 'R6', true, NOW(), NOW()),
+(105905, 105905, 'กปภ.เขต 6 - งานบุคคล', 'งานบุคคล', 6, 'R6', true, NOW(), NOW())
 ON CONFLICT (ba_code) DO NOTHING;
 
 -- =====================================================
@@ -380,6 +390,14 @@ CREATE INDEX IF NOT EXISTS idx_doc_status_history_user ON document_status_histor
 -- Branches indexes
 CREATE INDEX IF NOT EXISTS idx_branches_ba_code ON branches(ba_code);
 CREATE INDEX IF NOT EXISTS idx_branches_region ON branches(region_code, is_active);
+
+-- Department-specific indexes
+CREATE INDEX IF NOT EXISTS idx_branches_department_name ON branches(department_name);
+CREATE INDEX IF NOT EXISTS idx_branches_ba_dept_composite ON branches(ba_code, department_name);
+
+-- Add unique constraint for ba_code + department_name
+ALTER TABLE branches ADD CONSTRAINT IF NOT EXISTS branches_ba_dept_unique
+UNIQUE (ba_code, department_name);
 
 -- User roles and permissions indexes
 CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
@@ -424,12 +442,18 @@ AND table_type = 'BASE TABLE';
 
 SELECT 'Roles Created' as status, count(*) as count FROM roles;
 SELECT 'Permissions Created' as status, count(*) as count FROM permissions;
-SELECT 'R6 Branches Created' as status, count(*) as count FROM branches;
+SELECT 'Total Branches Created' as status, count(*) as count FROM branches;
+SELECT 'R6 Regular Branches' as status, count(*) as count FROM branches WHERE department_name IS NULL;
+SELECT 'BA1059 Departments' as status, count(*) as count FROM branches WHERE department_name IS NOT NULL;
 SELECT 'System Settings Created' as status, count(*) as count FROM system_settings;
 
 \echo '';
-\echo 'R6 Branches Summary:';
-SELECT ba_code, name FROM branches ORDER BY ba_code;
+\echo 'R6 Regular Branches Summary:';
+SELECT ba_code, name FROM branches WHERE department_name IS NULL ORDER BY ba_code;
+
+\echo '';
+\echo 'BA1059 Department Branches Summary:';
+SELECT ba_code, name, department_name FROM branches WHERE department_name IS NOT NULL ORDER BY ba_code;
 
 \echo '';
 \echo 'Role-Permission Summary:';
@@ -438,3 +462,14 @@ FROM roles r
 LEFT JOIN role_permissions rp ON r.id = rp.role_id
 GROUP BY r.name
 ORDER BY r.name;
+
+\echo '';
+\echo 'Department URLs Available:';
+\echo '  - /documents/branch/105901 (งานพัสดุ)';
+\echo '  - /documents/branch/105902 (งานธุรการ)';
+\echo '  - /documents/branch/105903 (งานบัญชีเจ้าหนี้)';
+\echo '  - /documents/branch/105904 (งานการเงิน)';
+\echo '  - /documents/branch/105905 (งานบุคคล)';
+\echo '';
+\echo 'DocFlow Database Initialization Complete!';
+\echo 'Ready to start the application with: pnpm dev';

@@ -32,7 +32,14 @@ function getBranches() {
     { id: 19, baCode: 1133, name: "กปภ.สาขาร้อยเอ็ด" },
     { id: 20, baCode: 1134, name: "กปภ.สาขาโพนทอง" },
     { id: 21, baCode: 1135, name: "กปภ.สาขาสุวรรณภูมิ" },
-    { id: 22, baCode: 1245, name: "กปภ.สาขาบำเหน็จณรงค์" }
+    { id: 22, baCode: 1245, name: "กปภ.สาขาบำเหน็จณรงค์" },
+
+    // BA1059 Department branches
+    { id: 23, baCode: 105901, name: "กปภ.เขต 6 - งานพัสดุ" },
+    { id: 24, baCode: 105902, name: "กปภ.เขต 6 - งานธุรการ" },
+    { id: 25, baCode: 105903, name: "กปภ.เขต 6 - งานบัญชีเจ้าหนี้" },
+    { id: 26, baCode: 105904, name: "กปภ.เขต 6 - งานการเงิน" },
+    { id: 27, baCode: 105905, name: "กปภ.เขต 6 - งานบุคคล" },
   ];
 
   return R6_BRANCHES;

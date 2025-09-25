@@ -80,7 +80,15 @@
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE additional_document_files ADD COLUMN IF NOT EXISTS verification_comment text;\")",
       "Bash(npx tsx:*)",
       "Bash(./scripts/test-reset-dry-run.sh:*)",
-      "Bash(./scripts/test-reset-simple.sh:*)"
+      "Bash(./scripts/test-reset-simple.sh:*)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT baCode, name FROM branches ORDER BY baCode;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT ba_code, name FROM branches ORDER BY ba_code;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE branches ADD COLUMN department_name VARCHAR(255);\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE branches ADD CONSTRAINT branches_ba_dept_unique UNIQUE (ba_code, department_name);\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"\nINSERT INTO branches (ba_code, branch_code, name, department_name, region_id, region_code, is_active) VALUES\n(1059, 105901, ''กปภ.เขต 6 - งานพัสดุ'', ''งานพัสดุ'', 6, ''R6'', true),\n(1059, 105902, ''กปภ.เขต 6 - งานธุรการ'', ''งานธุรการ'', 6, ''R6'', true),\n(1059, 105903, ''กปภ.เขต 6 - งานบัญชีเจ้าหนี้'', ''งานบัญชีเจ้าหนี้'', 6, ''R6'', true),\n(1059, 105904, ''กปภ.เขต 6 - งานการเงิน'', ''งานการเงิน'', 6, ''R6'', true),\n(1059, 105905, ''กปภ.เขต 6 - งานบุคคล'', ''งานบุคคล'', 6, ''R6'', true);\n\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"\\d branches\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE branches DROP CONSTRAINT branches_ba_code_key;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT ba_code, branch_code, name, department_name FROM branches WHERE ba_code >= 105901 ORDER BY ba_code;\")"
     ],
     "deny": []
   }
