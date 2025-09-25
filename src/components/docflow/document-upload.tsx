@@ -1,35 +1,41 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ThaiDatePicker } from '@/components/ui/thai-date-picker';
-import { 
-  Upload, 
-  FileText, 
-  X, 
-  AlertCircle, 
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ThaiDatePicker } from "@/components/ui/thai-date-picker";
+import {
+  Upload,
+  FileText,
+  X,
+  AlertCircle,
   CheckCircle,
-  Loader2
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { 
-  clientDocumentUploadSchema, 
-  validateForm, 
-  validateField, 
+  Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  clientDocumentUploadSchema,
+  validateForm,
+  validateField,
   validatePDFFile,
   sanitizeFormData,
   type ValidationResult,
-  type ClientDocumentUploadInput
-} from '@/lib/validation/client';
-import { generateMonthYearOptions, getCurrentMonthYear } from '@/lib/utils/month-year-generator';
-import { getDefaultReturnDates, isSecondDateAfterFirst } from '@/lib/utils/business-days';
+  type ClientDocumentUploadInput,
+} from "@/lib/validation/client";
+import {
+  generateMonthYearOptions,
+  getCurrentMonthYear,
+} from "@/lib/utils/month-year-generator";
+import {
+  getDefaultReturnDates,
+  isSecondDateAfterFirst,
+} from "@/lib/utils/business-days";
 
 interface Branch {
   id: number;
@@ -74,28 +80,33 @@ interface FormData {
   deadlineDate: string;
 }
 
-export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEditComplete }: DocumentUploadProps) {
+export function DocumentUpload({
+  branches,
+  onUploadSuccess,
+  editDocument,
+  onEditComplete,
+}: DocumentUploadProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState<FormData>(() => {
     const defaultDates = getDefaultReturnDates();
     return {
-      branchBaCode: editDocument?.branchBaCode.toString() || '',
-      mtNumber: editDocument?.mtNumber || '',
-      mtDate: editDocument?.mtDate || '',
-      subject: editDocument?.subject || '',
+      branchBaCode: editDocument?.branchBaCode.toString() || "",
+      mtNumber: editDocument?.mtNumber || "",
+      mtDate: editDocument?.mtDate || "",
+      subject: editDocument?.subject || "",
       monthYear: editDocument?.monthYear || getCurrentMonthYear(),
-      docReceivedDate: editDocument?.docReceivedDate || '',
+      docReceivedDate: editDocument?.docReceivedDate || "",
       hasAdditionalDocs: editDocument?.hasAdditionalDocs || false,
       additionalDocsCount: editDocument?.additionalDocsCount || 1,
-      additionalDocs: editDocument?.additionalDocs || [''],
+      additionalDocs: editDocument?.additionalDocs || [""],
       sendBackOriginalDocument: false,
       sendBackDate: defaultDates.sendBackDate,
-      deadlineDate: defaultDates.deadlineDate
+      deadlineDate: defaultDates.deadlineDate,
     };
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -113,36 +124,37 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         mtDate: editDocument.mtDate,
         subject: editDocument.subject,
         monthYear: editDocument.monthYear,
-        docReceivedDate: editDocument.docReceivedDate || '',
+        docReceivedDate: editDocument.docReceivedDate || "",
         hasAdditionalDocs: editDocument.hasAdditionalDocs || false,
         additionalDocsCount: editDocument.additionalDocsCount || 1,
-        additionalDocs: editDocument.additionalDocs || [''],
-        sendBackOriginalDocument: editDocument.sendBackOriginalDocument || false,
+        additionalDocs: editDocument.additionalDocs || [""],
+        sendBackOriginalDocument:
+          editDocument.sendBackOriginalDocument || false,
         sendBackDate: editDocument.sendBackDate || defaultDates.sendBackDate,
-        deadlineDate: editDocument.deadlineDate || defaultDates.deadlineDate
+        deadlineDate: editDocument.deadlineDate || defaultDates.deadlineDate,
       });
       // Clear any existing file selection when switching to edit mode
       setSelectedFile(null);
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     } else {
       setIsEditMode(false);
       // Reset form data to defaults when not in edit mode
       const defaultDates = getDefaultReturnDates();
       setFormData({
-        branchBaCode: '',
-        mtNumber: '',
-        mtDate: '',
-        subject: '',
+        branchBaCode: "",
+        mtNumber: "",
+        mtDate: "",
+        subject: "",
         monthYear: getCurrentMonthYear(),
-        docReceivedDate: '',
+        docReceivedDate: "",
         hasAdditionalDocs: false,
         additionalDocsCount: 1,
-        additionalDocs: [''],
+        additionalDocs: [""],
         sendBackOriginalDocument: false,
         sendBackDate: defaultDates.sendBackDate,
-        deadlineDate: defaultDates.deadlineDate
+        deadlineDate: defaultDates.deadlineDate,
       });
     }
   }, [editDocument]);
@@ -150,185 +162,232 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
   // File validation
   const validateFile = useCallback((file: File) => {
     const maxSize = 10 * 1024 * 1024; // 10MB
-    const allowedTypes = ['application/pdf'];
-    
+    const allowedTypes = ["application/pdf"];
+
     if (!allowedTypes.includes(file.type)) {
-      return 'Only PDF files are allowed';
+      return "Only PDF files are allowed";
     }
-    
+
     if (file.size > maxSize) {
-      return 'File size must be less than 10MB';
+      return "File size must be less than 10MB";
     }
-    
+
     return null;
   }, []);
 
   // Handle file selection
-  const handleFileSelect = useCallback((file: File) => {
-    const error = validateFile(file);
-    if (error) {
-      toast.error(error);
-      return;
-    }
-    
-    setSelectedFile(file);
-    setErrors(prev => ({ ...prev, file: '' }));
-  }, [validateFile]);
+  const handleFileSelect = useCallback(
+    (file: File) => {
+      const error = validateFile(file);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+
+      setSelectedFile(file);
+      setErrors((prev) => ({ ...prev, file: "" }));
+    },
+    [validateFile],
+  );
 
   // Drag and drop handlers
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
 
-    const files = e.dataTransfer.files;
-    if (files && files[0]) {
-      handleFileSelect(files[0]);
-    }
-  }, [handleFileSelect]);
+      const files = e.dataTransfer.files;
+      if (files && files[0]) {
+        handleFileSelect(files[0]);
+      }
+    },
+    [handleFileSelect],
+  );
 
   // File input change
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files[0]) {
-      handleFileSelect(files[0]);
-    }
-  }, [handleFileSelect]);
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files && files[0]) {
+        handleFileSelect(files[0]);
+      }
+    },
+    [handleFileSelect],
+  );
 
   // Field-level validation for real-time feedback (define first)
-  const validateSingleField = useCallback((fieldName: keyof ClientDocumentUploadInput, value: string) => {
-    try {
-      // Create a partial object with just this field for validation
-      const partialData = { [fieldName]: value };
-      const result = clientDocumentUploadSchema.safeParse(partialData);
+  const validateSingleField = useCallback(
+    (fieldName: keyof ClientDocumentUploadInput, value: string) => {
+      try {
+        // Create a partial object with just this field for validation
+        const partialData = { [fieldName]: value };
+        const result = clientDocumentUploadSchema.safeParse(partialData);
 
-      // Extract any error for this specific field
-      if (!result.success) {
-        const fieldError = result.error.errors.find(err =>
-          err.path.length === 0 || err.path.includes(fieldName)
-        );
+        // Extract any error for this specific field
+        if (!result.success) {
+          const fieldError = result.error.errors.find(
+            (err) => err.path.length === 0 || err.path.includes(fieldName),
+          );
 
-        if (fieldError) {
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: fieldError.message
-          }));
-          return false;
+          if (fieldError) {
+            setFieldErrors((prev) => ({
+              ...prev,
+              [fieldName]: fieldError.message,
+            }));
+            return false;
+          }
         }
+
+        // Clear error if validation passed
+        setFieldErrors((prev) => ({
+          ...prev,
+          [fieldName]: "",
+        }));
+
+        return true;
+      } catch (error) {
+        console.warn(`Validation error for field ${fieldName}:`, error);
+        // Clear error on exception and allow form to proceed
+        setFieldErrors((prev) => ({
+          ...prev,
+          [fieldName]: "",
+        }));
+        return true;
       }
-
-      // Clear error if validation passed
-      setFieldErrors(prev => ({
-        ...prev,
-        [fieldName]: ''
-      }));
-
-      return true;
-    } catch (error) {
-      console.warn(`Validation error for field ${fieldName}:`, error);
-      // Clear error on exception and allow form to proceed
-      setFieldErrors(prev => ({
-        ...prev,
-        [fieldName]: ''
-      }));
-      return true;
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Form input change
-  const handleInputChange = useCallback((field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear errors for this field
-    setErrors(prev => ({ ...prev, [field]: [] }));
-    setFieldErrors(prev => ({ ...prev, [field]: '' }));
-    
-    // Real-time validation with debounce
-    if (value.trim()) {
-      setTimeout(() => {
-        // Only validate fields that exist in the schema
-        const validationFields: (keyof ClientDocumentUploadInput)[] = [
-          'branchBaCode', 'mtNumber', 'mtDate', 'subject', 'monthYear', 'docReceivedDate',
-          'hasAdditionalDocs', 'additionalDocsCount', 'sendBackOriginalDocument',
-          'sendBackDate', 'deadlineDate'
-        ];
-        
-        if (validationFields.includes(field as keyof ClientDocumentUploadInput)) {
-          validateSingleField(field as keyof ClientDocumentUploadInput, value);
-        }
-      }, 300);
-    }
-  }, [validateSingleField]);
+  const handleInputChange = useCallback(
+    (field: keyof FormData, value: string) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+
+      // Clear errors for this field
+      setErrors((prev) => ({ ...prev, [field]: [] }));
+      setFieldErrors((prev) => ({ ...prev, [field]: "" }));
+
+      // Real-time validation with debounce
+      if (value.trim()) {
+        setTimeout(() => {
+          // Only validate fields that exist in the schema
+          const validationFields: (keyof ClientDocumentUploadInput)[] = [
+            "branchBaCode",
+            "mtNumber",
+            "mtDate",
+            "subject",
+            "monthYear",
+            "docReceivedDate",
+            "hasAdditionalDocs",
+            "additionalDocsCount",
+            "sendBackOriginalDocument",
+            "sendBackDate",
+            "deadlineDate",
+          ];
+
+          if (
+            validationFields.includes(field as keyof ClientDocumentUploadInput)
+          ) {
+            validateSingleField(
+              field as keyof ClientDocumentUploadInput,
+              value,
+            );
+          }
+        }, 300);
+      }
+    },
+    [validateSingleField],
+  );
 
   // Handle additional documents checkbox
   const handleAdditionalDocsToggle = useCallback((checked: boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       hasAdditionalDocs: checked,
       additionalDocsCount: checked ? prev.additionalDocsCount || 1 : 1,
-      additionalDocs: checked ? (prev.additionalDocs || ['']) : ['']
+      additionalDocs: checked ? prev.additionalDocs || [""] : [""],
     }));
   }, []);
 
   // Handle additional documents count change
   const handleAdditionalDocsCountChange = useCallback((count: number) => {
     const validCount = Math.max(1, Math.min(10, count));
-    setFormData(prev => {
+    setFormData((prev) => {
       const currentDocs = prev.additionalDocs || [];
-      const newDocs = Array.from({ length: validCount }, (_, i) => currentDocs[i] || '');
+      const newDocs = Array.from(
+        { length: validCount },
+        (_, i) => currentDocs[i] || "",
+      );
       return {
         ...prev,
         additionalDocsCount: validCount,
-        additionalDocs: newDocs
+        additionalDocs: newDocs,
       };
     });
   }, []);
 
   // Handle individual additional document change
-  const handleAdditionalDocChange = useCallback((index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      additionalDocs: (prev.additionalDocs || []).map((doc, i) => i === index ? value : doc)
-    }));
-  }, []);
+  const handleAdditionalDocChange = useCallback(
+    (index: number, value: string) => {
+      setFormData((prev) => ({
+        ...prev,
+        additionalDocs: (prev.additionalDocs || []).map((doc, i) =>
+          i === index ? value : doc,
+        ),
+      }));
+    },
+    [],
+  );
 
   // Handle original document return checkbox
-  const handleSendBackOriginalDocumentToggle = useCallback((checked: boolean) => {
-    const defaultDates = getDefaultReturnDates();
-    setFormData(prev => ({
-      ...prev,
-      sendBackOriginalDocument: checked,
-      sendBackDate: checked ? prev.sendBackDate || defaultDates.sendBackDate : defaultDates.sendBackDate,
-      deadlineDate: checked ? prev.deadlineDate || defaultDates.deadlineDate : defaultDates.deadlineDate
-    }));
-  }, []);
+  const handleSendBackOriginalDocumentToggle = useCallback(
+    (checked: boolean) => {
+      const defaultDates = getDefaultReturnDates();
+      setFormData((prev) => ({
+        ...prev,
+        sendBackOriginalDocument: checked,
+        sendBackDate: checked
+          ? prev.sendBackDate || defaultDates.sendBackDate
+          : defaultDates.sendBackDate,
+        deadlineDate: checked
+          ? prev.deadlineDate || defaultDates.deadlineDate
+          : defaultDates.deadlineDate,
+      }));
+    },
+    [],
+  );
 
   // Handle send back date change
   const handleSendBackDateChange = useCallback((value: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newFormData = {
         ...prev,
-        sendBackDate: value
+        sendBackDate: value,
       };
 
       // Validate that deadline is after send back date
-      if (value && prev.deadlineDate && !isSecondDateAfterFirst(value, prev.deadlineDate)) {
-        setFieldErrors(prevErrors => ({
+      if (
+        value &&
+        prev.deadlineDate &&
+        !isSecondDateAfterFirst(value, prev.deadlineDate)
+      ) {
+        setFieldErrors((prevErrors) => ({
           ...prevErrors,
-          deadlineDate: 'กำหนดส่งกลับต้องหลังจากวันที่ส่งกลับ'
+          deadlineDate: "กำหนดส่งกลับต้องหลังจากวันที่ส่งกลับ",
         }));
       } else {
-        setFieldErrors(prevErrors => {
+        setFieldErrors((prevErrors) => {
           const { deadlineDate, ...rest } = prevErrors;
           return rest;
         });
@@ -340,20 +399,24 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
 
   // Handle deadline date change
   const handleDeadlineDateChange = useCallback((value: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newFormData = {
         ...prev,
-        deadlineDate: value
+        deadlineDate: value,
       };
 
       // Validate that deadline is after send back date
-      if (prev.sendBackDate && value && !isSecondDateAfterFirst(prev.sendBackDate, value)) {
-        setFieldErrors(prevErrors => ({
+      if (
+        prev.sendBackDate &&
+        value &&
+        !isSecondDateAfterFirst(prev.sendBackDate, value)
+      ) {
+        setFieldErrors((prevErrors) => ({
           ...prevErrors,
-          deadlineDate: 'กำหนดส่งกลับต้องหลังจากวันที่ส่งกลับ'
+          deadlineDate: "กำหนดส่งกลับต้องหลังจากวันที่ส่งกลับ",
         }));
       } else {
-        setFieldErrors(prevErrors => {
+        setFieldErrors((prevErrors) => {
           const { deadlineDate, ...rest } = prevErrors;
           return rest;
         });
@@ -364,58 +427,68 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
   }, []);
 
   // Validate file
-  const validateFileSelection = useCallback((file: File | null): { isValid: boolean; error?: string } => {
-    if (!file && !isEditMode) {
-      return { isValid: false, error: 'กรุณาเลือกไฟล์ PDF' };
-    }
-    
-    if (file) {
-      return validatePDFFile(file);
-    }
-    
-    return { isValid: true };
-  }, [isEditMode]);
+  const validateFileSelection = useCallback(
+    (file: File | null): { isValid: boolean; error?: string } => {
+      if (!file && !isEditMode) {
+        return { isValid: false, error: "กรุณาเลือกไฟล์ PDF" };
+      }
+
+      if (file) {
+        return validatePDFFile(file);
+      }
+
+      return { isValid: true };
+    },
+    [isEditMode],
+  );
 
   // Form validation with Zod
-  const validateFormData = useCallback((): ValidationResult<ClientDocumentUploadInput> => {
-    // Sanitize form data
-    const sanitizedData = sanitizeFormData(formData);
-    
-    // Validate with Zod schema
-    const validation = validateForm(sanitizedData, clientDocumentUploadSchema);
-    
-    // File validation
-    const fileValidation = validateFileSelection(selectedFile);
-    if (!fileValidation.isValid) {
-      validation.errors = { 
-        ...validation.errors, 
-        file: [fileValidation.error!] 
-      };
-      validation.success = false;
-    }
-    
-    // Update error states
-    setErrors(validation.errors || {});
-    setFieldErrors(
-      Object.fromEntries(
-        Object.entries(validation.errors || {}).map(([key, msgs]) => [key, msgs[0]])
-      )
-    );
-    
-    return validation;
-  }, [formData, selectedFile, validateFileSelection]);
+  const validateFormData =
+    useCallback((): ValidationResult<ClientDocumentUploadInput> => {
+      // Sanitize form data
+      const sanitizedData = sanitizeFormData(formData);
+
+      // Validate with Zod schema
+      const validation = validateForm(
+        sanitizedData,
+        clientDocumentUploadSchema,
+      );
+
+      // File validation
+      const fileValidation = validateFileSelection(selectedFile);
+      if (!fileValidation.isValid) {
+        validation.errors = {
+          ...validation.errors,
+          file: [fileValidation.error!],
+        };
+        validation.success = false;
+      }
+
+      // Update error states
+      setErrors(validation.errors || {});
+      setFieldErrors(
+        Object.fromEntries(
+          Object.entries(validation.errors || {}).map(([key, msgs]) => [
+            key,
+            msgs[0],
+          ]),
+        ),
+      );
+
+      return validation;
+    }, [formData, selectedFile, validateFileSelection]);
 
   // Get month/year options using the utility function
   const monthYearOptions = generateMonthYearOptions();
 
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent, action: 'save' | 'send') => {
+  const handleSubmit = async (e: React.FormEvent, action: "save" | "send") => {
     e.preventDefault();
-    
+
     // Validate form data
     const validation = validateFormData();
     if (!validation.success) {
-      toast.error(validation.message || 'กรุณาตรวจสอบข้อมูลที่กรอก');
+      toast.error(validation.message || "กรุณาตรวจสอบข้อมูลที่กรอก");
       return;
     }
 
@@ -433,81 +506,105 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
           docReceivedDate: formData.docReceivedDate,
           hasAdditionalDocs: formData.hasAdditionalDocs || false,
           additionalDocsCount: formData.additionalDocsCount || 1,
-          additionalDocs: formData.additionalDocs || [''],
+          additionalDocs: formData.additionalDocs || [""],
           sendBackOriginalDocument: formData.sendBackOriginalDocument || false,
-          sendBackDate: formData.sendBackDate || '',
-          deadlineDate: formData.deadlineDate || ''
+          sendBackDate: formData.sendBackDate || "",
+          deadlineDate: formData.deadlineDate || "",
         };
 
         let response;
         if (selectedFile) {
           // Update with new file
           const uploadFormData = new FormData();
-          uploadFormData.append('file', selectedFile);
-          uploadFormData.append('branchBaCode', formData.branchBaCode);
-          uploadFormData.append('mtNumber', formData.mtNumber);
-          uploadFormData.append('mtDate', formData.mtDate);
-          uploadFormData.append('subject', formData.subject);
-          uploadFormData.append('monthYear', formData.monthYear);
-          uploadFormData.append('docReceivedDate', formData.docReceivedDate);
-          uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
-          uploadFormData.append('additionalDocsCount', (formData.additionalDocsCount || 1).toString());
-          uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs || ['']));
-          uploadFormData.append('sendBackOriginalDocument', formData.sendBackOriginalDocument.toString());
-          uploadFormData.append('sendBackDate', formData.sendBackDate || '');
-          uploadFormData.append('deadlineDate', formData.deadlineDate || '');
-          uploadFormData.append('action', action);
+          uploadFormData.append("file", selectedFile);
+          uploadFormData.append("branchBaCode", formData.branchBaCode);
+          uploadFormData.append("mtNumber", formData.mtNumber);
+          uploadFormData.append("mtDate", formData.mtDate);
+          uploadFormData.append("subject", formData.subject);
+          uploadFormData.append("monthYear", formData.monthYear);
+          uploadFormData.append("docReceivedDate", formData.docReceivedDate);
+          uploadFormData.append(
+            "hasAdditionalDocs",
+            formData.hasAdditionalDocs.toString(),
+          );
+          uploadFormData.append(
+            "additionalDocsCount",
+            (formData.additionalDocsCount || 1).toString(),
+          );
+          uploadFormData.append(
+            "additionalDocs",
+            JSON.stringify(formData.additionalDocs || [""]),
+          );
+          uploadFormData.append(
+            "sendBackOriginalDocument",
+            formData.sendBackOriginalDocument.toString(),
+          );
+          uploadFormData.append("sendBackDate", formData.sendBackDate || "");
+          uploadFormData.append("deadlineDate", formData.deadlineDate || "");
+          uploadFormData.append("action", action);
 
           response = await fetch(`/api/documents/${editDocument.id}`, {
-            method: 'PUT',
-            credentials: 'include',
-            body: uploadFormData
+            method: "PUT",
+            credentials: "include",
+            body: uploadFormData,
           });
         } else {
           // Update metadata only
           response = await fetch(`/api/documents/${editDocument.id}`, {
-            method: 'PATCH',
-            credentials: 'include',
+            method: "PATCH",
+            credentials: "include",
             headers: {
-              'Content-Type': 'application/json'
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify(updateData)
+            body: JSON.stringify(updateData),
           });
         }
 
         const result = await response.json();
 
         if (response.ok && result.success) {
-          toast.success('อัปเดตเอกสารสำเร็จ');
-          
+          toast.success("อัปเดตเอกสารสำเร็จ");
+
           onEditComplete?.();
           onUploadSuccess?.(result.data);
-          router.push('/documents');
+          router.push("/documents");
         } else {
-          throw new Error(result.error || 'Update failed');
+          throw new Error(result.error || "Update failed");
         }
       } else {
         // Create new document
         const uploadFormData = new FormData();
-        uploadFormData.append('file', selectedFile!);
-        uploadFormData.append('branchBaCode', formData.branchBaCode);
-        uploadFormData.append('mtNumber', formData.mtNumber);
-        uploadFormData.append('mtDate', formData.mtDate);
-        uploadFormData.append('subject', formData.subject);
-        uploadFormData.append('monthYear', formData.monthYear);
-        uploadFormData.append('docReceivedDate', formData.docReceivedDate);
-        uploadFormData.append('hasAdditionalDocs', formData.hasAdditionalDocs.toString());
-        uploadFormData.append('additionalDocsCount', (formData.additionalDocsCount || 1).toString());
-        uploadFormData.append('additionalDocs', JSON.stringify(formData.additionalDocs || ['']));
-        uploadFormData.append('sendBackOriginalDocument', formData.sendBackOriginalDocument.toString());
-        uploadFormData.append('sendBackDate', formData.sendBackDate || '');
-        uploadFormData.append('deadlineDate', formData.deadlineDate || '');
-        uploadFormData.append('action', action);
+        uploadFormData.append("file", selectedFile!);
+        uploadFormData.append("branchBaCode", formData.branchBaCode);
+        uploadFormData.append("mtNumber", formData.mtNumber);
+        uploadFormData.append("mtDate", formData.mtDate);
+        uploadFormData.append("subject", formData.subject);
+        uploadFormData.append("monthYear", formData.monthYear);
+        uploadFormData.append("docReceivedDate", formData.docReceivedDate);
+        uploadFormData.append(
+          "hasAdditionalDocs",
+          formData.hasAdditionalDocs.toString(),
+        );
+        uploadFormData.append(
+          "additionalDocsCount",
+          (formData.additionalDocsCount || 1).toString(),
+        );
+        uploadFormData.append(
+          "additionalDocs",
+          JSON.stringify(formData.additionalDocs || [""]),
+        );
+        uploadFormData.append(
+          "sendBackOriginalDocument",
+          formData.sendBackOriginalDocument.toString(),
+        );
+        uploadFormData.append("sendBackDate", formData.sendBackDate || "");
+        uploadFormData.append("deadlineDate", formData.deadlineDate || "");
+        uploadFormData.append("action", action);
 
-        const response = await fetch('/api/documents', {
-          method: 'POST',
-          credentials: 'include',
-          body: uploadFormData
+        const response = await fetch("/api/documents", {
+          method: "POST",
+          credentials: "include",
+          body: uploadFormData,
         });
 
         const result = await response.json();
@@ -515,48 +612,56 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
         // Handle rate limiting
         if (response.status === 429) {
           const retryAfter = result.retryAfter || 60;
-          toast.error(`Rate limit exceeded. Please try again in ${retryAfter} seconds.`);
+          toast.error(
+            `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
+          );
           return;
         }
 
         if (response.ok && result.success) {
           toast.success(
-            action === 'save' 
-              ? 'Document saved as draft successfully' 
-              : 'Document uploaded and sent successfully'
+            action === "save"
+              ? "Document saved as draft successfully"
+              : "Document uploaded and sent successfully",
           );
-          
+
           // Reset form
           setSelectedFile(null);
           const defaultDates = getDefaultReturnDates();
           setFormData({
-            branchBaCode: '',
-            mtNumber: '',
-            mtDate: '',
-            subject: '',
+            branchBaCode: "",
+            mtNumber: "",
+            mtDate: "",
+            subject: "",
             monthYear: getCurrentMonthYear(),
-            docReceivedDate: '',
+            docReceivedDate: "",
             hasAdditionalDocs: false,
             additionalDocsCount: 1,
-            additionalDocs: [''],
+            additionalDocs: [""],
             sendBackOriginalDocument: false,
             sendBackDate: defaultDates.sendBackDate,
-            deadlineDate: defaultDates.deadlineDate
+            deadlineDate: defaultDates.deadlineDate,
           });
-          
+
           if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+            fileInputRef.current.value = "";
           }
 
           onUploadSuccess?.(result.data);
-          router.push('/documents');
+          router.push("/documents");
         } else {
-          throw new Error(result.error || 'Upload failed');
+          throw new Error(result.error || "Upload failed");
         }
       }
     } catch (error) {
-      console.error(isEditMode ? 'Update error:' : 'Upload error:', error);
-      toast.error(error instanceof Error ? error.message : (isEditMode ? 'Update failed' : 'Upload failed'));
+      console.error(isEditMode ? "Update error:" : "Upload error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : isEditMode
+            ? "Update failed"
+            : "Upload failed",
+      );
     } finally {
       setUploading(false);
     }
@@ -566,7 +671,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
   const removeFile = () => {
     setSelectedFile(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -575,33 +680,40 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="h-6 w-6" />
-          {isEditMode ? 'แก้ไขเอกสาร' : 'อัปโหลดเอกสาร'}
+          {isEditMode ? "แก้ไขเอกสาร" : "อัปโหลดเอกสาร"}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* File Upload Area */}
         <div className="space-y-4">
-          <Label>ไฟล์เอกสาร PDF {isEditMode ? '(เว้นว่างหากไม่ต้องการเปลี่ยนไฟล์)' : '*'}</Label>
-          
+          <Label>
+            ไฟล์เอกสาร PDF{" "}
+            {isEditMode ? "(เว้นว่างหากไม่ต้องการเปลี่ยนไฟล์)" : "*"}
+          </Label>
+
           {isEditMode && editDocument && !selectedFile && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center gap-2 text-blue-700">
                 <FileText className="h-4 w-4" />
-                <span className="text-sm font-medium">ไฟล์ปัจจุบัน: {editDocument.originalFilename}</span>
+                <span className="text-sm font-medium">
+                  ไฟล์ปัจจุบัน: {editDocument.originalFilename}
+                </span>
               </div>
-              <p className="text-xs text-blue-600 mt-1">อัปโหลดไฟล์ใหม่เพื่อเปลี่ยนแปลง หรือเว้นว่างเพื่อใช้ไฟล์เดิม</p>
+              <p className="text-xs text-blue-600 mt-1">
+                อัปโหลดไฟล์ใหม่เพื่อเปลี่ยนแปลง หรือเว้นว่างเพื่อใช้ไฟล์เดิม
+              </p>
             </div>
           )}
-          
+
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragActive 
-                ? 'border-blue-500 bg-blue-50' 
-                : fieldErrors.file || (errors.file && errors.file[0]) 
-                ? 'border-red-300 bg-red-50' 
-                : isEditMode && !selectedFile
-                ? 'border-gray-200 bg-gray-50'
-                : 'border-gray-300 hover:border-gray-400'
+              dragActive
+                ? "border-blue-500 bg-blue-50"
+                : fieldErrors.file || (errors.file && errors.file[0])
+                  ? "border-red-300 bg-red-50"
+                  : isEditMode && !selectedFile
+                    ? "border-gray-200 bg-gray-50"
+                    : "border-gray-300 hover:border-gray-400"
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -628,7 +740,10 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-700"
+                >
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Ready to upload
                 </Badge>
@@ -637,9 +752,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
               <div className="space-y-4">
                 <Upload className="h-12 w-12 mx-auto text-gray-400" />
                 <div>
-                  <p className="text-lg font-medium">
-                    วางไฟล์ PDF ที่นี่ หรือ
-                  </p>
+                  <p className="text-lg font-medium">วางไฟล์ PDF ที่นี่ หรือ</p>
                   <Button
                     type="button"
                     variant="outline"
@@ -651,11 +764,16 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                 </div>
                 <p className="text-sm text-gray-500">
                   รองรับไฟล์ PDF เท่านั้น (สูงสุด 10MB)
-                  {isEditMode && <><br />อัปโหลดไฟล์ใหม่เพื่อเปลี่ยนแปลงไฟล์เดิม</>}
+                  {isEditMode && (
+                    <>
+                      <br />
+                      อัปโหลดไฟล์ใหม่เพื่อเปลี่ยนแปลงไฟล์เดิม
+                    </>
+                  )}
                 </p>
               </div>
             )}
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -664,7 +782,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
               className="hidden"
             />
           </div>
-          
+
           {(fieldErrors.file || (errors.file && errors.file[0])) && (
             <p className="text-sm text-red-600 flex items-center gap-1">
               <AlertCircle className="h-4 w-4" />
@@ -681,7 +799,9 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
               <select
                 id="branchBaCode"
                 value={formData.branchBaCode}
-                onChange={(e) => handleInputChange('branchBaCode', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("branchBaCode", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">เลือกสาขา</option>
@@ -691,21 +811,36 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                   </option>
                 ))}
               </select>
-              {(fieldErrors.branchBaCode || (errors.branchBaCode && errors.branchBaCode[0])) && (
-                <p className="text-sm text-red-600">{fieldErrors.branchBaCode || errors.branchBaCode[0]}</p>
+              {(fieldErrors.branchBaCode ||
+                (errors.branchBaCode && errors.branchBaCode[0])) && (
+                <p className="text-sm text-red-600">
+                  {fieldErrors.branchBaCode || errors.branchBaCode[0]}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="docReceivedDate">วันที่รับเอกสารต้นฉบับจากสาขา</Label>
+              <Label htmlFor="docReceivedDate">
+                วันที่รับเอกสารต้นฉบับจากสาขา
+              </Label>
               <ThaiDatePicker
                 value={formData.docReceivedDate}
-                onChange={(value) => handleInputChange('docReceivedDate', value)}
+                onChange={(value) =>
+                  handleInputChange("docReceivedDate", value)
+                }
                 placeholder="เลือกวันที่รับเอกสาร"
-                className={fieldErrors.docReceivedDate || (errors.docReceivedDate && errors.docReceivedDate[0]) ? 'border-red-300' : ''}
+                className={
+                  fieldErrors.docReceivedDate ||
+                  (errors.docReceivedDate && errors.docReceivedDate[0])
+                    ? "border-red-300"
+                    : ""
+                }
               />
-              {(fieldErrors.docReceivedDate || (errors.docReceivedDate && errors.docReceivedDate[0])) && (
-                <p className="text-sm text-red-600">{fieldErrors.docReceivedDate || errors.docReceivedDate[0]}</p>
+              {(fieldErrors.docReceivedDate ||
+                (errors.docReceivedDate && errors.docReceivedDate[0])) && (
+                <p className="text-sm text-red-600">
+                  {fieldErrors.docReceivedDate || errors.docReceivedDate[0]}
+                </p>
               )}
             </div>
           </div>
@@ -717,12 +852,20 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
               <Input
                 id="mtNumber"
                 value={formData.mtNumber}
-                onChange={(e) => handleInputChange('mtNumber', e.target.value)}
+                onChange={(e) => handleInputChange("mtNumber", e.target.value)}
                 placeholder="เช่น MT001-2024"
-                className={fieldErrors.mtNumber || (errors.mtNumber && errors.mtNumber[0]) ? 'border-red-300' : ''}
+                className={
+                  fieldErrors.mtNumber ||
+                  (errors.mtNumber && errors.mtNumber[0])
+                    ? "border-red-300"
+                    : ""
+                }
               />
-              {(fieldErrors.mtNumber || (errors.mtNumber && errors.mtNumber[0])) && (
-                <p className="text-sm text-red-600">{fieldErrors.mtNumber || errors.mtNumber[0]}</p>
+              {(fieldErrors.mtNumber ||
+                (errors.mtNumber && errors.mtNumber[0])) && (
+                <p className="text-sm text-red-600">
+                  {fieldErrors.mtNumber || errors.mtNumber[0]}
+                </p>
               )}
             </div>
 
@@ -730,12 +873,18 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
               <Label htmlFor="mtDate">วันที่ลงเลขที่ มท *</Label>
               <ThaiDatePicker
                 value={formData.mtDate}
-                onChange={(value) => handleInputChange('mtDate', value)}
+                onChange={(value) => handleInputChange("mtDate", value)}
                 placeholder="เลือกวันที่"
-                className={fieldErrors.mtDate || (errors.mtDate && errors.mtDate[0]) ? 'border-red-300' : ''}
+                className={
+                  fieldErrors.mtDate || (errors.mtDate && errors.mtDate[0])
+                    ? "border-red-300"
+                    : ""
+                }
               />
               {(fieldErrors.mtDate || (errors.mtDate && errors.mtDate[0])) && (
-                <p className="text-sm text-red-600">{fieldErrors.mtDate || errors.mtDate[0]}</p>
+                <p className="text-sm text-red-600">
+                  {fieldErrors.mtDate || errors.mtDate[0]}
+                </p>
               )}
             </div>
           </div>
@@ -746,13 +895,19 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             <Textarea
               id="subject"
               value={formData.subject}
-              onChange={(e) => handleInputChange('subject', e.target.value)}
+              onChange={(e) => handleInputChange("subject", e.target.value)}
               placeholder="ระบุรายละเอียดเรื่องที่เบิกจ่าย"
               rows={3}
-              className={fieldErrors.subject || (errors.subject && errors.subject[0]) ? 'border-red-300' : ''}
+              className={
+                fieldErrors.subject || (errors.subject && errors.subject[0])
+                  ? "border-red-300"
+                  : ""
+              }
             />
             {(fieldErrors.subject || (errors.subject && errors.subject[0])) && (
-              <p className="text-sm text-red-600">{fieldErrors.subject || errors.subject[0]}</p>
+              <p className="text-sm text-red-600">
+                {fieldErrors.subject || errors.subject[0]}
+              </p>
             )}
           </div>
 
@@ -764,8 +919,11 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                 checked={formData.sendBackOriginalDocument}
                 onCheckedChange={handleSendBackOriginalDocumentToggle}
               />
-              <Label htmlFor="sendBackOriginalDocument" className="cursor-pointer font-medium">
-                ส่งเอกสารต้นฉบับกับสาขา
+              <Label
+                htmlFor="sendBackOriginalDocument"
+                className="cursor-pointer font-medium"
+              >
+                ส่งเอกสารต้นฉบับกลับสาขา
               </Label>
             </div>
 
@@ -778,7 +936,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                     value={formData.sendBackDate}
                     onChange={handleSendBackDateChange}
                     placeholder="dd/mm/yyyy"
-                    className={fieldErrors.sendBackDate ? 'border-red-300' : ''}
+                    className={fieldErrors.sendBackDate ? "border-red-300" : ""}
                   />
                   {fieldErrors.sendBackDate && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
@@ -795,7 +953,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                     value={formData.deadlineDate}
                     onChange={handleDeadlineDateChange}
                     placeholder="dd/mm/yyyy"
-                    className={fieldErrors.deadlineDate ? 'border-red-300' : ''}
+                    className={fieldErrors.deadlineDate ? "border-red-300" : ""}
                   />
                   {fieldErrors.deadlineDate && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
@@ -826,7 +984,11 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                     min="1"
                     max="10"
                     value={formData.additionalDocsCount}
-                    onChange={(e) => handleAdditionalDocsCountChange(parseInt(e.target.value) || 1)}
+                    onChange={(e) =>
+                      handleAdditionalDocsCountChange(
+                        parseInt(e.target.value) || 1,
+                      )
+                    }
                     className="w-16 h-8"
                   />
                   <span className="text-sm text-gray-600">ฉบับ</span>
@@ -836,29 +998,33 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
 
             {formData.hasAdditionalDocs && (
               <div className="space-y-2">
-                {(formData.additionalDocs || []).slice(0, formData.additionalDocsCount).map((doc, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-600 w-6">
-                      {index + 1}.
-                    </span>
-                    <Input
-                      value={doc || ''}
-                      onChange={(e) => handleAdditionalDocChange(index, e.target.value)}
-                      placeholder={`เอกสารเพิ่มเติมที่ ${index + 1}`}
-                      className={`flex-1 ${(fieldErrors.additionalDocs || (errors.additionalDocs && errors.additionalDocs[0])) ? 'border-red-300' : ''}`}
-                    />
-                  </div>
-                ))}
+                {(formData.additionalDocs || [])
+                  .slice(0, formData.additionalDocsCount)
+                  .map((doc, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-600 w-6">
+                        {index + 1}.
+                      </span>
+                      <Input
+                        value={doc || ""}
+                        onChange={(e) =>
+                          handleAdditionalDocChange(index, e.target.value)
+                        }
+                        placeholder={`เอกสารเพิ่มเติมที่ ${index + 1}`}
+                        className={`flex-1 ${fieldErrors.additionalDocs || (errors.additionalDocs && errors.additionalDocs[0]) ? "border-red-300" : ""}`}
+                      />
+                    </div>
+                  ))}
               </div>
             )}
-            
-            {(fieldErrors.additionalDocs || (errors.additionalDocs && errors.additionalDocs[0])) && (
+
+            {(fieldErrors.additionalDocs ||
+              (errors.additionalDocs && errors.additionalDocs[0])) && (
               <p className="text-sm text-red-600 flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
-                {formData.hasAdditionalDocs 
-                  ? 'กรุณาระบุรายละเอียดเอกสารที่ต้องส่งเพิ่มเติมทุกรายการ'
-                  : (fieldErrors.additionalDocs || errors.additionalDocs[0])
-                }
+                {formData.hasAdditionalDocs
+                  ? "กรุณาระบุรายละเอียดเอกสารที่ต้องส่งเพิ่มเติมทุกรายการ"
+                  : fieldErrors.additionalDocs || errors.additionalDocs[0]}
               </p>
             )}
           </div>
@@ -869,7 +1035,7 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             <select
               id="monthYear"
               value={formData.monthYear}
-              onChange={(e) => handleInputChange('monthYear', e.target.value)}
+              onChange={(e) => handleInputChange("monthYear", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">เลือกเดือน/ปี</option>
@@ -879,8 +1045,11 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                 </option>
               ))}
             </select>
-            {(fieldErrors.monthYear || (errors.monthYear && errors.monthYear[0])) && (
-              <p className="text-sm text-red-600">{fieldErrors.monthYear || errors.monthYear[0]}</p>
+            {(fieldErrors.monthYear ||
+              (errors.monthYear && errors.monthYear[0])) && (
+              <p className="text-sm text-red-600">
+                {fieldErrors.monthYear || errors.monthYear[0]}
+              </p>
             )}
           </div>
 
@@ -889,28 +1058,28 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
             <Button
               type="button"
               variant="outline"
-              onClick={(e) => handleSubmit(e, 'save')}
+              onClick={(e) => handleSubmit(e, "save")}
               disabled={uploading}
               className="flex-1"
             >
               {uploading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              {isEditMode ? 'บันทึกการแก้ไข' : 'บันทึก (Draft)'}
+              {isEditMode ? "บันทึกการแก้ไข" : "บันทึก (Draft)"}
             </Button>
-            
+
             <Button
               type="button"
-              onClick={(e) => handleSubmit(e, 'send')}
+              onClick={(e) => handleSubmit(e, "send")}
               disabled={uploading}
               className="flex-1"
             >
               {uploading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              {isEditMode ? 'บันทึกและส่งเอกสาร' : 'ส่งเอกสาร'}
+              {isEditMode ? "บันทึกและส่งเอกสาร" : "ส่งเอกสาร"}
             </Button>
-            
+
             {isEditMode && (
               <Button
                 type="button"
@@ -919,15 +1088,15 @@ export function DocumentUpload({ branches, onUploadSuccess, editDocument, onEdit
                   setIsEditMode(false);
                   setSelectedFile(null);
                   setFormData({
-                    branchBaCode: '',
-                    mtNumber: '',
-                    mtDate: '',
-                    subject: '',
+                    branchBaCode: "",
+                    mtNumber: "",
+                    mtDate: "",
+                    subject: "",
                     monthYear: getCurrentMonthYear(),
-                    docReceivedDate: '',
+                    docReceivedDate: "",
                     hasAdditionalDocs: false,
                     additionalDocsCount: 1,
-                    additionalDocs: ['']
+                    additionalDocs: [""],
                   });
                   onEditComplete?.();
                 }}

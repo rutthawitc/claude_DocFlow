@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { th } from 'date-fns/locale';
-import { 
-  ArrowLeft, 
-  Download, 
-  MessageSquare, 
-  Send, 
-  User, 
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { th } from "date-fns/locale";
+import {
+  ArrowLeft,
+  Download,
+  MessageSquare,
+  Send,
+  User,
   Calendar,
   FileText,
   Building,
@@ -18,28 +18,29 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
-  BookCheck
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { 
+  BookCheck,
+  Tag,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
   Breadcrumb,
   BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbSeparator,
   BreadcrumbPage,
-} from '@/components/ui/breadcrumb';
-import { toast } from 'sonner';
-import { StatusManagement } from './status-management';
-import { CommentSystem } from './comment-system';
-import { PDFViewer } from './pdf-viewer';
-import { AdditionalDocumentUpload } from './additional-document-upload';
-import { DocumentStatus } from '@/lib/types';
-import Link from 'next/link';
+} from "@/components/ui/breadcrumb";
+import { toast } from "sonner";
+import { StatusManagement } from "./status-management";
+import { CommentSystem } from "./comment-system";
+import { PDFViewer } from "./pdf-viewer";
+import { AdditionalDocumentUpload } from "./additional-document-upload";
+import { DocumentStatus } from "@/lib/types";
+import Link from "next/link";
 
 interface Document {
   id: number;
@@ -55,6 +56,9 @@ interface Document {
   hasAdditionalDocs?: boolean;
   additionalDocsCount?: number;
   additionalDocs?: string[];
+  sendBackOriginalDocument?: boolean;
+  sendBackDate?: string;
+  deadlineDate?: string;
   status: string;
   uploaderId: number;
   createdAt: string;
@@ -111,26 +115,30 @@ interface DocumentDetailProps {
 }
 
 const STATUS_COLORS = {
-  draft: 'bg-gray-100 text-gray-700',
-  sent_to_branch: 'bg-orange-100 text-orange-700',
-  acknowledged: 'bg-green-100 text-green-700',
-  sent_back_to_district: 'bg-blue-100 text-blue-700',
-  complete: 'bg-emerald-100 text-emerald-700'
+  draft: "bg-gray-100 text-gray-700",
+  sent_to_branch: "bg-orange-100 text-orange-700",
+  acknowledged: "bg-green-100 text-green-700",
+  sent_back_to_district: "bg-blue-100 text-blue-700",
+  complete: "bg-emerald-100 text-emerald-700",
 };
 
 const STATUS_LABELS = {
-  draft: 'ร่าง',
-  sent_to_branch: 'เอกสารจากเขต',
-  acknowledged: 'รับทราบแล้ว',
-  sent_back_to_district: 'ส่งกลับเขต',
-  complete: 'เสร็จสิ้น'
+  draft: "ร่าง",
+  sent_to_branch: "เอกสารจากเขต",
+  acknowledged: "รับทราบแล้ว",
+  sent_back_to_district: "ส่งกลับเขต",
+  complete: "เสร็จสิ้น",
 };
 
-export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentDetailProps) {
+export function DocumentDetail({
+  documentId,
+  userRoles = [],
+  userId,
+}: DocumentDetailProps) {
   const router = useRouter();
   const [document, setDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
-  const [commentText, setCommentText] = useState('');
+  const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
@@ -139,7 +147,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
     const fetchDocument = async () => {
       try {
         const response = await fetch(`/api/documents/${documentId}`, {
-          credentials: 'include'
+          credentials: "include",
         });
 
         const result = await response.json();
@@ -147,12 +155,12 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
         if (response.ok && result.success) {
           setDocument(result.data);
         } else {
-          throw new Error(result.error || 'Failed to fetch document');
+          throw new Error(result.error || "Failed to fetch document");
         }
       } catch (error) {
-        console.error('Error fetching document:', error);
-        toast.error('ไม่สามารถโหลดเอกสารได้');
-        router.push('/documents');
+        console.error("Error fetching document:", error);
+        toast.error("ไม่สามารถโหลดเอกสารได้");
+        router.push("/documents");
       } finally {
         setLoading(false);
       }
@@ -166,62 +174,62 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
     if (!document) return;
 
     // Check if we're in the browser environment
-    if (typeof window === 'undefined') {
-      console.error('Download can only be triggered on the client side');
+    if (typeof window === "undefined") {
+      console.error("Download can only be triggered on the client side");
       return;
     }
 
     try {
       const response = await fetch(`/api/documents/${documentId}/download`, {
-        credentials: 'include'
+        credentials: "include",
       });
 
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const link = window.document.createElement('a');
+        const link = window.document.createElement("a");
         link.href = url;
         link.download = document.originalFilename;
         window.document.body.appendChild(link);
         link.click();
         window.URL.revokeObjectURL(url);
         window.document.body.removeChild(link);
-        toast.success('ดาวน์โหลดเรียบร้อย');
+        toast.success("ดาวน์โหลดเรียบร้อย");
       } else {
-        throw new Error('Download failed');
+        throw new Error("Download failed");
       }
     } catch (error) {
-      console.error('Download error:', error);
-      toast.error('ไม่สามารถดาวน์โหลดไฟล์ได้');
+      console.error("Download error:", error);
+      toast.error("ไม่สามารถดาวน์โหลดไฟล์ได้");
     }
   };
 
   // Handle status update
-  const handleStatusUpdate = async (newStatus: string, comment = '') => {
+  const handleStatusUpdate = async (newStatus: string, comment = "") => {
     if (!document) return;
 
     setUpdatingStatus(true);
     try {
       const response = await fetch(`/api/documents/${documentId}/status`, {
-        method: 'PATCH',
-        credentials: 'include',
+        method: "PATCH",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: newStatus, comment })
+        body: JSON.stringify({ status: newStatus, comment }),
       });
 
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setDocument(prev => prev ? { ...prev, status: newStatus } : null);
-        toast.success('อัปเดทสถานะเรียบร้อย');
+        setDocument((prev) => (prev ? { ...prev, status: newStatus } : null));
+        toast.success("อัปเดทสถานะเรียบร้อย");
       } else {
-        throw new Error(result.error || 'Status update failed');
+        throw new Error(result.error || "Status update failed");
       }
     } catch (error) {
-      console.error('Status update error:', error);
-      toast.error('ไม่สามารถอัปเดทสถานะได้');
+      console.error("Status update error:", error);
+      toast.error("ไม่สามารถอัปเดทสถานะได้");
     } finally {
       setUpdatingStatus(false);
     }
@@ -230,39 +238,39 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
   // Handle comment submission
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!commentText.trim()) return;
 
     setSubmittingComment(true);
     try {
       const response = await fetch(`/api/documents/${documentId}/comments`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ content: commentText })
+        body: JSON.stringify({ content: commentText }),
       });
 
       const result = await response.json();
 
       if (response.ok && result.success) {
         // Add new comment to the list
-        setDocument(prev => {
+        setDocument((prev) => {
           if (!prev) return null;
           return {
             ...prev,
-            comments: [...(prev.comments || []), result.data]
+            comments: [...(prev.comments || []), result.data],
           };
         });
-        setCommentText('');
-        toast.success('เพิ่มความคิดเห็นเรียบร้อย');
+        setCommentText("");
+        toast.success("เพิ่มความคิดเห็นเรียบร้อย");
       } else {
-        throw new Error(result.error || 'Comment submission failed');
+        throw new Error(result.error || "Comment submission failed");
       }
     } catch (error) {
-      console.error('Comment submission error:', error);
-      toast.error('ไม่สามารถเพิ่มความคิดเห็นได้');
+      console.error("Comment submission error:", error);
+      toast.error("ไม่สามารถเพิ่มความคิดเห็นได้");
     } finally {
       setSubmittingComment(false);
     }
@@ -270,24 +278,28 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
 
   // Check user permissions
   const canUpdateStatus = () => {
-    return userRoles.includes('branch_user') || 
-           userRoles.includes('branch_manager') || 
-           userRoles.includes('admin');
+    return (
+      userRoles.includes("branch_user") ||
+      userRoles.includes("branch_manager") ||
+      userRoles.includes("admin")
+    );
   };
 
   const canAddComment = () => {
-    return userRoles.includes('branch_user') || 
-           userRoles.includes('branch_manager') || 
-           userRoles.includes('admin');
+    return (
+      userRoles.includes("branch_user") ||
+      userRoles.includes("branch_manager") ||
+      userRoles.includes("admin")
+    );
   };
 
   // Format file size
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   if (loading) {
@@ -332,7 +344,9 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
             </>
           )}
           <BreadcrumbItem>
-            <BreadcrumbPage>{document?.mtNumber || 'กำลังโหลด...'}</BreadcrumbPage>
+            <BreadcrumbPage>
+              {document?.mtNumber || "กำลังโหลด..."}
+            </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -343,7 +357,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
           <ArrowLeft className="h-4 w-4 mr-2" />
           กลับ
         </Button>
-        
+
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleDownload}>
             <Download className="h-4 w-4 mr-2" />
@@ -361,13 +375,15 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-xl">{document.mtNumber}</CardTitle>
-                  {document.status === 'complete' && (
+                  {document.status === "complete" && (
                     <BookCheck className="h-5 w-5 text-emerald-600" />
                   )}
                 </div>
-                <Badge 
-                  variant="outline" 
-                  className={STATUS_COLORS[document.status as keyof typeof STATUS_COLORS]}
+                <Badge
+                  variant="outline"
+                  className={
+                    STATUS_COLORS[document.status as keyof typeof STATUS_COLORS]
+                  }
                 >
                   {STATUS_LABELS[document.status as keyof typeof STATUS_LABELS]}
                 </Badge>
@@ -384,10 +400,13 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
-                      วันที่ มท: {format(new Date(document.mtDate), 'dd MMMM yyyy', { locale: th })}
+                      วันที่ มท:{" "}
+                      {format(new Date(document.mtDate), "dd MMMM yyyy", {
+                        locale: th,
+                      })}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Hash className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
@@ -400,7 +419,12 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
-                      วันที่รับเอกสารต้นฉบับจากสาขา: {format(new Date(document.docReceivedDate), 'dd MMMM yyyy', { locale: th })}
+                      วันที่รับเอกสารต้นฉบับจากสาขา:{" "}
+                      {format(
+                        new Date(document.docReceivedDate),
+                        "dd MMMM yyyy",
+                        { locale: th },
+                      )}
                     </span>
                   </div>
                 )}
@@ -409,9 +433,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
                   {document.branch && (
                     <div className="flex items-center gap-2">
                       <Building className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">
-                        {document.branch.name}
-                      </span>
+                      <span className="text-sm">{document.branch.name}</span>
                     </div>
                   )}
 
@@ -443,20 +465,65 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                <h3 className="text-lg font-semibold">เอกสารที่ต้องส่งเพิ่มเติม/แก้ไข</h3>
+                <h3 className="text-lg font-semibold">
+                  เอกสารที่ต้องส่งเพิ่มเติม/แก้ไข
+                </h3>
               </div>
-              
+
               <AdditionalDocumentUpload
                 documentId={document.id}
-                additionalDocs={document.additionalDocs?.filter(doc => doc && doc.trim() !== '') || []}
+                additionalDocs={
+                  document.additionalDocs?.filter(
+                    (doc) => doc && doc.trim() !== "",
+                  ) || []
+                }
                 userRoles={userRoles}
                 documentStatus={document.status}
                 onFileUploaded={() => {
                   // Refresh document data if needed
-                  console.log('File uploaded, refreshing...');
+                  console.log("File uploaded, refreshing...");
                 }}
               />
             </div>
+          )}
+
+          {/* Send Original Document Card */}
+          {document.sendBackOriginalDocument && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader className="pb-1 pt-1">
+                <CardTitle className="text-base font-semibold text-orange-800 flex items-center gap-2">
+                  <Tag className="h-5 w-5 text-orange-600" />
+                  ส่งเอกสารต้นฉบับกลับสาขา
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-1 pb-1 space-y-2">
+                {document.sendBackDate && (
+                  <div className="flex items-center gap-1 text-sm">
+                    <Calendar className="h-3 w-3 text-gray-500" />
+                    <span className="font-medium">วันที่ส่งกลับ:</span>
+                    <span>
+                      {format(new Date(document.sendBackDate), "dd MMMM yyyy", {
+                        locale: th,
+                      })}
+                    </span>
+                  </div>
+                )}
+                {document.deadlineDate && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-3 w-3 text-gray-500" />
+                    <span className="font-medium">กำหนดส่งกลับ:</span>
+                    <Badge
+                      variant="secondary"
+                      className="bg-orange-200 text-orange-800 border-orange-300 hover:bg-orange-200 text-xs px-2 py-0.5"
+                    >
+                      {format(new Date(document.deadlineDate), "dd MMMM yyyy", {
+                        locale: th,
+                      })}
+                    </Badge>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           {/* PDF Viewer */}
@@ -489,7 +556,7 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
                 currentStatus={document.status as DocumentStatus}
                 userRoles={userRoles}
                 onStatusUpdate={(newStatus) => {
-                  setDocument(prev => {
+                  setDocument((prev) => {
                     if (!prev) return null;
                     return { ...prev, status: newStatus };
                   });
@@ -507,22 +574,38 @@ export function DocumentDetail({ documentId, userRoles = [], userId }: DocumentD
               <CardContent>
                 <div className="space-y-3">
                   {document.statusHistory.map((history) => (
-                    <div key={history.id} className="border-l-2 border-gray-200 pl-3">
+                    <div
+                      key={history.id}
+                      className="border-l-2 border-gray-200 pl-3"
+                    >
                       <div className="flex items-center justify-between mb-1">
-                        <Badge 
-                          variant="outline" 
-                          className={STATUS_COLORS[history.toStatus as keyof typeof STATUS_COLORS]}
+                        <Badge
+                          variant="outline"
+                          className={
+                            STATUS_COLORS[
+                              history.toStatus as keyof typeof STATUS_COLORS
+                            ]
+                          }
                         >
-                          {STATUS_LABELS[history.toStatus as keyof typeof STATUS_LABELS]}
+                          {
+                            STATUS_LABELS[
+                              history.toStatus as keyof typeof STATUS_LABELS
+                            ]
+                          }
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-gray-500">
-                          {format(new Date(history.createdAt), 'dd/MM/yyyy HH:mm', { locale: th })}
+                          {format(
+                            new Date(history.createdAt),
+                            "dd/MM/yyyy HH:mm",
+                            { locale: th },
+                          )}
                         </p>
                         {history.changedByUser && (
                           <p className="text-xs font-medium text-gray-700 text-right">
-                            โดย {history.changedByUser.firstName} {history.changedByUser.lastName}
+                            โดย {history.changedByUser.firstName}{" "}
+                            {history.changedByUser.lastName}
                           </p>
                         )}
                       </div>
