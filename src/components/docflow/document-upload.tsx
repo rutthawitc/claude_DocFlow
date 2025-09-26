@@ -17,8 +17,24 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
+  Eye,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
+
+const PDFPreviewModal = dynamic(() => import("./pdf-preview-modal").then(mod => ({ default: mod.PDFPreviewModal })), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+});
 import {
   clientDocumentUploadSchema,
   validateForm,
@@ -91,6 +107,10 @@ export function DocumentUpload({
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [emendationDocFile, setEmendationDocFile] = useState<File | null>(null);
+  const [emendationDocDragActive, setEmendationDocDragActive] = useState(false);
+  const [showEmendationDocUpload, setShowEmendationDocUpload] = useState(false);
+  const [showEmendationDocPreview, setShowEmendationDocPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState<FormData>(() => {
     const defaultDates = getDefaultReturnDates();
@@ -174,6 +194,53 @@ export function DocumentUpload({
 
     return null;
   }, []);
+
+  // Emendation document file handlers
+  const handleEmendationDocFileSelect = useCallback((file: File) => {
+    const validationError = validateFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    setEmendationDocFile(file);
+    toast.success("ไฟล์เอกสารแก้ไขถูกเลือกแล้ว");
+  }, [validateFile]);
+
+  const handleEmendationDocFileDelete = useCallback(() => {
+    setEmendationDocFile(null);
+    toast.success("ลบไฟล์เอกสารแก้ไขแล้ว");
+  }, []);
+
+  const handleEmendationDocFilePreview = useCallback(() => {
+    if (emendationDocFile) {
+      setShowEmendationDocPreview(true);
+    }
+  }, [emendationDocFile]);
+
+  // Emendation document drag & drop handlers
+  const handleEmendationDocDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setEmendationDocDragActive(true);
+    } else if (e.type === "dragleave") {
+      setEmendationDocDragActive(false);
+    }
+  }, []);
+
+  const handleEmendationDocDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setEmendationDocDragActive(false);
+
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        const file = e.dataTransfer.files[0];
+        handleEmendationDocFileSelect(file);
+      }
+    },
+    [handleEmendationDocFileSelect],
+  );
 
   // Handle file selection
   const handleFileSelect = useCallback(
@@ -965,6 +1032,135 @@ export function DocumentUpload({
             )}
           </div>
 
+          {/* Emendation Document Upload */}
+          <div className="space-y-4 border rounded-lg p-4 bg-green-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="showEmendationDocUpload"
+                  checked={showEmendationDocUpload}
+                  onCheckedChange={(checked) => setShowEmendationDocUpload(!!checked)}
+                />
+                <Label
+                  htmlFor="showEmendationDocUpload"
+                  className="cursor-pointer font-medium text-green-800"
+                >
+                  ตัวอย่างเอกสารที่ต้องแก้ไข
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                {emendationDocFile && (
+                  <Badge variant="secondary" className="bg-green-200 text-green-800">
+                    อัปโหลดแล้ว
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {showEmendationDocUpload && (
+              <>
+                {!emendationDocFile ? (
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors duration-200 ${
+                  emendationDocDragActive
+                    ? "border-blue-400 bg-blue-50"
+                    : "border-gray-300 hover:border-gray-400"
+                }`}
+                onDragEnter={handleEmendationDocDrag}
+                onDragLeave={handleEmendationDocDrag}
+                onDragOver={handleEmendationDocDrag}
+                onDrop={handleEmendationDocDrop}
+              >
+                <input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleEmendationDocFileSelect(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="emendation-doc-file-input"
+                />
+                <label
+                  htmlFor="emendation-doc-file-input"
+                  className="cursor-pointer flex flex-col items-center gap-2"
+                >
+                  <Upload className={`h-8 w-8 ${emendationDocDragActive ? "text-blue-500" : "text-gray-400"}`} />
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium text-blue-600 hover:text-blue-500">
+                      คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวาง
+                    </span>
+                    <p className="mt-1">รองรับไฟล์ PDF เท่านั้น (สูงสุด 10MB)</p>
+                  </div>
+                </label>
+              </div>
+            ) : (
+              <div className="border rounded-lg p-4 bg-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-8 w-8 text-red-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {emendationDocFile.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {(emendationDocFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEmendationDocFilePreview}
+                      className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      ดูเอกสาร
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEmendationDocFileDelete}
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      ลบ
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('emendation-doc-file-input')?.click()}
+                      className="text-gray-600 border-gray-300 hover:bg-gray-50"
+                    >
+                      <Upload className="h-4 w-4 mr-1" />
+                      เปลี่ยนไฟล์
+                    </Button>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleEmendationDocFileSelect(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="emendation-doc-file-input"
+                />
+              </div>
+                )}
+              </>
+            )}
+          </div>
+
           {/* Additional Documents */}
           <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
             <div className="flex items-center gap-3">
@@ -1110,6 +1306,13 @@ export function DocumentUpload({
             )}
           </div>
         </form>
+
+        {/* PDF Preview Modal */}
+        <PDFPreviewModal
+          file={emendationDocFile}
+          isOpen={showEmendationDocPreview}
+          onClose={() => setShowEmendationDocPreview(false)}
+        />
       </CardContent>
     </Card>
   );
