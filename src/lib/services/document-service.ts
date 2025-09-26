@@ -1089,6 +1089,9 @@ export class DocumentService {
       const storeResult = await FileStorageService.storeFile(emendationFile, documentId);
       console.log('Emendation file stored at:', storeResult.filePath);
 
+      // Construct relative path that the API endpoint expects
+      const relativeFilePath = `uploads/${storeResult.filePath}`;
+
       // Save to additional_document_files table
       // Use itemIndex 0 for emendation documents and special name
       const [insertedRecord] = await db
@@ -1097,7 +1100,7 @@ export class DocumentService {
           documentId: documentId,
           itemIndex: 0, // Use 0 for emendation documents
           itemName: 'เอกสารแก้ไข', // Standard name for emendation documents
-          filePath: storeResult.filePath,
+          filePath: relativeFilePath,
           originalFilename: emendationFile.name,
           fileSize: emendationFile.size,
           uploaderId: uploaderId,
