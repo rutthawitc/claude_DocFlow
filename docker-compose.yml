@@ -26,11 +26,11 @@ services:
   # Next.js application
   app:
     # For production: use pre-built image
-    image: docflow-app:latest
+    # image: docflow-app:latest
     # For development: uncomment build section below
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.prod.simple
+    build:
+      context: .
+      dockerfile: Dockerfile.prod.simple
     container_name: docflow-app
     restart: unless-stopped
     expose:

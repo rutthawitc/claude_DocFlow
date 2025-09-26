@@ -20,6 +20,7 @@ import {
   AlertCircle,
   BookCheck,
   Tag,
+  Hourglass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -489,39 +490,40 @@ export function DocumentDetail({
 
           {/* Send Original Document Card */}
           {document.sendBackOriginalDocument && (
-            <Card className="border-orange-200 bg-orange-50">
-              <CardHeader className="pb-1 pt-1">
-                <CardTitle className="text-base font-semibold text-orange-800 flex items-center gap-2">
-                  <Tag className="h-5 w-5 text-orange-600" />
-                  ส่งเอกสารต้นฉบับกลับสาขา
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-1 pb-1 space-y-2">
-                {document.sendBackDate && (
-                  <div className="flex items-center gap-1 text-sm">
-                    <Calendar className="h-3 w-3 text-gray-500" />
-                    <span className="font-medium">วันที่ส่งกลับ:</span>
-                    <span>
-                      {format(new Date(document.sendBackDate), "dd MMMM yyyy", {
-                        locale: th,
-                      })}
-                    </span>
+            <Card className="border-orange-200 bg-orange-50 rounded-lg">
+              <CardContent className="p-4">
+                {/* Header with tag icon */}
+                <div className="flex items-center gap-2 mb-2">
+                  <Tag className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm text-orange-700 font-medium">
+                    ส่งเอกสารต้นฉบับกลับ
+                    {document.sendBackDate &&
+                      ` เมื่อวันที่ ${format(new Date(document.sendBackDate), "dd MMMM yyyy", { locale: th })}`}
+                  </span>
+                </div>
+
+                {/* Main content with hourglass icon */}
+                <div className="flex items-center gap-3 mb-1">
+                  <Hourglass className="h-6 w-6 text-red-600" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-red-700">
+                      {document.deadlineDate &&
+                        (() => {
+                          const deadline = new Date(document.deadlineDate);
+                          const today = new Date();
+                          const diffTime = deadline.getTime() - today.getTime();
+                          const diffDays = Math.ceil(
+                            diffTime / (1000 * 60 * 60 * 24),
+                          );
+                          return `เหลืออีก ${diffDays} วัน`;
+                        })()}
+                    </h3>
+                    <p className="text-sm text-red-600">
+                      {document.deadlineDate &&
+                        `กำหนดส่ง: ${format(new Date(document.deadlineDate), "dd MMMM yyyy", { locale: th })}`}
+                    </p>
                   </div>
-                )}
-                {document.deadlineDate && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-3 w-3 text-gray-500" />
-                    <span className="font-medium">กำหนดส่งกลับ:</span>
-                    <Badge
-                      variant="secondary"
-                      className="bg-orange-200 text-orange-800 border-orange-300 hover:bg-orange-200 text-xs px-2 py-0.5"
-                    >
-                      {format(new Date(document.deadlineDate), "dd MMMM yyyy", {
-                        locale: th,
-                      })}
-                    </Badge>
-                  </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           )}

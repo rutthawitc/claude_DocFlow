@@ -291,6 +291,12 @@ export const branchQuerySchema = z.object({
 });
 
 // Path parameter validation schemas
+export const idSchema = z.object({
+  id: z.coerce.number()
+    .int('ID must be an integer')
+    .min(1, 'ID must be positive')
+});
+
 export const documentIdSchema = z.object({
   id: z.coerce.number()
     .int('Document ID must be an integer')
