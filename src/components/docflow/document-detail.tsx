@@ -470,7 +470,7 @@ export function DocumentDetail({
 
           {/* Additional Documents with Upload */}
           {document.hasAdditionalDocs && (
-            <div className="space-y-4">
+            <div className="space-y-4 mb-8">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 <h3 className="text-lg font-semibold">
@@ -497,22 +497,23 @@ export function DocumentDetail({
 
           {/* Send Original Document Card */}
           {document.sendBackOriginalDocument && (
-            <Card className="border-orange-200 bg-orange-50 rounded-lg">
-              <CardContent className="p-4">
-                {/* Header with tag icon */}
-                <div className="flex items-center gap-2 mb-2">
-                  <Tag className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm text-orange-700 font-medium">
+            <div className="mt-8">
+              <Card className="border-orange-200 bg-orange-50 rounded-lg">
+                <CardContent className="p-4">
+                  {/* Header with tag icon */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Tag className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm text-orange-700 font-medium">
                     ส่งเอกสารต้นฉบับกลับ
                     {document.sendBackDate &&
                       ` เมื่อวันที่ ${format(new Date(document.sendBackDate), "dd MMMM yyyy", { locale: th })}`}
-                  </span>
-                </div>
+                    </span>
+                  </div>
 
-                {/* Main content with hourglass icon */}
-                <div className="flex items-center gap-3 mb-1">
-                  <Hourglass className="h-6 w-6 text-red-600" />
-                  <div>
+                  {/* Main content with hourglass icon */}
+                  <div className="flex items-center gap-3 mb-1">
+                    <Hourglass className="h-6 w-6 text-red-600" />
+                    <div>
                     <h3 className="text-lg font-semibold text-red-700">
                       {document.deadlineDate &&
                         (() => {
@@ -538,10 +539,11 @@ export function DocumentDetail({
                       {document.deadlineDate &&
                         `กำหนดส่ง: ${format(new Date(document.deadlineDate), "dd MMMM yyyy", { locale: th })}`}
                     </p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* PDF Viewer */}
@@ -551,7 +553,8 @@ export function DocumentDetail({
           />
 
           {/* Comments Section */}
-          <CommentSystem
+          <div className="mt-8">
+            <CommentSystem
             documentId={document.id}
             initialComments={document.comments || []}
             userRoles={userRoles}
@@ -559,6 +562,7 @@ export function DocumentDetail({
             refreshInterval={10000}
             documentStatus={document.status}
           />
+          </div>
         </div>
 
         {/* Sidebar */}
@@ -585,7 +589,7 @@ export function DocumentDetail({
 
           {/* Status History */}
           {document.statusHistory && document.statusHistory.length > 0 && (
-            <Card>
+            <Card className="mt-8">
               <CardHeader>
                 <CardTitle>ประวัติการเปลี่ยนสถานะ</CardTitle>
               </CardHeader>

@@ -41,7 +41,7 @@ export function EmendationDocumentViewer({
   documentId,
   userRoles = []
 }: EmendationDocumentViewerProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false); // Default to closed
   const [emendationFiles, setEmendationFiles] = useState<EmendationFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,75 +147,40 @@ export function EmendationDocumentViewer({
   }
 
   return (
-    <Card className="border-blue-200 bg-blue-50 mb-6">
-      <CardHeader
-        className="cursor-pointer hover:bg-blue-100 transition-colors pb-3"
+    <div className="mb-8">
+      {/* Clickable header to show/hide emendation documents */}
+      <div
+        className="mb-4 flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-3 rounded-lg border border-blue-200"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <CardTitle className="flex items-center justify-between text-lg">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            <span className="text-blue-800">เอกสารแก้ไข</span>
-            <Badge variant="secondary" className="bg-blue-200 text-blue-800">
-              {emendationFiles.length} ไฟล์
-            </Badge>
-          </div>
-          {isExpanded ? (
-            <ChevronDown className="h-5 w-5 text-blue-600" />
-          ) : (
-            <ChevronRight className="h-5 w-5 text-blue-600" />
-          )}
-        </CardTitle>
-      </CardHeader>
+        <FileText className="h-5 w-5 text-blue-600" />
+        <span className="font-medium text-blue-800">เอกสารแก้ไข</span>
+        <Badge variant="secondary" className="bg-blue-200 text-blue-800">
+          {emendationFiles.length} ไฟล์
+        </Badge>
+        {isExpanded ? (
+          <ChevronDown className="h-4 w-4 text-blue-600 ml-auto" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-blue-600 ml-auto" />
+        )}
+      </div>
 
+      {/* Show PDFs only when expanded */}
       {isExpanded && (
-        <CardContent className="pt-0">
-          <div className="space-y-4">
-            {emendationFiles.map((file) => (
-              <div key={file.id} className="bg-white rounded-lg p-4 border border-blue-200">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-6 w-6 text-red-600 mt-1" />
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-1">
-                        {file.originalFilename}
-                      </h4>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <p>ขนาด: {formatFileSize(file.fileSize)}</p>
-                        {file.uploader && (
-                          <p>อัปโหลดโดย: {file.uploader.firstName} {file.uploader.lastName}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(file)}
-                      className="text-gray-600 border-gray-300 hover:bg-gray-50"
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      ดาวน์โหลด
-                    </Button>
-                  </div>
-                </div>
-
-                {/* PDF Viewer for this file */}
-                <div className="border-t border-gray-200 pt-3">
-                  <PDFViewer
-                    documentId={documentId}
-                    filename={file.originalFilename}
-                    additionalFileIndex={file.itemIndex}
-                    compact={true}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
+        <div>
+          {emendationFiles.map((file) => (
+            <div key={file.id} className="mb-6">
+              {/* Direct PDF Display */}
+              <PDFViewer
+                documentId={documentId}
+                filename={file.originalFilename}
+                additionalFileIndex={file.itemIndex}
+                compact={false}
+              />
+            </div>
+          ))}
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

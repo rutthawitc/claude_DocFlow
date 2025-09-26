@@ -32,4 +32,4 @@ export const POST = withAuthHandler(
     requiredPermissions: [DOCFLOW_PERMISSIONS.ADMIN_MANAGE],
     requireAdmin: true
   }
-)(request);
+);

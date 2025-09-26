@@ -3,9 +3,8 @@ import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { getDb } from '@/db';
 import { additionalDocumentFiles } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { readFile } from 'fs/promises';
+import { FileStorageService } from '@/lib/services/file-service';
 import path from 'path';
-import { existsSync } from 'fs';
 
 interface RouteParams {
   params: Promise<{
@@ -52,18 +51,21 @@ export async function GET(request: NextRequest, { params: paramsPromise }: Route
         }
 
         const file = fileRecord[0];
-        const filePath = path.join(process.cwd(), file.filePath);
 
-        // Check if file exists on disk
-        if (!existsSync(filePath)) {
+        // Extract just the filename from the stored path (remove 'uploads/' prefix if present)
+        const filename = file.filePath.replace(/^uploads\//, '');
+
+        // Check if file exists using FileStorageService
+        const fileExists = await FileStorageService.fileExists(filename);
+        if (!fileExists) {
           return NextResponse.json(
             { success: false, error: 'File not found on disk' },
             { status: 404 }
           );
         }
 
-        // Read file
-        const fileBuffer = await readFile(filePath);
+        // Read and decrypt file using FileStorageService
+        const fileBuffer = await FileStorageService.retrieveFile(filename);
 
         // Return file for viewing (not downloading)
         return new NextResponse(fileBuffer, {
