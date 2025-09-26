@@ -40,6 +40,7 @@ import { StatusManagement } from "./status-management";
 import { CommentSystem } from "./comment-system";
 import { PDFViewer } from "./pdf-viewer";
 import { AdditionalDocumentUpload } from "./additional-document-upload";
+import { EmendationDocumentViewer } from "./emendation-document-viewer";
 import { DocumentStatus } from "@/lib/types";
 import Link from "next/link";
 
@@ -460,6 +461,12 @@ export function DocumentDetail({
               )}
             </CardContent>
           </Card>
+
+          {/* Emendation Documents Viewer */}
+          <EmendationDocumentViewer
+            documentId={document.id}
+            userRoles={userRoles}
+          />
 
           {/* Additional Documents with Upload */}
           {document.hasAdditionalDocs && (

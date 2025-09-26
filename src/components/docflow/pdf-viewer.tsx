@@ -30,14 +30,18 @@ interface PDFViewerProps {
   documentId: number;
   filename: string;
   className?: string;
+  additionalFileIndex?: number; // For additional files
+  compact?: boolean; // For compact view
 }
 
-export function PDFViewer({ documentId, filename, className }: PDFViewerProps) {
+export function PDFViewer({ documentId, filename, className, additionalFileIndex, compact }: PDFViewerProps) {
   return (
-    <PDFViewerClient 
+    <PDFViewerClient
       documentId={documentId}
       filename={filename}
       className={className}
+      additionalFileIndex={additionalFileIndex}
+      compact={compact}
     />
   );
 }

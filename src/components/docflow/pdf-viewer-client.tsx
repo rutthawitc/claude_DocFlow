@@ -28,9 +28,11 @@ interface PDFViewerClientProps {
   documentId: number;
   filename: string;
   className?: string;
+  additionalFileIndex?: number; // For additional files
+  compact?: boolean; // For compact view
 }
 
-export function PDFViewerClient({ documentId, filename, className }: PDFViewerClientProps) {
+export function PDFViewerClient({ documentId, filename, className, additionalFileIndex, compact = false }: PDFViewerClientProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
@@ -39,9 +41,11 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfInitialized, setPdfInitialized] = useState<boolean>(false);
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false); // Default state is open
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(compact); // For compact mode, start collapsed
 
-  const pdfUrl = `/api/documents/${documentId}/download`;
+  const pdfUrl = additionalFileIndex !== undefined
+    ? `/api/documents/${documentId}/additional-files/${additionalFileIndex}/view`
+    : `/api/documents/${documentId}/download`;
   
   // Initialize PDF.js worker
   useEffect(() => {
@@ -149,7 +153,7 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
             onClick={toggleCollapse}
           >
             <FileText className="h-5 w-5" />
-            เอกสาร PDF
+{additionalFileIndex !== undefined ? 'เอกสารแก้ไข PDF' : 'เอกสาร PDF'}
             {isCollapsed ? (
               <ChevronDown className="h-4 w-4 ml-1" />
             ) : (
@@ -192,7 +196,7 @@ export function PDFViewerClient({ documentId, filename, className }: PDFViewerCl
           onClick={toggleCollapse}
         >
           <FileText className="h-5 w-5" />
-          เอกสาร PDF
+          {additionalFileIndex !== undefined ? 'เอกสารแก้ไข PDF' : 'เอกสาร PDF'}
           {isCollapsed ? (
             <ChevronDown className="h-4 w-4 ml-1" />
           ) : (

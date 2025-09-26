@@ -97,7 +97,10 @@
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS send_back_original_document boolean DEFAULT false;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS send_back_date date;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS deadline_date date;\")",
-      "Bash(env)"
+      "Bash(env)",
+      "Bash(timeout:*)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, document_id, item_index, item_name, original_filename FROM additional_document_files WHERE document_id = 3;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"DELETE FROM additional_document_files WHERE document_id = 3 AND item_index = 0;\")"
     ],
     "deny": []
   }

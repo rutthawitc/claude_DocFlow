@@ -609,6 +609,11 @@ export function DocumentUpload({
           uploadFormData.append("deadlineDate", formData.deadlineDate || "");
           uploadFormData.append("action", action);
 
+          // Add emendation document if exists
+          if (emendationDocFile) {
+            uploadFormData.append("emendationDocFile", emendationDocFile);
+          }
+
           response = await fetch(`/api/documents/${editDocument.id}`, {
             method: "PUT",
             credentials: "include",
@@ -667,6 +672,11 @@ export function DocumentUpload({
         uploadFormData.append("deadlineDate", formData.deadlineDate || "");
         uploadFormData.append("action", action);
 
+        // Add emendation document if exists
+        if (emendationDocFile) {
+          uploadFormData.append("emendationDocFile", emendationDocFile);
+        }
+
         const response = await fetch("/api/documents", {
           method: "POST",
           credentials: "include",
@@ -693,6 +703,8 @@ export function DocumentUpload({
 
           // Reset form
           setSelectedFile(null);
+          setEmendationDocFile(null);
+          setShowEmendationDocUpload(false);
           const defaultDates = getDefaultReturnDates();
           setFormData({
             branchBaCode: "",
@@ -1282,6 +1294,8 @@ export function DocumentUpload({
                 onClick={() => {
                   setIsEditMode(false);
                   setSelectedFile(null);
+                  setEmendationDocFile(null);
+                  setShowEmendationDocUpload(false);
                   const defaultDates = getDefaultReturnDates();
                   setFormData({
                     branchBaCode: "",

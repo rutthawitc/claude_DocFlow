@@ -49,13 +49,17 @@ export async function handleDocumentUpload(request: NextRequest): Promise<NextRe
     console.log('Documents API - Starting file upload handling...');
 
     // Handle file upload
-    let file, formData;
+    let file, formData, emendationDocFile;
     try {
       const result = await StreamingFileHandler.handleFileUpload(request);
       file = result.file;
       formData = result.formData;
+      emendationDocFile = formData.get('emendationDocFile') as File | null;
       console.log('Documents API - File upload handled successfully');
       console.log('Documents API - File name:', file.name, 'Size:', file.size);
+      if (emendationDocFile) {
+        console.log('Documents API - Emendation file:', emendationDocFile.name, 'Size:', emendationDocFile.size);
+      }
     } catch (fileError) {
       console.error('Documents API - File upload error:', fileError);
       throw fileError;
@@ -108,6 +112,19 @@ export async function handleDocumentUpload(request: NextRequest): Promise<NextRe
     } catch (createError) {
       console.error('Documents API - Document creation error:', createError);
       throw createError;
+    }
+
+    // Handle emendation document if provided
+    if (emendationDocFile) {
+      try {
+        console.log('Documents API - Saving emendation document...');
+        await DocumentService.saveEmendationDocument(document.id, emendationDocFile, user.databaseId);
+        console.log('Documents API - Emendation document saved successfully');
+      } catch (emendationError) {
+        console.error('Documents API - Emendation document save error:', emendationError);
+        // Don't fail the main upload if emendation save fails
+        console.log('Documents API - Continuing despite emendation document error');
+      }
     }
 
     // Log document creation

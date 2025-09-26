@@ -1,6 +1,6 @@
 import { eq, and, desc, gte, lte, count, ilike, or, ne, sql } from 'drizzle-orm';
 import { getDb } from '@/db';
-import { documents, branches, users, comments, documentStatusHistory, activityLogs } from '@/db/schema';
+import { documents, branches, users, comments, documentStatusHistory, activityLogs, additionalDocumentFiles } from '@/db/schema';
 import { 
   Document, 
   DocumentWithRelations, 
@@ -1069,6 +1069,48 @@ export class DocumentService {
     } catch (error) {
       console.error('Error getting user own documents:', error);
       throw new DatabaseError('get_user_own_documents', error as Error);
+    }
+  }
+
+  /**
+   * Save emendation document file to additional document files
+   */
+  static async saveEmendationDocument(documentId: number, emendationFile: File, uploaderId: number): Promise<void> {
+    const db = await getDb();
+
+    try {
+      // Validate the emendation file
+      const validation = await FileValidationService.validateFile(emendationFile);
+      if (!validation.isValid) {
+        throw new Error(`Emendation file validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+      }
+
+      // Store the file
+      const storeResult = await FileStorageService.storeFile(emendationFile, documentId);
+      console.log('Emendation file stored at:', storeResult.filePath);
+
+      // Save to additional_document_files table
+      // Use itemIndex 0 for emendation documents and special name
+      const [insertedRecord] = await db
+        .insert(additionalDocumentFiles)
+        .values({
+          documentId: documentId,
+          itemIndex: 0, // Use 0 for emendation documents
+          itemName: 'เอกสารแก้ไข', // Standard name for emendation documents
+          filePath: storeResult.filePath,
+          originalFilename: emendationFile.name,
+          fileSize: emendationFile.size,
+          uploaderId: uploaderId,
+          isVerified: false, // Default to unverified
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+
+      console.log('Emendation document saved to database with ID:', insertedRecord?.id);
+    } catch (error) {
+      console.error('Error saving emendation document:', error);
+      throw new Error(`Failed to save emendation document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }
