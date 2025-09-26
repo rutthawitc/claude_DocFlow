@@ -515,7 +515,16 @@ export function DocumentDetail({
                           const diffDays = Math.ceil(
                             diffTime / (1000 * 60 * 60 * 24),
                           );
-                          return `เหลืออีก ${diffDays} วัน`;
+
+                          if (diffDays < 0) {
+                            // Overdue - show positive number of days overdue
+                            const overdueDays = Math.abs(diffDays);
+                            return `เกินกำหนด ${overdueDays} วัน`;
+                          } else if (diffDays === 0) {
+                            return `วันนี้เป็นกำหนดส่ง`;
+                          } else {
+                            return `เหลืออีก ${diffDays} วัน`;
+                          }
                         })()}
                     </h3>
                     <p className="text-sm text-red-600">
