@@ -156,7 +156,7 @@ export function PDFViewerClient({ documentId, filename, className, additionalFil
             onClick={toggleCollapse}
           >
             <FileText className="h-5 w-5" />
-{additionalFileIndex !== undefined ? 'เอกสารแก้ไข PDF' : 'บันทึกต้นฉบับ'}
+{additionalFileIndex !== undefined ? 'เอกสารแก้ไข PDF' : (emendationFileId !== undefined ? 'เอกสารแก้ไข' : 'บันทึกต้นฉบับ')}
             {isCollapsed ? (
               <ChevronDown className="h-4 w-4 ml-1" />
             ) : (
@@ -199,7 +199,7 @@ export function PDFViewerClient({ documentId, filename, className, additionalFil
           onClick={toggleCollapse}
         >
           <FileText className="h-5 w-5" />
-          {additionalFileIndex !== undefined ? 'เอกสารแก้ไข PDF' : 'บันทึกต้นฉบับ'}
+          {additionalFileIndex !== undefined ? 'เอกสารแก้ไข PDF' : (emendationFileId !== undefined ? 'เอกสารแก้ไข' : 'บันทึกต้นฉบับ')}
           {isCollapsed ? (
             <ChevronDown className="h-4 w-4 ml-1" />
           ) : (
