@@ -29,10 +29,11 @@ interface PDFViewerClientProps {
   filename: string;
   className?: string;
   additionalFileIndex?: number; // For additional files
+  emendationFileId?: number; // For emendation files
   compact?: boolean; // For compact view
 }
 
-export function PDFViewerClient({ documentId, filename, className, additionalFileIndex, compact = false }: PDFViewerClientProps) {
+export function PDFViewerClient({ documentId, filename, className, additionalFileIndex, emendationFileId, compact = false }: PDFViewerClientProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
@@ -43,7 +44,9 @@ export function PDFViewerClient({ documentId, filename, className, additionalFil
   const [pdfInitialized, setPdfInitialized] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(compact); // For compact mode, start collapsed
 
-  const pdfUrl = additionalFileIndex !== undefined
+  const pdfUrl = emendationFileId !== undefined
+    ? `/api/documents/${documentId}/emendation-files/${emendationFileId}/view`
+    : additionalFileIndex !== undefined
     ? `/api/documents/${documentId}/additional-files/${additionalFileIndex}/view`
     : `/api/documents/${documentId}/download`;
   

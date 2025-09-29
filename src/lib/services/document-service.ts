@@ -1,6 +1,6 @@
 import { eq, and, desc, gte, lte, count, ilike, or, ne, sql } from 'drizzle-orm';
 import { getDb } from '@/db';
-import { documents, branches, users, comments, documentStatusHistory, activityLogs, additionalDocumentFiles } from '@/db/schema';
+import { documents, branches, users, comments, documentStatusHistory, activityLogs, additionalDocumentFiles, emendationDocuments } from '@/db/schema';
 import { 
   Document, 
   DocumentWithRelations, 
@@ -1092,19 +1092,15 @@ export class DocumentService {
       // Construct relative path that the API endpoint expects
       const relativeFilePath = `uploads/${storeResult.filePath}`;
 
-      // Save to additional_document_files table
-      // Use itemIndex 0 for emendation documents and special name
+      // Save to emendation_documents table (separate from additional documents)
       const [insertedRecord] = await db
-        .insert(additionalDocumentFiles)
+        .insert(emendationDocuments)
         .values({
           documentId: documentId,
-          itemIndex: 0, // Use 0 for emendation documents
-          itemName: 'เอกสารแก้ไข', // Standard name for emendation documents
           filePath: relativeFilePath,
           originalFilename: emendationFile.name,
           fileSize: emendationFile.size,
           uploaderId: uploaderId,
-          isVerified: false, // Default to unverified
           createdAt: new Date(),
           updatedAt: new Date()
         })

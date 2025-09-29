@@ -31,16 +31,18 @@ interface PDFViewerProps {
   filename: string;
   className?: string;
   additionalFileIndex?: number; // For additional files
+  emendationFileId?: number; // For emendation files
   compact?: boolean; // For compact view
 }
 
-export function PDFViewer({ documentId, filename, className, additionalFileIndex, compact }: PDFViewerProps) {
+export function PDFViewer({ documentId, filename, className, additionalFileIndex, emendationFileId, compact }: PDFViewerProps) {
   return (
     <PDFViewerClient
       documentId={documentId}
       filename={filename}
       className={className}
       additionalFileIndex={additionalFileIndex}
+      emendationFileId={emendationFileId}
       compact={compact}
     />
   );

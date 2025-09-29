@@ -126,7 +126,8 @@ export function AdditionalDocumentUpload({
             // Skip emendation documents (itemIndex 0) - only include additional documents (itemIndex > 0)
             if (file.itemIndex > 0) {
               // Map to display index (subtract 1 since additional docs start from itemIndex 1)
-              filesMap[file.itemIndex - 1] = file;
+              const displayIndex = file.itemIndex - 1;
+              filesMap[displayIndex] = file;
             }
           });
           setExistingFiles(filesMap);
@@ -213,7 +214,9 @@ export function AdditionalDocumentUpload({
   // Handle file download
   const handleFileDownload = async (itemIndex: number, filename: string) => {
     try {
-      const response = await fetch(`/api/documents/${documentId}/additional-files/${itemIndex}/download`, {
+      // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
+      const actualItemIndex = itemIndex + 1;
+      const response = await fetch(`/api/documents/${documentId}/additional-files/${actualItemIndex}/download`, {
         credentials: 'include'
       });
 
@@ -240,7 +243,9 @@ export function AdditionalDocumentUpload({
   // Handle file delete
   const handleFileDelete = async (itemIndex: number) => {
     try {
-      const response = await fetch(`/api/documents/${documentId}/additional-files?itemIndex=${itemIndex}`, {
+      // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
+      const actualItemIndex = itemIndex + 1;
+      const response = await fetch(`/api/documents/${documentId}/additional-files?itemIndex=${actualItemIndex}`, {
         method: 'DELETE',
         credentials: 'include'
       });

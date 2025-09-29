@@ -462,6 +462,7 @@ export function DocumentDetail({
             </CardContent>
           </Card>
 
+
           {/* Emendation Documents Viewer */}
           <EmendationDocumentViewer
             documentId={document.id}
@@ -546,7 +547,7 @@ export function DocumentDetail({
             </div>
           )}
 
-          {/* PDF Viewer */}
+          {/* PDF Viewer - Main Document */}
           <PDFViewer
             documentId={document.id}
             filename={document.originalFilename}

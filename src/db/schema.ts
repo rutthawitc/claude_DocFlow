@@ -141,6 +141,18 @@ export const additionalDocumentFiles = pgTable('additional_document_files', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Emendation documents table (separate from additional documents)
+export const emendationDocuments = pgTable('emendation_documents', {
+  id: serial('id').primaryKey(),
+  documentId: integer('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  filePath: varchar('file_path', { length: 500 }).notNull(),
+  originalFilename: varchar('original_filename', { length: 255 }).notNull(),
+  fileSize: integer('file_size').notNull(),
+  uploaderId: integer('uploader_id').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Activity logs table (extended)
 export const activityLogs = pgTable('activity_logs', {
   id: serial('id').primaryKey(),
@@ -230,6 +242,7 @@ export const documentsRelations = relations(documents, ({ one, many }) => ({
   }),
   comments: many(comments),
   additionalFiles: many(additionalDocumentFiles),
+  emendationFiles: many(emendationDocuments),
   activityLogs: many(activityLogs),
   statusHistory: many(documentStatusHistory),
 }));
@@ -256,6 +269,17 @@ export const additionalDocumentFilesRelations = relations(additionalDocumentFile
   }),
   verifier: one(users, {
     fields: [additionalDocumentFiles.verifiedBy],
+    references: [users.id],
+  }),
+}));
+
+export const emendationDocumentsRelations = relations(emendationDocuments, ({ one }) => ({
+  document: one(documents, {
+    fields: [emendationDocuments.documentId],
+    references: [documents.id],
+  }),
+  uploader: one(users, {
+    fields: [emendationDocuments.uploaderId],
     references: [users.id],
   }),
 }));

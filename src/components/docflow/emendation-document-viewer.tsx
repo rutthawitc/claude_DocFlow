@@ -19,13 +19,12 @@ import { PDFViewer } from './pdf-viewer';
 interface EmendationFile {
   id: number;
   documentId: number;
-  itemIndex: number;
-  itemName: string;
   filePath: string;
   originalFilename: string;
   fileSize: number;
   uploaderId: number;
   createdAt: string;
+  updatedAt: string;
   uploader?: {
     firstName: string;
     lastName: string;
@@ -51,15 +50,13 @@ export function EmendationDocumentViewer({
     const fetchEmendationFiles = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/documents/${documentId}/additional-files`, {
+        const response = await fetch(`/api/documents/${documentId}/emendation-files`, {
           credentials: 'include',
         });
 
         const result = await response.json();
 
         if (response.ok && result.success) {
-          // Filter for emendation documents (we could add a flag later to distinguish)
-          // For now, we'll consider all additional files as potential emendation docs
           setEmendationFiles(result.data || []);
         } else {
           throw new Error(result.error || 'Failed to fetch emendation files');
@@ -79,7 +76,7 @@ export function EmendationDocumentViewer({
   const handleDownload = async (file: EmendationFile) => {
     try {
       const response = await fetch(
-        `/api/documents/${documentId}/additional-files/${file.itemIndex}/download`,
+        `/api/documents/${documentId}/emendation-files/${file.id}/download`,
         {
           credentials: 'include',
         }
@@ -174,7 +171,7 @@ export function EmendationDocumentViewer({
               <PDFViewer
                 documentId={documentId}
                 filename={file.originalFilename}
-                additionalFileIndex={file.itemIndex}
+                emendationFileId={file.id}
                 compact={false}
               />
             </div>

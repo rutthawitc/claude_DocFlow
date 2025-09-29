@@ -102,7 +102,12 @@
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, document_id, item_index, item_name, original_filename FROM additional_document_files WHERE document_id = 3;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"DELETE FROM additional_document_files WHERE document_id = 3 AND item_index = 0;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, mt_number, subject, status, created_at FROM documents WHERE mt_number = ''55210-5/991'';\")",
-      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, document_id, item_index, item_name, original_filename FROM additional_document_files WHERE document_id = 4;\")"
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, document_id, item_index, item_name, original_filename FROM additional_document_files WHERE document_id = 4;\")",
+      "Bash(npm install:*)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, document_id, item_index, item_name, original_filename, file_size, created_at FROM additional_document_files ORDER BY created_at DESC LIMIT 10;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, document_id, item_index, item_name, original_filename FROM additional_document_files WHERE document_id = 9 ORDER BY item_index;\")",
+      "Bash(printf \"n\\n\")",
+      "Bash(PGPASSWORD=postgres psql:*)"
     ],
     "deny": []
   }

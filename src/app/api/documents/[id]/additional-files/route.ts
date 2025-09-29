@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { getDb } from '@/db';
 import { additionalDocumentFiles, documents, branches, users } from '@/db/schema';
-import { eq, and, count, isNull, isNotNull } from 'drizzle-orm';
+import { eq, and, count, isNull, isNotNull, gt } from 'drizzle-orm';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
@@ -174,11 +174,16 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
           const requiredDocsCount = doc.additionalDocsCount || 0;
           
           if (requiredDocsCount > 0) {
-            // Count uploaded additional documents
+            // Count uploaded additional documents (exclude emendation documents with itemIndex 0)
             const [uploadedCount] = await db
               .select({ count: count() })
               .from(additionalDocumentFiles)
-              .where(eq(additionalDocumentFiles.documentId, documentId));
+              .where(
+                and(
+                  eq(additionalDocumentFiles.documentId, documentId),
+                  gt(additionalDocumentFiles.itemIndex, 0)
+                )
+              );
 
             // If all additional documents are now uploaded, notify admins
             if (uploadedCount.count >= requiredDocsCount) {
@@ -351,11 +356,16 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
 
         // Send admin notification for document verification completion
         try {
-          // Check if all additional documents are now verified
+          // Check if all additional documents are now verified (exclude emendation documents with itemIndex 0)
           const [totalDocs] = await db
             .select({ count: count() })
             .from(additionalDocumentFiles)
-            .where(eq(additionalDocumentFiles.documentId, documentId));
+            .where(
+              and(
+                eq(additionalDocumentFiles.documentId, documentId),
+                gt(additionalDocumentFiles.itemIndex, 0)
+              )
+            );
 
           const [verifiedDocs] = await db
             .select({ count: count() })
@@ -363,7 +373,8 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
             .where(
               and(
                 eq(additionalDocumentFiles.documentId, documentId),
-                eq(additionalDocumentFiles.isVerified, true)
+                eq(additionalDocumentFiles.isVerified, true),
+                gt(additionalDocumentFiles.itemIndex, 0)
               )
             );
 
