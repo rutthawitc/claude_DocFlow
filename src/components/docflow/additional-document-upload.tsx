@@ -123,7 +123,11 @@ export function AdditionalDocumentUpload({
         if (response.ok && result.success) {
           const filesMap: Record<number, AdditionalFile> = {};
           result.data.forEach((file: AdditionalFile) => {
-            filesMap[file.itemIndex] = file;
+            // Skip emendation documents (itemIndex 0) - only include additional documents (itemIndex > 0)
+            if (file.itemIndex > 0) {
+              // Map to display index (subtract 1 since additional docs start from itemIndex 1)
+              filesMap[file.itemIndex - 1] = file;
+            }
           });
           setExistingFiles(filesMap);
         }
@@ -159,7 +163,8 @@ export function AdditionalDocumentUpload({
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('itemIndex', itemIndex.toString());
+      // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
+      formData.append('itemIndex', (itemIndex + 1).toString());
       formData.append('itemName', itemName);
 
       const response = await fetch(`/api/documents/${documentId}/additional-files`, {
@@ -266,14 +271,16 @@ export function AdditionalDocumentUpload({
 
   // Handle PDF view
   const handlePdfView = (itemIndex: number, itemName: string, filename: string) => {
-    setSelectedPdfFile({ itemIndex, itemName, filename });
+    // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
+    setSelectedPdfFile({ itemIndex: itemIndex + 1, itemName, filename });
     setPdfModalOpen(true);
   };
 
   // Handle verification status change
   const handleVerificationChange = async (itemIndex: number, isVerified: boolean, comment?: string) => {
     try {
-      const body: any = { itemIndex, isVerified };
+      // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
+      const body: any = { itemIndex: itemIndex + 1, isVerified };
       if (comment && !isVerified) {
         body.comment = comment;
       }

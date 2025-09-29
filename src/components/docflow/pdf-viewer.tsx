@@ -12,7 +12,7 @@ const PDFViewerClient = dynamic(
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            เอกสาร PDF
+            บันทึกต้นฉบับ
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">

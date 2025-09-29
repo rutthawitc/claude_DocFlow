@@ -183,8 +183,10 @@ function VerificationStatus({
             let notUploaded = 0;
 
             // Count verification status for each additional document
+            // Note: itemIndex 0 is reserved for emendation documents, additional docs start from index 1
             filteredDocs.forEach((_, index) => {
-              const file = files.find((f) => f.itemIndex === index);
+              const actualIndex = index + 1; // Additional docs start from index 1
+              const file = files.find((f) => f.itemIndex === actualIndex);
               if (file) {
                 if (file.isVerified === true) {
                   verified++;
@@ -667,7 +669,8 @@ export function DocumentsList({
               let total = filteredDocs.length;
 
               filteredDocs.forEach((_, index) => {
-                const file = files.find((f) => f.itemIndex === index);
+                const actualIndex = index + 1; // Additional docs start from index 1 (0 is for emendation)
+                const file = files.find((f) => f.itemIndex === actualIndex);
                 if (file && file.isVerified === true) {
                   verified++;
                 }
@@ -676,8 +679,8 @@ export function DocumentsList({
               const allVerified =
                 total > 0 &&
                 verified === total &&
-                files.filter((f) => f.isVerified === false).length === 0 &&
-                files.filter((f) => f.isVerified === null).length === 0;
+                files.filter((f) => f.itemIndex > 0 && f.isVerified === false).length === 0 &&
+                files.filter((f) => f.itemIndex > 0 && f.isVerified === null).length === 0;
 
               setVerificationStatus({
                 verified,
