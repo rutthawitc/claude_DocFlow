@@ -131,6 +131,7 @@ CREATE TABLE IF NOT EXISTS additional_document_files (
     verified_by INTEGER REFERENCES users(id),
     verified_at TIMESTAMP,
     verification_comment TEXT,
+    correction_count INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -169,6 +170,20 @@ CREATE TABLE IF NOT EXISTS system_settings (
     updated_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Additional Document Correction Tracking table
+-- This table preserves correction counts across delete/re-upload cycles
+CREATE TABLE IF NOT EXISTS additional_document_correction_tracking (
+    id SERIAL PRIMARY KEY,
+    document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    item_index INTEGER NOT NULL,
+    item_name VARCHAR(255) NOT NULL,
+    correction_count INTEGER NOT NULL DEFAULT 0,
+    last_updated TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(document_id, item_index)
 );
 
 -- =====================================================
@@ -414,6 +429,14 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(setting_key);
 CREATE INDEX IF NOT EXISTS idx_system_settings_type ON system_settings(setting_type);
 
+-- Additional document correction tracking indexes
+CREATE INDEX IF NOT EXISTS idx_correction_tracking_document ON additional_document_correction_tracking(document_id, item_index);
+CREATE INDEX IF NOT EXISTS idx_correction_tracking_updated ON additional_document_correction_tracking(last_updated DESC);
+
+-- Additional document files indexes for correction count
+CREATE INDEX IF NOT EXISTS idx_additional_files_correction_count ON additional_document_files(document_id, correction_count);
+CREATE INDEX IF NOT EXISTS idx_additional_files_verification ON additional_document_files(document_id, is_verified);
+
 -- =====================================================
 -- 7. Insert Default System Settings
 -- =====================================================
@@ -470,6 +493,11 @@ ORDER BY r.name;
 \echo '  - /documents/branch/105903 (งานบัญชีเจ้าหนี้)';
 \echo '  - /documents/branch/105904 (งานการเงิน)';
 \echo '  - /documents/branch/105905 (งานบุคคล)';
+\echo '';
+\echo 'Recent Updates:';
+\echo '  - Added correction_count column to additional_document_files';
+\echo '  - Added additional_document_correction_tracking table for persistence';
+\echo '  - Added performance indexes for correction count features';
 \echo '';
 \echo 'DocFlow Database Initialization Complete!';
 \echo 'Ready to start the application with: pnpm dev';
