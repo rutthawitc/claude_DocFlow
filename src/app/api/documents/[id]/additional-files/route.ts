@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthHandler } from '@/lib/middleware/api-auth';
 import { getDb } from '@/db';
-import { additionalDocumentFiles, documents, branches, users } from '@/db/schema';
+import { additionalDocumentFiles, documents, branches, users, additionalDocumentCorrectionTracking } from '@/db/schema';
 import { eq, and, count, isNull, isNotNull, gt } from 'drizzle-orm';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
@@ -154,7 +154,21 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
             })
             .where(eq(additionalDocumentFiles.id, existingFile[0].id));
         } else {
-          // Insert new file record
+          // Check if there's a preserved correction count for this document item
+          const [trackingRecord] = await db
+            .select()
+            .from(additionalDocumentCorrectionTracking)
+            .where(
+              and(
+                eq(additionalDocumentCorrectionTracking.documentId, documentId),
+                eq(additionalDocumentCorrectionTracking.itemIndex, itemIndex)
+              )
+            )
+            .limit(1);
+
+          const preservedCorrectionCount = trackingRecord?.correctionCount || 0;
+
+          // Insert new file record with restored correction count
           await db.insert(additionalDocumentFiles).values({
             documentId,
             itemIndex,
@@ -162,8 +176,20 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
             filePath: relativeFilePath,
             originalFilename: file.name,
             fileSize: file.size,
-            uploaderId: user.databaseId
+            uploaderId: user.databaseId,
+            correctionCount: preservedCorrectionCount, // Restore preserved correction count
           });
+
+          // Update tracking table to mark as restored (optional cleanup)
+          if (trackingRecord) {
+            await db
+              .update(additionalDocumentCorrectionTracking)
+              .set({
+                lastUpdated: new Date(),
+                updatedAt: new Date(),
+              })
+              .where(eq(additionalDocumentCorrectionTracking.id, trackingRecord.id));
+          }
         }
 
         // Check if all additional documents are now uploaded (completed)
@@ -260,6 +286,44 @@ export async function DELETE(request: NextRequest, { params: paramsPromise }: Ro
         }
 
         const db = await getDb();
+
+        // Get current file info before deletion to preserve correction count
+        const [currentFile] = await db
+          .select()
+          .from(additionalDocumentFiles)
+          .where(
+            and(
+              eq(additionalDocumentFiles.documentId, documentId),
+              eq(additionalDocumentFiles.itemIndex, itemIndex)
+            )
+          )
+          .limit(1);
+
+        if (!currentFile) {
+          return NextResponse.json(
+            { success: false, error: 'File not found' },
+            { status: 404 }
+          );
+        }
+
+        // Preserve correction count in tracking table before deleting
+        await db
+          .insert(additionalDocumentCorrectionTracking)
+          .values({
+            documentId: documentId,
+            itemIndex: itemIndex,
+            itemName: currentFile.itemName,
+            correctionCount: currentFile.correctionCount || 0,
+            lastUpdated: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: [additionalDocumentCorrectionTracking.documentId, additionalDocumentCorrectionTracking.itemIndex],
+            set: {
+              correctionCount: currentFile.correctionCount || 0,
+              lastUpdated: new Date(),
+              updatedAt: new Date(),
+            },
+          });
 
         // Delete file record
         await db

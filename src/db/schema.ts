@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, varchar, integer, primaryKey, boolean, bigint, date, jsonb, inet } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, varchar, integer, primaryKey, boolean, bigint, date, jsonb, inet, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Users table
@@ -327,5 +327,30 @@ export const systemSettingsRelations = relations(systemSettings, ({ one }) => ({
   updatedByUser: one(users, {
     fields: [systemSettings.updatedBy],
     references: [users.id],
+  }),
+}));
+
+// Additional Document Correction Tracking Table
+// This table preserves correction counts across delete/re-upload cycles
+export const additionalDocumentCorrectionTracking = pgTable('additional_document_correction_tracking', {
+  id: serial('id').primaryKey(),
+  documentId: integer('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  itemIndex: integer('item_index').notNull(), // 0-based index for additional documents
+  itemName: varchar('item_name', { length: 255 }).notNull(), // e.g., "Docs#1", "Docs#2"
+  correctionCount: integer('correction_count').notNull().default(0), // Persistent correction counter
+  lastUpdated: timestamp('last_updated').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => {
+  return {
+    // Unique constraint: one tracking record per document+itemIndex
+    uniqueDocumentItem: unique().on(table.documentId, table.itemIndex),
+  };
+});
+
+export const additionalDocumentCorrectionTrackingRelations = relations(additionalDocumentCorrectionTracking, ({ one }) => ({
+  document: one(documents, {
+    fields: [additionalDocumentCorrectionTracking.documentId],
+    references: [documents.id],
   }),
 }));

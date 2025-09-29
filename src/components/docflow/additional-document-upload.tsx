@@ -180,8 +180,8 @@ export function AdditionalDocumentUpload({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
-      formData.append("itemIndex", (itemIndex + 1).toString());
+      // Use itemIndex directly (0-based indexing for additional docs)
+      formData.append("itemIndex", itemIndex.toString());
       formData.append("itemName", itemName);
 
       const response = await fetch(
@@ -237,10 +237,9 @@ export function AdditionalDocumentUpload({
   // Handle file download
   const handleFileDownload = async (itemIndex: number, filename: string) => {
     try {
-      // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
-      const actualItemIndex = itemIndex + 1;
+      // Use itemIndex directly (0-based indexing for additional docs)
       const response = await fetch(
-        `/api/documents/${documentId}/additional-files/${actualItemIndex}/download`,
+        `/api/documents/${documentId}/additional-files/${itemIndex}/download`,
         {
           credentials: "include",
         },
@@ -269,10 +268,9 @@ export function AdditionalDocumentUpload({
   // Handle file delete
   const handleFileDelete = async (itemIndex: number) => {
     try {
-      // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
-      const actualItemIndex = itemIndex + 1;
+      // Use itemIndex directly (0-based indexing for additional docs)
       const response = await fetch(
-        `/api/documents/${documentId}/additional-files?itemIndex=${actualItemIndex}`,
+        `/api/documents/${documentId}/additional-files?itemIndex=${itemIndex}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -309,8 +307,8 @@ export function AdditionalDocumentUpload({
     itemName: string,
     filename: string,
   ) => {
-    // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
-    setSelectedPdfFile({ itemIndex: itemIndex + 1, itemName, filename });
+    // Use itemIndex directly (0-based indexing for additional docs)
+    setSelectedPdfFile({ itemIndex, itemName, filename });
     setPdfModalOpen(true);
   };
 
