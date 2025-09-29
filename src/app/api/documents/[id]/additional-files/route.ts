@@ -324,7 +324,26 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
 
         const db = await getDb();
 
-        // Update verification status
+        // Get current file status to check if we need to increment correction counter
+        const [currentFile] = await db
+          .select()
+          .from(additionalDocumentFiles)
+          .where(
+            and(
+              eq(additionalDocumentFiles.documentId, documentId),
+              eq(additionalDocumentFiles.itemIndex, itemIndex)
+            )
+          )
+          .limit(1);
+
+        if (!currentFile) {
+          return NextResponse.json(
+            { success: false, error: 'File not found' },
+            { status: 404 }
+          );
+        }
+
+        // Prepare update data
         const updateData = isVerified ? {
           isVerified: true,
           verifiedBy: user.databaseId,
@@ -336,6 +355,8 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
           verifiedBy: user.databaseId,
           verifiedAt: new Date(),
           verificationComment: comment || null, // Store comment when marking as incorrect
+          // Increment correction counter only when transitioning to incorrect status
+          correctionCount: currentFile.isVerified !== false ? (currentFile.correctionCount || 0) + 1 : (currentFile.correctionCount || 0),
           updatedAt: new Date()
         };
 
