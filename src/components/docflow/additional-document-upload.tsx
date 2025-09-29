@@ -184,11 +184,16 @@ export function AdditionalDocumentUpload({
           credentials: 'include'
         });
         const filesResult = await filesResponse.json();
-        
+
         if (filesResponse.ok && filesResult.success) {
           const filesMap: Record<number, AdditionalFile> = {};
           filesResult.data.forEach((file: AdditionalFile) => {
-            filesMap[file.itemIndex] = file;
+            // Skip emendation documents (itemIndex 0) - only include additional documents (itemIndex > 0)
+            if (file.itemIndex > 0) {
+              // Map to display index (subtract 1 since additional docs start from itemIndex 1)
+              const displayIndex = file.itemIndex - 1;
+              filesMap[displayIndex] = file;
+            }
           });
           setExistingFiles(filesMap);
         }
@@ -309,11 +314,16 @@ export function AdditionalDocumentUpload({
           credentials: 'include'
         });
         const filesResult = await filesResponse.json();
-        
+
         if (filesResponse.ok && filesResult.success) {
           const filesMap: Record<number, AdditionalFile> = {};
           filesResult.data.forEach((file: AdditionalFile) => {
-            filesMap[file.itemIndex] = file;
+            // Skip emendation documents (itemIndex 0) - only include additional documents (itemIndex > 0)
+            if (file.itemIndex > 0) {
+              // Map to display index (subtract 1 since additional docs start from itemIndex 1)
+              const displayIndex = file.itemIndex - 1;
+              filesMap[displayIndex] = file;
+            }
           });
           setExistingFiles(filesMap);
         }
