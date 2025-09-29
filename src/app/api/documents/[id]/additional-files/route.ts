@@ -174,16 +174,11 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
           const requiredDocsCount = doc.additionalDocsCount || 0;
           
           if (requiredDocsCount > 0) {
-            // Count uploaded additional documents (exclude emendation documents with itemIndex 0)
+            // Count uploaded additional documents (all documents now start from itemIndex 0)
             const [uploadedCount] = await db
               .select({ count: count() })
               .from(additionalDocumentFiles)
-              .where(
-                and(
-                  eq(additionalDocumentFiles.documentId, documentId),
-                  gt(additionalDocumentFiles.itemIndex, 0)
-                )
-              );
+              .where(eq(additionalDocumentFiles.documentId, documentId));
 
             // If all additional documents are now uploaded, notify admins
             if (uploadedCount.count >= requiredDocsCount) {
@@ -356,16 +351,11 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
 
         // Send admin notification for document verification completion
         try {
-          // Check if all additional documents are now verified (exclude emendation documents with itemIndex 0)
+          // Check if all additional documents are now verified (all documents now start from itemIndex 0)
           const [totalDocs] = await db
             .select({ count: count() })
             .from(additionalDocumentFiles)
-            .where(
-              and(
-                eq(additionalDocumentFiles.documentId, documentId),
-                gt(additionalDocumentFiles.itemIndex, 0)
-              )
-            );
+            .where(eq(additionalDocumentFiles.documentId, documentId));
 
           const [verifiedDocs] = await db
             .select({ count: count() })
@@ -373,8 +363,7 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
             .where(
               and(
                 eq(additionalDocumentFiles.documentId, documentId),
-                eq(additionalDocumentFiles.isVerified, true),
-                gt(additionalDocumentFiles.itemIndex, 0)
+                eq(additionalDocumentFiles.isVerified, true)
               )
             );
 

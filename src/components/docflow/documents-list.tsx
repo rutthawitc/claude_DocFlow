@@ -669,8 +669,8 @@ export function DocumentsList({
               let total = filteredDocs.length;
 
               filteredDocs.forEach((_, index) => {
-                const actualIndex = index + 1; // Additional docs start from index 1 (0 is for emendation)
-                const file = files.find((f) => f.itemIndex === actualIndex);
+                // Additional docs now use 0-based indexing directly
+                const file = files.find((f) => f.itemIndex === index);
                 if (file && file.isVerified === true) {
                   verified++;
                 }
@@ -679,8 +679,8 @@ export function DocumentsList({
               const allVerified =
                 total > 0 &&
                 verified === total &&
-                files.filter((f) => f.itemIndex > 0 && f.isVerified === false).length === 0 &&
-                files.filter((f) => f.itemIndex > 0 && f.isVerified === null).length === 0;
+                files.filter((f) => f.isVerified === false).length === 0 &&
+                files.filter((f) => f.isVerified === null).length === 0;
 
               setVerificationStatus({
                 verified,

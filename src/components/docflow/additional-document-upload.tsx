@@ -123,12 +123,8 @@ export function AdditionalDocumentUpload({
         if (response.ok && result.success) {
           const filesMap: Record<number, AdditionalFile> = {};
           result.data.forEach((file: AdditionalFile) => {
-            // Skip emendation documents (itemIndex 0) - only include additional documents (itemIndex > 0)
-            if (file.itemIndex > 0) {
-              // Map to display index (subtract 1 since additional docs start from itemIndex 1)
-              const displayIndex = file.itemIndex - 1;
-              filesMap[displayIndex] = file;
-            }
+            // All additional documents now use 0-based indexing directly
+            filesMap[file.itemIndex] = file;
           });
           setExistingFiles(filesMap);
         }
@@ -188,12 +184,8 @@ export function AdditionalDocumentUpload({
         if (filesResponse.ok && filesResult.success) {
           const filesMap: Record<number, AdditionalFile> = {};
           filesResult.data.forEach((file: AdditionalFile) => {
-            // Skip emendation documents (itemIndex 0) - only include additional documents (itemIndex > 0)
-            if (file.itemIndex > 0) {
-              // Map to display index (subtract 1 since additional docs start from itemIndex 1)
-              const displayIndex = file.itemIndex - 1;
-              filesMap[displayIndex] = file;
-            }
+            // All additional documents now use 0-based indexing directly
+            filesMap[file.itemIndex] = file;
           });
           setExistingFiles(filesMap);
         }
@@ -289,8 +281,8 @@ export function AdditionalDocumentUpload({
   // Handle verification status change
   const handleVerificationChange = async (itemIndex: number, isVerified: boolean, comment?: string) => {
     try {
-      // Add 1 to itemIndex since additional docs start from index 1 (0 is reserved for emendation)
-      const body: any = { itemIndex: itemIndex + 1, isVerified };
+      // Use itemIndex directly (0-based indexing)
+      const body: any = { itemIndex, isVerified };
       if (comment && !isVerified) {
         body.comment = comment;
       }
@@ -318,12 +310,8 @@ export function AdditionalDocumentUpload({
         if (filesResponse.ok && filesResult.success) {
           const filesMap: Record<number, AdditionalFile> = {};
           filesResult.data.forEach((file: AdditionalFile) => {
-            // Skip emendation documents (itemIndex 0) - only include additional documents (itemIndex > 0)
-            if (file.itemIndex > 0) {
-              // Map to display index (subtract 1 since additional docs start from itemIndex 1)
-              const displayIndex = file.itemIndex - 1;
-              filesMap[displayIndex] = file;
-            }
+            // All additional documents now use 0-based indexing directly
+            filesMap[file.itemIndex] = file;
           });
           setExistingFiles(filesMap);
         }
