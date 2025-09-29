@@ -183,9 +183,9 @@ function VerificationStatus({
             let notUploaded = 0;
 
             // Count verification status for each additional document
-            // Note: itemIndex 0 is reserved for emendation documents, additional docs start from index 1
+            // Note: Additional docs now use 0-based indexing directly
             filteredDocs.forEach((_, index) => {
-              const actualIndex = index + 1; // Additional docs start from index 1
+              const actualIndex = index; // Use 0-based indexing for additional docs
               const file = files.find((f) => f.itemIndex === actualIndex);
               if (file) {
                 if (file.isVerified === true) {
