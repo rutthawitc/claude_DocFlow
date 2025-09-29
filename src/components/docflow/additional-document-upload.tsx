@@ -12,9 +12,9 @@ import {
   AlertCircle,
   Eye,
   Check,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,8 +34,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AdditionalDocumentPDFModal } from "./additional-document-pdf-modal";
 
@@ -453,71 +451,52 @@ export function AdditionalDocumentUpload({
             </div>
           )}
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {filteredDocs.map((doc, index) => {
               const existingFile = existingFiles[index];
               const isUploading = uploadingItems.has(index);
+              const verificationState = existingFile?.isVerified;
+              const isPendingVerification =
+                verificationState === null || verificationState === undefined;
 
               return (
-                <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-700">
+                <div
+                  key={index}
+                  className="rounded-2xl border border-gray-200 bg-white shadow-sm"
+                >
+                  <div className="space-y-6 p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-base font-semibold text-blue-700">
                           {index + 1}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 mb-2">
-                          {doc}
-                          {existingFile && existingFile.correctionCount > 0 && (
-                            <span className="ml-2 inline-flex items-center px-1 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
-                              แก้ไขครั้งที่ {existingFile.correctionCount}
-                            </span>
-                          )}
-                        </p>
-
-                        {existingFile ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                              <span className="text-xs text-green-700">
-                                มีไฟล์แล้ว
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {formatFileSize(existingFile.fileSize)}
-                              </Badge>
-                              {existingFile.isVerified && (
-                                <div className="flex items-center gap-1">
-                                  <Check className="h-3 w-3 text-green-600" />
-                                  <span className="text-xs text-green-600">
-                                    เอกสารถูกต้อง
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-600">
-                              {existingFile.originalFilename}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <p className="text-lg font-semibold text-gray-900">
+                              {doc}
                             </p>
+                            {existingFile &&
+                              existingFile.correctionCount > 0 && (
+                                <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+                                  แก้ไขครั้งที่ {existingFile.correctionCount}
+                                </span>
+                              )}
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4 text-orange-500" />
-                            <span className="text-sm text-orange-700">
-                              ยังไม่มีไฟล์
-                            </span>
-                          </div>
-                        )}
+                          <p className="text-sm text-gray-500">
+                            {existingFile
+                              ? existingFile.originalFilename
+                              : "ยังไม่มีไฟล์ที่อัปโหลด"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {existingFile && (
                           <>
                             <Button
                               variant="outline"
                               size="sm"
+                              className="h-9 rounded-full border-gray-200 px-3 text-sm font-medium"
                               onClick={() =>
                                 handlePdfView(
                                   index,
@@ -525,37 +504,34 @@ export function AdditionalDocumentUpload({
                                   existingFile.originalFilename,
                                 )
                               }
-                              className="h-8"
                             >
-                              <Eye className="h-3 w-3 mr-1" />
+                              <Eye className="mr-2 h-4 w-4" />
                               ดูเอกสาร
                             </Button>
-
                             <Button
                               variant="outline"
                               size="sm"
+                              className="h-9 rounded-full border-gray-200 px-3 text-sm font-medium"
                               onClick={() =>
                                 handleFileDownload(
                                   index,
                                   existingFile.originalFilename,
                                 )
                               }
-                              className="h-8"
                             >
-                              <Download className="h-3 w-3 mr-1" />
+                              <Download className="mr-2 h-4 w-4" />
                               ดาวน์โหลด
                             </Button>
-
                             {canUploadBasedOnStatus &&
-                              existingFile.isVerified !== true && (
+                              verificationState !== true && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="h-8 text-red-600 hover:text-red-700"
+                                      className="h-9 rounded-full border-red-200 px-3 text-sm font-medium text-red-600 hover:text-red-700"
                                     >
-                                      <Trash2 className="h-3 w-3" />
+                                      <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
@@ -587,184 +563,187 @@ export function AdditionalDocumentUpload({
                         )}
 
                         {canUpload &&
-                          (!existingFile || !existingFile.isVerified) && (
-                            <div className="relative">
+                          (verificationState !== true || !existingFile) && (
+                            <div>
                               <Button
                                 variant={existingFile ? "outline" : "default"}
                                 size="sm"
+                                className="h-9 rounded-full px-4 text-sm font-medium"
                                 disabled={
                                   isUploading ||
-                                  existingFile?.isVerified === true ||
-                                  existingFile?.isVerified === false ||
-                                  !isDocumentAcknowledged
+                                  !isDocumentAcknowledged ||
+                                  isDocumentCompleted
                                 }
-                                className="h-8"
                                 onClick={() => {
-                                  if (!isDocumentAcknowledged) {
+                                  if (
+                                    !isDocumentAcknowledged ||
+                                    isDocumentCompleted
+                                  ) {
                                     return;
                                   }
                                   const input = document.getElementById(
                                     `file-input-${index}`,
-                                  ) as HTMLInputElement;
+                                  ) as HTMLInputElement | null;
                                   input?.click();
                                 }}
                               >
                                 {isUploading ? (
                                   <>
-                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     กำลังอัปโหลด...
                                   </>
                                 ) : (
                                   <>
-                                    <Upload className="h-3 w-3 mr-1" />
-                                    {existingFile ? "เปลี่ยนไฟล์" : "อัปโหลด"}
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    {existingFile
+                                      ? "เปลี่ยนไฟล์"
+                                      : "อัปโหลดไฟล์"}
                                   </>
                                 )}
                               </Button>
-
                               <input
                                 id={`file-input-${index}`}
                                 type="file"
-                                accept=".pdf"
+                                accept="application/pdf"
                                 className="hidden"
-                                disabled={!isDocumentAcknowledged}
-                                onChange={(e) => {
-                                  if (!isDocumentAcknowledged) {
-                                    return;
-                                  }
-                                  const file = e.target.files?.[0];
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0];
                                   if (file) {
                                     handleFileUpload(file, index, doc);
                                   }
-                                  e.target.value = "";
+                                  event.target.value = "";
                                 }}
                               />
                             </div>
                           )}
                       </div>
+                    </div>
 
-                      {existingFile && (canVerify || !canVerify) && (
-                        <div className="bg-blue-50 px-3 py-3 rounded-md">
-                          {canVerify ? (
-                            // Admin/District Manager/Uploader - can change verification status
-                            <div className="space-y-2">
-                              <div className="text-xs font-medium text-blue-700 mb-2">
-                                สถานะการตรวจสอบ:
-                              </div>
-                              <RadioGroup
-                                value={
-                                  existingFile.isVerified === true
-                                    ? "correct"
-                                    : existingFile.isVerified === false
-                                      ? "incorrect"
-                                      : ""
-                                }
-                                onValueChange={(value) => {
-                                  console.log(
-                                    `Radio changed for index ${index}:`,
-                                    value,
-                                  );
-                                  if (value === "correct") {
-                                    handleVerificationChange(index, true);
-                                  } else if (value === "incorrect") {
-                                    // Open comment dialog for incorrect verification
-                                    handleIncorrectVerification(index, doc);
+                    {existingFile ? (
+                      <div className="flex flex-wrap items-center gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="font-medium">มีไฟล์แล้ว</span>
+                        <div className="h-4 w-px bg-emerald-200" />
+                        <div className="flex items-center gap-2 text-emerald-700">
+                          <FileText className="h-4 w-4" />
+                          {formatFileSize(existingFile.fileSize)}
+                        </div>
+                        {verificationState === true && (
+                          <span className="ml-auto inline-flex items-center gap-2 rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white">
+                            <Check className="h-4 w-4" /> เอกสารถูกต้อง
+                          </span>
+                        )}
+                        {verificationState === false && (
+                          <span className="ml-auto inline-flex items-center gap-2 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white">
+                            <AlertCircle className="h-4 w-4" /> เอกสารไม่ถูกต้อง
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500">
+                        <div className="flex items-center gap-2 font-medium">
+                          <AlertCircle className="h-4 w-4 text-orange-500" />
+                          ยังไม่มีไฟล์แนบ
+                        </div>
+                        {canUpload &&
+                          isDocumentAcknowledged &&
+                          !isDocumentCompleted && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const input = document.getElementById(
+                                  `file-input-${index}`,
+                                ) as HTMLInputElement | null;
+                                input?.click();
+                              }}
+                              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                            >
+                              อัปโหลดไฟล์
+                            </button>
+                          )}
+                      </div>
+                    )}
+
+                    <div className="space-y-3 border-t border-gray-100 pt-4">
+                      <p className="text-sm font-semibold text-gray-700">
+                        สถานะการตรวจสอบ:
+                      </p>
+
+                      {canVerify ? (
+                        <div className="flex flex-wrap gap-3">
+                          {(() => {
+                            const correctDisabled =
+                              !existingFile || verificationState === true;
+                            const incorrectDisabled =
+                              !existingFile || verificationState === false;
+                            return (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={
+                                    verificationState === true
+                                      ? "h-10 rounded-sm border-emerald-500 bg-emerald-500 px-6 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-60 disabled:pointer-events-none"
+                                      : "h-10 rounded-sm border-emerald-200 bg-white px-6 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-60 disabled:pointer-events-none"
                                   }
-                                }}
-                                className="flex space-x-6"
-                              >
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem
-                                    value="incorrect"
-                                    id={`incorrect-${index}`}
-                                  />
-                                  <Label
-                                    htmlFor={`incorrect-${index}`}
-                                    className="text-sm font-medium text-red-700 cursor-pointer"
-                                  >
-                                    เอกสารไม่ถูกต้อง
-                                  </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem
-                                    value="correct"
-                                    id={`correct-${index}`}
-                                  />
-                                  <Label
-                                    htmlFor={`correct-${index}`}
-                                    className="text-sm font-medium text-green-700 cursor-pointer"
-                                  >
-                                    เอกสารถูกต้อง
-                                  </Label>
-                                </div>
-                              </RadioGroup>
-                              {existingFile.isVerified === false &&
-                                existingFile.verificationComment && (
-                                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
-                                    <div className="font-medium text-red-700 mb-1">
-                                      ความคิดเห็น:
-                                    </div>
-                                    <div className="text-red-600 break-words">
-                                      {existingFile.verificationComment}
-                                    </div>
-                                  </div>
-                                )}
-                            </div>
-                          ) : (
-                            // Branch users - read-only status display
-                            <div className="space-y-1">
-                              <div className="text-xs font-medium text-blue-700">
-                                สถานะการตรวจสอบ:
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                {existingFile.isVerified === true ? (
-                                  <>
-                                    <Check className="h-4 w-4 text-green-600" />
-                                    <span className="text-sm font-medium text-green-700">
-                                      เอกสารถูกต้อง
-                                    </span>
-                                  </>
-                                ) : existingFile.isVerified === false ? (
-                                  <>
-                                    <AlertCircle className="h-4 w-4 text-red-600" />
-                                    <span className="text-sm font-medium text-red-700">
-                                      เอกสารไม่ถูกต้อง
-                                    </span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <AlertCircle className="h-4 w-4 text-gray-500" />
-                                    <span className="text-sm font-medium text-gray-600">
-                                      ยังไม่ตรวจสอบ
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                              {existingFile.correctionCount > 0 && (
-                                <div className="mt-1">
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-amber-100 text-amber-800 text-xs"
-                                  >
-                                    แก้ไขครั้งที่ {existingFile.correctionCount}
-                                  </Badge>
-                                </div>
-                              )}
-                              {existingFile.isVerified === false &&
-                                existingFile.verificationComment && (
-                                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
-                                    <div className="font-medium text-red-700 mb-1">
-                                      ความคิดเห็น:
-                                    </div>
-                                    <div className="text-red-600 break-words">
-                                      {existingFile.verificationComment}
-                                    </div>
-                                  </div>
-                                )}
-                            </div>
+                                  onClick={() =>
+                                    handleVerificationChange(index, true)
+                                  }
+                                  disabled={correctDisabled}
+                                >
+                                  <Check className="mr-2 h-4 w-4" />
+                                  เอกสารถูกต้อง
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={
+                                    verificationState === false
+                                      ? "h-10 rounded-sm border-red-500 bg-red-500 px-6 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60 disabled:pointer-events-none"
+                                      : "h-10 rounded-sm border-red-200 bg-white px-6 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 disabled:pointer-events-none"
+                                  }
+                                  onClick={() =>
+                                    handleIncorrectVerification(index, doc)
+                                  }
+                                  disabled={incorrectDisabled}
+                                >
+                                  <AlertCircle className="mr-2 h-4 w-4" />
+                                  เอกสารไม่ถูกต้อง
+                                </Button>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          {verificationState === true && (
+                            <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white">
+                              <Check className="h-4 w-4" /> เอกสารถูกต้อง
+                            </span>
+                          )}
+                          {verificationState === false && (
+                            <span className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white">
+                              <AlertCircle className="h-4 w-4" />{" "}
+                              เอกสารไม่ถูกต้อง
+                            </span>
+                          )}
+                          {isPendingVerification && (
+                            <span className="inline-flex items-center gap-2 rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700">
+                              <AlertCircle className="h-4 w-4" /> ยังไม่ตรวจสอบ
+                            </span>
                           )}
                         </div>
                       )}
+
+                      {existingFile?.isVerified === false &&
+                        existingFile.verificationComment && (
+                          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                            <p className="font-semibold">ความคิดเห็น:</p>
+                            <p className="whitespace-pre-line text-red-600">
+                              {existingFile.verificationComment}
+                            </p>
+                          </div>
+                        )}
                     </div>
                   </div>
                 </div>
