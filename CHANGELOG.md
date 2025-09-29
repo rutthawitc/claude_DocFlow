@@ -118,4 +118,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-*Last updated: September 17, 2025*
+## [v1.0.2] - 2025-09-29
+
+### 🐛 Critical Bug Fixes
+- **Correction Count Persistence**: Added tracking mechanism to preserve document correction counts across delete/re-upload cycles
+- **Additional Document Indexing**: Fixed frontend/database indexing mismatch preventing file display
+- **Document List Verification**: Corrected verification status display logic
+
+### ⚡ Improvements
+- **Database Tracking**: Added `additional_document_correction_tracking` table for robust correction count management
+- **Consistent Indexing**: Normalized document indexing to 0-based system across all components
+- **Enhanced Data Integrity**: Improved document state tracking and restoration mechanisms
+
+### 💥 Impact
+- ✅ **Persistent Correction Tracking** - Document correction history maintained across operations
+- ✅ **Accurate Document Indexing** - Resolved display and tracking inconsistencies
+- ✅ **Improved User Experience** - More reliable document management workflow
+
+### 🔧 Technical Details
+- Added: `additional_document_correction_tracking` database table
+- Fixed: Indexing logic in upload, document list, and API endpoints
+- Improved: Document status tracking and restoration processes
+
+---
+
+*Last updated: September 29, 2025*
