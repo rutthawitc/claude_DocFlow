@@ -53,6 +53,11 @@ export const documentUploadSchema = z.object({
     .optional()
     .default([]),
 
+  additionalDocsDueDates: z.array(z.string().trim())
+    .max(10, 'Cannot have more than 10 due dates')
+    .optional()
+    .default([]),
+
   sendBackOriginalDocument: z.union([z.boolean(), z.string()])
     .transform((val) => {
       if (typeof val === 'string') {
@@ -153,6 +158,10 @@ export const documentUpdateSchema = z.object({
 
   additionalDocs: z.array(z.string().trim())
     .max(10, 'Cannot have more than 10 additional documents')
+    .optional(),
+
+  additionalDocsDueDates: z.array(z.string().trim())
+    .max(10, 'Cannot have more than 10 due dates')
     .optional(),
 
   sendBackOriginalDocument: z.boolean()

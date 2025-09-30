@@ -152,10 +152,24 @@ export function validateFormData<T>(
       console.warn('Failed to parse additionalDocs as JSON:', data.additionalDocs);
     }
   }
-  
+
+  // Parse additionalDocsDueDates from JSON string to array
+  if (data.additionalDocsDueDates && typeof data.additionalDocsDueDates === 'string') {
+    try {
+      data.additionalDocsDueDates = JSON.parse(data.additionalDocsDueDates);
+    } catch (e) {
+      // If JSON parsing fails, leave as string and let Zod validation handle the error
+      console.warn('Failed to parse additionalDocsDueDates as JSON:', data.additionalDocsDueDates);
+    }
+  }
+
   // Convert string booleans to actual booleans
   if (data.hasAdditionalDocs && typeof data.hasAdditionalDocs === 'string') {
     data.hasAdditionalDocs = data.hasAdditionalDocs === 'true';
+  }
+
+  if (data.sendBackOriginalDocument && typeof data.sendBackOriginalDocument === 'string') {
+    data.sendBackOriginalDocument = data.sendBackOriginalDocument === 'true';
   }
   
   try {

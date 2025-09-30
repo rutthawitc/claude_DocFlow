@@ -95,6 +95,7 @@ export async function handleDocumentUpload(request: NextRequest): Promise<NextRe
       hasAdditionalDocs: validatedData.hasAdditionalDocs,
       additionalDocsCount: validatedData.additionalDocsCount,
       additionalDocs: validatedData.additionalDocs,
+      additionalDocsDueDates: validatedData.additionalDocsDueDates,
       sendBackOriginalDocument: validatedData.sendBackOriginalDocument,
       sendBackDate: validatedData.sendBackDate,
       deadlineDate: validatedData.deadlineDate

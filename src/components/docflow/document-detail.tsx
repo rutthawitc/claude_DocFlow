@@ -58,6 +58,7 @@ interface Document {
   hasAdditionalDocs?: boolean;
   additionalDocsCount?: number;
   additionalDocs?: string[];
+  additionalDocsDueDates?: string[];
   sendBackOriginalDocument?: boolean;
   sendBackDate?: string;
   deadlineDate?: string;
@@ -486,6 +487,7 @@ export function DocumentDetail({
                     (doc) => doc && doc.trim() !== "",
                   ) || []
                 }
+                additionalDocsDueDates={document.additionalDocsDueDates || []}
                 userRoles={userRoles}
                 documentStatus={document.status}
                 onFileUploaded={() => {

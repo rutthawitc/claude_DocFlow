@@ -51,6 +51,7 @@ import {
 import {
   getDefaultReturnDates,
   isSecondDateAfterFirst,
+  getDefaultAdditionalDocDueDate,
 } from "@/lib/utils/business-days";
 
 interface Branch {
@@ -91,6 +92,7 @@ interface FormData {
   hasAdditionalDocs: boolean;
   additionalDocsCount: number;
   additionalDocs: string[];
+  additionalDocsDueDates: string[]; // Due dates for each additional document
   sendBackOriginalDocument: boolean;
   sendBackDate: string;
   deadlineDate: string;
@@ -114,6 +116,7 @@ export function DocumentUpload({
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState<FormData>(() => {
     const defaultDates = getDefaultReturnDates();
+    const defaultDueDate = getDefaultAdditionalDocDueDate();
     return {
       branchBaCode: editDocument?.branchBaCode.toString() || "",
       mtNumber: editDocument?.mtNumber || "",
@@ -124,6 +127,7 @@ export function DocumentUpload({
       hasAdditionalDocs: editDocument?.hasAdditionalDocs || false,
       additionalDocsCount: editDocument?.additionalDocsCount || 1,
       additionalDocs: editDocument?.additionalDocs || [""],
+      additionalDocsDueDates: [defaultDueDate], // Initialize with default due date (5 business days)
       sendBackOriginalDocument: false,
       sendBackDate: defaultDates.sendBackDate,
       deadlineDate: defaultDates.deadlineDate,
@@ -137,6 +141,7 @@ export function DocumentUpload({
   useEffect(() => {
     if (editDocument) {
       const defaultDates = getDefaultReturnDates();
+      const defaultDueDate = getDefaultAdditionalDocDueDate();
       setIsEditMode(true);
       setFormData({
         branchBaCode: editDocument.branchBaCode.toString(),
@@ -148,6 +153,7 @@ export function DocumentUpload({
         hasAdditionalDocs: editDocument.hasAdditionalDocs || false,
         additionalDocsCount: editDocument.additionalDocsCount || 1,
         additionalDocs: editDocument.additionalDocs || [""],
+        additionalDocsDueDates: [defaultDueDate], // Initialize with default due date (5 business days)
         sendBackOriginalDocument:
           editDocument.sendBackOriginalDocument || false,
         sendBackDate: editDocument.sendBackDate || defaultDates.sendBackDate,
@@ -162,6 +168,7 @@ export function DocumentUpload({
       setIsEditMode(false);
       // Reset form data to defaults when not in edit mode
       const defaultDates = getDefaultReturnDates();
+      const defaultDueDate = getDefaultAdditionalDocDueDate();
       setFormData({
         branchBaCode: "",
         mtNumber: "",
@@ -172,6 +179,7 @@ export function DocumentUpload({
         hasAdditionalDocs: false,
         additionalDocsCount: 1,
         additionalDocs: [""],
+        additionalDocsDueDates: [defaultDueDate], // Initialize with default due date (5 business days)
         sendBackOriginalDocument: false,
         sendBackDate: defaultDates.sendBackDate,
         deadlineDate: defaultDates.deadlineDate,
@@ -379,27 +387,36 @@ export function DocumentUpload({
 
   // Handle additional documents checkbox
   const handleAdditionalDocsToggle = useCallback((checked: boolean) => {
+    const defaultDueDate = getDefaultAdditionalDocDueDate();
     setFormData((prev) => ({
       ...prev,
       hasAdditionalDocs: checked,
       additionalDocsCount: checked ? prev.additionalDocsCount || 1 : 1,
       additionalDocs: checked ? prev.additionalDocs || [""] : [""],
+      additionalDocsDueDates: checked ? prev.additionalDocsDueDates || [defaultDueDate] : [defaultDueDate],
     }));
   }, []);
 
   // Handle additional documents count change
   const handleAdditionalDocsCountChange = useCallback((count: number) => {
     const validCount = Math.max(1, Math.min(10, count));
+    const defaultDueDate = getDefaultAdditionalDocDueDate();
     setFormData((prev) => {
       const currentDocs = prev.additionalDocs || [];
+      const currentDueDates = prev.additionalDocsDueDates || [];
       const newDocs = Array.from(
         { length: validCount },
         (_, i) => currentDocs[i] || "",
+      );
+      const newDueDates = Array.from(
+        { length: validCount },
+        (_, i) => currentDueDates[i] || defaultDueDate, // Use default due date for new items
       );
       return {
         ...prev,
         additionalDocsCount: validCount,
         additionalDocs: newDocs,
+        additionalDocsDueDates: newDueDates,
       };
     });
   }, []);
@@ -411,6 +428,19 @@ export function DocumentUpload({
         ...prev,
         additionalDocs: (prev.additionalDocs || []).map((doc, i) =>
           i === index ? value : doc,
+        ),
+      }));
+    },
+    [],
+  );
+
+  // Handle individual additional document due date change
+  const handleAdditionalDocDueDateChange = useCallback(
+    (index: number, value: string) => {
+      setFormData((prev) => ({
+        ...prev,
+        additionalDocsDueDates: (prev.additionalDocsDueDates || []).map((date, i) =>
+          i === index ? value : date,
         ),
       }));
     },
@@ -573,6 +603,7 @@ export function DocumentUpload({
           hasAdditionalDocs: formData.hasAdditionalDocs || false,
           additionalDocsCount: formData.additionalDocsCount || 1,
           additionalDocs: formData.additionalDocs || [""],
+          additionalDocsDueDates: formData.additionalDocsDueDates || [""],
           sendBackOriginalDocument: formData.sendBackOriginalDocument || false,
           sendBackDate: formData.sendBackDate || "",
           deadlineDate: formData.deadlineDate || "",
@@ -600,6 +631,10 @@ export function DocumentUpload({
           uploadFormData.append(
             "additionalDocs",
             JSON.stringify(formData.additionalDocs || [""]),
+          );
+          uploadFormData.append(
+            "additionalDocsDueDates",
+            JSON.stringify(formData.additionalDocsDueDates || [""]),
           );
           uploadFormData.append(
             "sendBackOriginalDocument",
@@ -663,6 +698,10 @@ export function DocumentUpload({
         uploadFormData.append(
           "additionalDocs",
           JSON.stringify(formData.additionalDocs || [""]),
+        );
+        uploadFormData.append(
+          "additionalDocsDueDates",
+          JSON.stringify(formData.additionalDocsDueDates || [""]),
         );
         uploadFormData.append(
           "sendBackOriginalDocument",
@@ -1204,22 +1243,33 @@ export function DocumentUpload({
             </div>
 
             {formData.hasAdditionalDocs && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {(formData.additionalDocs || [])
                   .slice(0, formData.additionalDocsCount)
                   .map((doc, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-600 w-6">
-                        {index + 1}.
-                      </span>
-                      <Input
-                        value={doc || ""}
-                        onChange={(e) =>
-                          handleAdditionalDocChange(index, e.target.value)
-                        }
-                        placeholder={`เอกสารเพิ่มเติมที่ ${index + 1}`}
-                        className={`flex-1 ${fieldErrors.additionalDocs || (errors.additionalDocs && errors.additionalDocs[0]) ? "border-red-300" : ""}`}
-                      />
+                    <div key={index} className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-600 w-6">
+                          {index + 1}.
+                        </span>
+                        <Input
+                          value={doc || ""}
+                          onChange={(e) =>
+                            handleAdditionalDocChange(index, e.target.value)
+                          }
+                          placeholder={`เอกสารเพิ่มเติมที่ ${index + 1}`}
+                          className={`flex-1 ${fieldErrors.additionalDocs || (errors.additionalDocs && errors.additionalDocs[0]) ? "border-red-300" : ""}`}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 ml-8">
+                        <Label className="text-sm text-gray-600 min-w-[80px]">กำหนดส่ง:</Label>
+                        <ThaiDatePicker
+                          value={formData.additionalDocsDueDates[index] || ""}
+                          onChange={(value) => handleAdditionalDocDueDateChange(index, value)}
+                          placeholder="เลือกวันที่กำหนดส่ง"
+                          className="flex-1"
+                        />
+                      </div>
                     </div>
                   ))}
               </div>

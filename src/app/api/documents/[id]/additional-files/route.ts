@@ -168,7 +168,12 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
 
           const preservedCorrectionCount = trackingRecord?.correctionCount || 0;
 
-          // Insert new file record with restored correction count
+          // Get due date for this item from the document's additionalDocsDueDates array
+          const doc = document[0];
+          const dueDates = doc.additionalDocsDueDates || [];
+          const dueDate = dueDates[itemIndex] || null;
+
+          // Insert new file record with restored correction count and due date
           await db.insert(additionalDocumentFiles).values({
             documentId,
             itemIndex,
@@ -178,6 +183,7 @@ export async function POST(request: NextRequest, { params: paramsPromise }: Rout
             fileSize: file.size,
             uploaderId: user.databaseId,
             correctionCount: preservedCorrectionCount, // Restore preserved correction count
+            dueDate: dueDate, // Set due date from document
           });
 
           // Update tracking table to mark as restored (optional cleanup)

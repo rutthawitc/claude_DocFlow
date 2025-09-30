@@ -1,0 +1,54 @@
+name: Due Date Notifications
+
+# Run daily at 8:00 AM Thailand time (1:00 AM UTC)
+# Adjust the cron schedule as needed
+on:
+  schedule:
+    # Runs at 01:00 UTC (08:00 ICT/Thailand time)
+    - cron: '0 1 * * *'
+
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  send-notifications:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Due Date Notifications
+        run: |
+          echo "🕐 Triggering due date notifications..."
+
+          # Call the cron endpoint
+          response=$(curl -s -w "\n%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/due-date-notifications")
+
+          # Extract HTTP status code (last line)
+          http_code=$(echo "$response" | tail -n1)
+
+          # Extract response body (all but last line)
+          body=$(echo "$response" | sed '$d')
+
+          echo "📊 Response:"
+          echo "$body" | jq '.'
+
+          echo "🔢 HTTP Status: $http_code"
+
+          # Check if successful
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Notifications sent successfully"
+          else
+            echo "❌ Failed to send notifications"
+            exit 1
+          fi
+
+      - name: Notification Result
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ Workflow completed successfully"
+          else
+            echo "❌ Workflow failed"
+          fi

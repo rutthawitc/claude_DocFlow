@@ -119,6 +119,7 @@ export interface DocumentUploadData {
   hasAdditionalDocs?: boolean;
   additionalDocsCount?: number;
   additionalDocs?: string[];
+  additionalDocsDueDates?: string[];
   sendBackOriginalDocument?: boolean;
   sendBackDate?: string;
   deadlineDate?: string;

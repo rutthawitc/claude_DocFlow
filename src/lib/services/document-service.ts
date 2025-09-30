@@ -70,6 +70,7 @@ export class DocumentService {
         hasAdditionalDocs: metadata.hasAdditionalDocs || false,
         additionalDocsCount: metadata.additionalDocsCount || 0,
         additionalDocs: metadata.additionalDocs || [],
+        additionalDocsDueDates: metadata.additionalDocsDueDates || [],
         sendBackOriginalDocument: metadata.sendBackOriginalDocument || false,
         sendBackDate: metadata.sendBackDate || null,
         deadlineDate: metadata.deadlineDate || null,

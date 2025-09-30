@@ -105,6 +105,7 @@ export const documents = pgTable('documents', {
   hasAdditionalDocs: boolean('has_additional_docs').default(false),
   additionalDocsCount: integer('additional_docs_count').default(0),
   additionalDocs: text('additional_docs').array(),
+  additionalDocsDueDates: text('additional_docs_due_dates').array(), // Due dates for each additional document
   sendBackOriginalDocument: boolean('send_back_original_document').default(false),
   sendBackDate: date('send_back_date'),
   deadlineDate: date('deadline_date'),
@@ -138,6 +139,7 @@ export const additionalDocumentFiles = pgTable('additional_document_files', {
   verifiedAt: timestamp('verified_at'),
   verificationComment: text('verification_comment'), // Comment when marking as incorrect
   correctionCount: integer('correction_count').notNull().default(0), // Counter for how many times marked as incorrect
+  dueDate: date('due_date'), // Due date for uploading/correcting the document
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

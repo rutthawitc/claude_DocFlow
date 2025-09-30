@@ -107,7 +107,12 @@
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, document_id, item_index, item_name, original_filename, file_size, created_at FROM additional_document_files ORDER BY created_at DESC LIMIT 10;\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \"SELECT id, document_id, item_index, item_name, original_filename FROM additional_document_files WHERE document_id = 9 ORDER BY item_index;\")",
       "Bash(printf \"n\\n\")",
-      "Bash(PGPASSWORD=postgres psql:*)"
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(printf \"No, add the constraint without truncating the table\\n\")",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__list_console_messages",
+      "mcp__chrome-devtools__list_network_requests"
     ],
     "deny": []
   }

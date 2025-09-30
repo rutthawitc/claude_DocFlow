@@ -51,6 +51,7 @@ interface AdditionalFile {
   verifiedAt: string | null;
   verificationComment: string | null;
   correctionCount: number;
+  dueDate: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,6 +59,7 @@ interface AdditionalFile {
 interface AdditionalDocumentUploadProps {
   documentId: number;
   additionalDocs: string[];
+  additionalDocsDueDates?: string[];
   userRoles?: string[];
   documentStatus?: string;
   onFileUploaded?: () => void;
@@ -66,6 +68,7 @@ interface AdditionalDocumentUploadProps {
 export function AdditionalDocumentUpload({
   documentId,
   additionalDocs = [],
+  additionalDocsDueDates = [],
   userRoles = [],
   documentStatus = "",
   onFileUploaded,
@@ -406,6 +409,40 @@ export function AdditionalDocumentUpload({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  // Calculate days until due date and get status
+  const getDueDateStatus = (dueDate: string | null) => {
+    if (!dueDate) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 bg-red-50 border-red-200' };
+    } else if (diffDays === 0) {
+      return { status: 'today', days: 0, color: 'text-orange-600 bg-orange-50 border-orange-200' };
+    } else if (diffDays <= 3) {
+      return { status: 'soon', days: diffDays, color: 'text-yellow-600 bg-yellow-50 border-yellow-200' };
+    } else {
+      return { status: 'normal', days: diffDays, color: 'text-green-600 bg-green-50 border-green-200' };
+    }
+  };
+
+  // Format due date in Thai format
+  const formatDueDate = (dueDate: string | null) => {
+    if (!dueDate) return '';
+    const date = new Date(dueDate);
+    return date.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   if (loading) {
     return (
       <Card>
@@ -475,6 +512,27 @@ export function AdditionalDocumentUpload({
                             <p className="text-lg font-semibold text-gray-900">
                               {doc}
                             </p>
+                            {(() => {
+                              const dueDate = existingFile?.dueDate || additionalDocsDueDates[index];
+                              const dueDateStatus = getDueDateStatus(dueDate);
+                              if (!dueDateStatus) return null;
+
+                              const formattedDate = formatDueDate(dueDate);
+                              let timeRemaining = '';
+                              if (dueDateStatus.status === 'overdue') {
+                                timeRemaining = `เกินกำหนด ${dueDateStatus.days} วัน`;
+                              } else if (dueDateStatus.status === 'today') {
+                                timeRemaining = 'ครบกำหนดวันนี้';
+                              } else {
+                                timeRemaining = `เหลือระยะเวลา ${dueDateStatus.days} วัน`;
+                              }
+
+                              return (
+                                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${dueDateStatus.color}`}>
+                                  กำหนดส่ง: {formattedDate} / {timeRemaining}
+                                </span>
+                              );
+                            })()}
                             {existingFile &&
                               existingFile.correctionCount > 0 && (
                                 <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
@@ -572,12 +630,14 @@ export function AdditionalDocumentUpload({
                                 disabled={
                                   isUploading ||
                                   !isDocumentAcknowledged ||
-                                  isDocumentCompleted
+                                  isDocumentCompleted ||
+                                  verificationState === false
                                 }
                                 onClick={() => {
                                   if (
                                     !isDocumentAcknowledged ||
-                                    isDocumentCompleted
+                                    isDocumentCompleted ||
+                                    verificationState === false
                                   ) {
                                     return;
                                   }
@@ -664,87 +724,74 @@ export function AdditionalDocumentUpload({
                       </div>
                     )}
 
-                    <div className="space-y-3 border-t border-gray-100 pt-4">
-                      <p className="text-sm font-semibold text-gray-700">
-                        สถานะการตรวจสอบ:
-                      </p>
-
-                      {canVerify ? (
-                        <div className="flex flex-wrap gap-3">
-                          {(() => {
-                            const correctDisabled =
-                              !existingFile || verificationState === true;
-                            const incorrectDisabled =
-                              !existingFile || verificationState === false;
-                            return (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className={
-                                    verificationState === true
-                                      ? "h-10 rounded-sm border-emerald-500 bg-emerald-500 px-6 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-60 disabled:pointer-events-none"
-                                      : "h-10 rounded-sm border-emerald-200 bg-white px-6 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-60 disabled:pointer-events-none"
-                                  }
-                                  onClick={() =>
-                                    handleVerificationChange(index, true)
-                                  }
-                                  disabled={correctDisabled}
-                                >
-                                  <Check className="mr-2 h-4 w-4" />
-                                  เอกสารถูกต้อง
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className={
-                                    verificationState === false
-                                      ? "h-10 rounded-sm border-red-500 bg-red-500 px-6 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60 disabled:pointer-events-none"
-                                      : "h-10 rounded-sm border-red-200 bg-white px-6 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 disabled:pointer-events-none"
-                                  }
-                                  onClick={() =>
-                                    handleIncorrectVerification(index, doc)
-                                  }
-                                  disabled={incorrectDisabled}
-                                >
-                                  <AlertCircle className="mr-2 h-4 w-4" />
-                                  เอกสารไม่ถูกต้อง
-                                </Button>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          {verificationState === true && (
-                            <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white">
-                              <Check className="h-4 w-4" /> เอกสารถูกต้อง
-                            </span>
-                          )}
-                          {verificationState === false && (
-                            <span className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white">
-                              <AlertCircle className="h-4 w-4" />{" "}
-                              เอกสารไม่ถูกต้อง
-                            </span>
-                          )}
-                          {isPendingVerification && (
-                            <span className="inline-flex items-center gap-2 rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700">
-                              <AlertCircle className="h-4 w-4" /> ยังไม่ตรวจสอบ
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {existingFile?.isVerified === false &&
-                        existingFile.verificationComment && (
-                          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                            <p className="font-semibold">ความคิดเห็น:</p>
-                            <p className="whitespace-pre-line text-red-600">
-                              {existingFile.verificationComment}
+                    {/* Only show verification status section for admin and district_manager */}
+                    {/* For branch users, show only verification comment when document is incorrect */}
+                    {(canVerify || (existingFile?.isVerified === false && existingFile.verificationComment)) && (
+                      <div className="space-y-3 border-t border-gray-100 pt-4">
+                        {canVerify && (
+                          <>
+                            <p className="text-sm font-semibold text-gray-700">
+                              สถานะการตรวจสอบ:
                             </p>
-                          </div>
+
+                            <div className="flex flex-wrap gap-3">
+                              {(() => {
+                                const correctDisabled =
+                                  !existingFile || verificationState === true;
+                                const incorrectDisabled =
+                                  !existingFile || verificationState === false;
+                                return (
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className={
+                                        verificationState === true
+                                          ? "h-10 rounded-sm border-emerald-500 bg-emerald-500 px-6 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-60 disabled:pointer-events-none"
+                                          : "h-10 rounded-sm border-emerald-200 bg-white px-6 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-60 disabled:pointer-events-none"
+                                      }
+                                      onClick={() =>
+                                        handleVerificationChange(index, true)
+                                      }
+                                      disabled={correctDisabled}
+                                    >
+                                      <Check className="mr-2 h-4 w-4" />
+                                      เอกสารถูกต้อง
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className={
+                                        verificationState === false
+                                          ? "h-10 rounded-sm border-red-500 bg-red-500 px-6 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60 disabled:pointer-events-none"
+                                          : "h-10 rounded-sm border-red-200 bg-white px-6 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 disabled:pointer-events-none"
+                                      }
+                                      onClick={() =>
+                                        handleIncorrectVerification(index, doc)
+                                      }
+                                      disabled={incorrectDisabled}
+                                    >
+                                      <AlertCircle className="mr-2 h-4 w-4" />
+                                      เอกสารไม่ถูกต้อง
+                                    </Button>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </>
                         )}
-                    </div>
+
+                        {existingFile?.isVerified === false &&
+                          existingFile.verificationComment && (
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                              <p className="font-semibold">ความคิดเห็น:</p>
+                              <p className="whitespace-pre-line text-red-600">
+                                {existingFile.verificationComment}
+                              </p>
+                            </div>
+                          )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

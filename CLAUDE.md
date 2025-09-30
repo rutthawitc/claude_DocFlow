@@ -157,6 +157,15 @@ This application manages document workflow across regional branches:
 - System alert broadcasting with severity levels
 - Configurable message formatting and notification types
 
+#### Due Date Notification Service (`src/lib/services/due-date-notification-service.ts`)
+
+- Automated monitoring of additional document due dates
+- Smart categorization by urgency (overdue, today, soon)
+- Daily scheduled notifications via Telegram
+- Statistics tracking and reporting
+- Integration with cron jobs for automated execution
+- See [Due Date Notifications Documentation](docs/DUE_DATE_NOTIFICATIONS.md) for details
+
 #### Validation Middleware (`src/lib/validation/middleware.ts`)
 
 - Zod-based request validation for all API endpoints
@@ -212,6 +221,10 @@ REDIS_KEY_PREFIX=docflow:
 # Optional: Document Upload Configuration
 NEXT_PUBLIC_MONTH_YEAR_FUTURE_YEARS=1
 NEXT_PUBLIC_MONTH_YEAR_PAST_YEARS=1
+
+# Optional: Cron Job Secret for Automated Notifications
+# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+CRON_SECRET=your-secure-cron-secret-key
 ```
 
 ## Development Notes
@@ -322,6 +335,13 @@ The dropdown will show months from 2567 to 2571 (Buddhist era).
 
 - `GET /api/test-maintenance` - Check maintenance mode status (development)
 - `POST /api/test-maintenance` - Toggle maintenance mode (development)
+
+#### Due Date Notification API
+
+- `GET /api/notifications/due-dates` - Get due date statistics (admin/district_manager)
+- `POST /api/notifications/due-dates` - Manually trigger due date notifications (admin/district_manager)
+- `GET /api/cron/due-date-notifications` - Automated cron endpoint (protected by CRON_SECRET)
+- See [Due Date Notifications Documentation](docs/DUE_DATE_NOTIFICATIONS.md) for setup and usage
 
 #### Rate Limiting
 

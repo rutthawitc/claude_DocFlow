@@ -72,3 +72,13 @@ export function isSecondDateAfterFirst(firstDate: string, secondDate: string): b
 
   return date2 > date1;
 }
+
+/**
+ * Get default due date for additional documents (5 business days from now)
+ * @returns Formatted date string (YYYY-MM-DD) for 5 business days from now
+ */
+export function getDefaultAdditionalDocDueDate(): string {
+  const currentDate = getCurrentThaiDate();
+  const dueDate = addBusinessDays(currentDate, 5);
+  return formatDateToString(dueDate);
+}
