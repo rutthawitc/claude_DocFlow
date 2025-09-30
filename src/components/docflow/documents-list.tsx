@@ -302,7 +302,7 @@ function VerificationStatus({
               <Clock className="h-3 w-3 text-orange-600" />
             </div>
             <span className="text-orange-700 font-medium animate-pulse">
-              ยังไม่ตรวจสอบ {verificationData.notUploaded} ฉบับ
+              ยังไม่มีไฟล์แนบ {verificationData.notUploaded} ฉบับ
             </span>
           </div>
         )}
@@ -897,7 +897,7 @@ export function DocumentsList({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700"
+                            className="border-blue-500 bg-blue-500 text-white hover:bg-blue-600 hover:border-blue-600"
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             ดูรายละเอียดเอกสาร
@@ -1105,7 +1105,7 @@ export function DocumentsList({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full justify-start hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all duration-200"
+                            className="w-full justify-start border-blue-500 bg-blue-500 text-white hover:bg-blue-600 hover:border-blue-600 transition-all duration-200"
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             ดูรายละเอียดเอกสาร
