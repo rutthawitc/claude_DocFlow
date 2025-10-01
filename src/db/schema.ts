@@ -109,6 +109,7 @@ export const documents = pgTable('documents', {
   sendBackOriginalDocument: boolean('send_back_original_document').default(false),
   sendBackDate: date('send_back_date'),
   deadlineDate: date('deadline_date'),
+  receivedPaperDocDate: date('received_paper_doc_date'), // Date when admin received the paper document
   status: varchar('status', { length: 50 }).notNull().default('sent_to_branch'),
   uploaderId: integer('uploader_id').notNull().references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),

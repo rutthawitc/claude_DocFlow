@@ -62,6 +62,7 @@ interface Document {
   sendBackOriginalDocument?: boolean;
   sendBackDate?: string;
   deadlineDate?: string;
+  receivedPaperDocDate?: string;
   status: string;
   uploaderId: number;
   createdAt: string;
@@ -144,6 +145,7 @@ export function DocumentDetail({
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [receivingPaper, setReceivingPaper] = useState(false);
 
   // Fetch document details
   useEffect(() => {
@@ -279,6 +281,40 @@ export function DocumentDetail({
     }
   };
 
+  // Handle receive paper document
+  const handleReceivePaper = async () => {
+    if (!document) return;
+
+    try {
+      setReceivingPaper(true);
+      const response = await fetch(`/api/documents/${document.id}/receive-paper`, {
+        method: 'PATCH',
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Update local document state
+        setDocument((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            receivedPaperDocDate: result.data.receivedDate,
+          };
+        });
+        toast.success('บันทึกการรับเอกสารต้นฉบับสำเร็จ');
+      } else {
+        throw new Error(result.error || 'Failed to mark as received');
+      }
+    } catch (error) {
+      console.error('Receive paper error:', error);
+      toast.error('ไม่สามารถบันทึกการรับเอกสารได้');
+    } finally {
+      setReceivingPaper(false);
+    }
+  };
+
   // Check user permissions
   const canUpdateStatus = () => {
     return (
@@ -286,6 +322,10 @@ export function DocumentDetail({
       userRoles.includes("branch_manager") ||
       userRoles.includes("admin")
     );
+  };
+
+  const isAdmin = () => {
+    return userRoles.includes("admin") || userRoles.includes("district_manager");
   };
 
   const canAddComment = () => {
@@ -501,49 +541,105 @@ export function DocumentDetail({
           {/* Send Original Document Card */}
           {document.sendBackOriginalDocument && (
             <div className="mt-8">
-              <Card className="border-orange-200 bg-orange-50 rounded-lg">
+              <Card
+                className={`rounded-lg ${
+                  document.receivedPaperDocDate
+                    ? "border-green-200 bg-green-50"
+                    : "border-orange-200 bg-orange-50"
+                }`}
+              >
                 <CardContent className="p-4">
-                  {/* Header with tag icon */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <Tag className="h-4 w-4 text-orange-600" />
-                    <span className="text-sm text-orange-700 font-medium">
-                    ส่งเอกสารต้นฉบับกลับ
-                    {document.sendBackDate &&
-                      ` เมื่อวันที่ ${format(new Date(document.sendBackDate), "dd MMMM yyyy", { locale: th })}`}
-                    </span>
-                  </div>
+                  {document.receivedPaperDocDate ? (
+                    // Green card - Already received
+                    <>
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-sm text-green-700 font-medium">
+                          ส่งเอกสารต้นฉบับกลับ
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-6 w-6 text-green-600 mt-1" />
+                        <div>
+                          <h3 className="text-lg font-semibold text-green-700">
+                            ได้รับเอกสารต้นฉบับแล้ว
+                          </h3>
+                          <p className="text-sm text-green-600">
+                            เมื่อวันที่ {format(new Date(document.receivedPaperDocDate), "dd MMMM yyyy", { locale: th })}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    // Orange card - Not received yet
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Tag className="h-4 w-4 text-orange-600" />
+                          <span className="text-sm text-orange-700 font-medium">
+                            ส่งเอกสารต้นฉบับกลับ
+                            {document.sendBackDate &&
+                              ` เมื่อวันที่ ${format(new Date(document.sendBackDate), "dd MMMM yyyy", { locale: th })}`}
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* Main content with hourglass icon */}
-                  <div className="flex items-center gap-3 mb-1">
-                    <Hourglass className="h-6 w-6 text-red-600" />
-                    <div>
-                    <h3 className="text-lg font-semibold text-red-700">
-                      {document.deadlineDate &&
-                        (() => {
-                          const deadline = new Date(document.deadlineDate);
-                          const today = new Date();
-                          const diffTime = deadline.getTime() - today.getTime();
-                          const diffDays = Math.ceil(
-                            diffTime / (1000 * 60 * 60 * 24),
-                          );
+                      {/* Deadline info */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <Hourglass className="h-6 w-6 text-red-600" />
+                        <div>
+                          <h3 className="text-lg font-semibold text-red-700">
+                            {document.deadlineDate &&
+                              (() => {
+                                const deadline = new Date(document.deadlineDate);
+                                const today = new Date();
+                                const diffTime = deadline.getTime() - today.getTime();
+                                const diffDays = Math.ceil(
+                                  diffTime / (1000 * 60 * 60 * 24),
+                                );
 
-                          if (diffDays < 0) {
-                            // Overdue - show positive number of days overdue
-                            const overdueDays = Math.abs(diffDays);
-                            return `เกินกำหนด ${overdueDays} วัน`;
-                          } else if (diffDays === 0) {
-                            return `วันนี้เป็นกำหนดส่ง`;
-                          } else {
-                            return `เหลืออีก ${diffDays} วัน`;
-                          }
-                        })()}
-                    </h3>
-                    <p className="text-sm text-red-600">
-                      {document.deadlineDate &&
-                        `กำหนดส่ง: ${format(new Date(document.deadlineDate), "dd MMMM yyyy", { locale: th })}`}
-                    </p>
-                    </div>
-                  </div>
+                                if (diffDays < 0) {
+                                  const overdueDays = Math.abs(diffDays);
+                                  return `เกินกำหนด ${overdueDays} วัน`;
+                                } else if (diffDays === 0) {
+                                  return `วันนี้เป็นกำหนดส่ง`;
+                                } else {
+                                  return `เหลืออีก ${diffDays} วัน`;
+                                }
+                              })()}
+                          </h3>
+                          <p className="text-sm text-red-600">
+                            {document.deadlineDate &&
+                              `กำหนดส่ง: ${format(new Date(document.deadlineDate), "dd MMMM yyyy", { locale: th })}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Admin action buttons */}
+                      {isAdmin() && document.status === 'sent_back_to_district' && (
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            onClick={handleReceivePaper}
+                            disabled={receivingPaper}
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            {receivingPaper ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                กำลังบันทึก...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                รับเอกสารฉบับจริงแล้ว
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>
