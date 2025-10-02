@@ -119,6 +119,7 @@ const STATUS_COLORS = {
   sent_to_branch: "bg-orange-100 text-orange-700 border-orange-200",
   acknowledged: "bg-green-100 text-green-700 border-green-200",
   sent_back_to_district: "bg-blue-100 text-blue-700 border-blue-200",
+  all_checked: "bg-green-100 text-green-700 border-green-200",
   complete: "bg-emerald-100 text-emerald-700 border-emerald-200",
 };
 
@@ -127,6 +128,7 @@ const STATUS_LABELS = {
   sent_to_branch: "เอกสารจากเขต",
   acknowledged: "รับทราบแล้ว",
   sent_back_to_district: "ส่งกลับเขต",
+  all_checked: "ตรวจสอบแล้ว",
   complete: "เสร็จสิ้น",
 };
 

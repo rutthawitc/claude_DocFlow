@@ -30,7 +30,7 @@ export interface DocumentNotificationData {
   branchName: string;
   userName: string;
   userFullName: string;
-  action: 'uploaded' | 'sent' | 'acknowledged' | 'sent_back' | 'completed';
+  action: 'uploaded' | 'sent' | 'acknowledged' | 'sent_back' | 'all_checked' | 'completed';
   timestamp: Date;
   comment?: string;
 }
@@ -324,6 +324,8 @@ export class NotificationService {
         return 'documentAcknowledged';
       case 'sent_back':
         return 'documentSentBack';
+      case 'all_checked':
+        return 'documentAllChecked';
       case 'completed':
         return 'documentCompleted';
       default:
@@ -357,6 +359,10 @@ export class NotificationService {
       case 'sent_back':
         emoji = '🔄';
         actionText = 'ถูกส่งกลับจากสาขา';
+        break;
+      case 'all_checked':
+        emoji = '✅✔️';
+        actionText = 'ตรวจสอบเอกสารครบถ้วนแล้ว';
         break;
       case 'completed':
         emoji = '📋✅';

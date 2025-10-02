@@ -62,6 +62,7 @@ interface AdditionalDocumentUploadProps {
   additionalDocsDueDates?: string[];
   userRoles?: string[];
   documentStatus?: string;
+  additionalDocsReceivedDate?: string;
   onFileUploaded?: () => void;
 }
 
@@ -71,6 +72,7 @@ export function AdditionalDocumentUpload({
   additionalDocsDueDates = [],
   userRoles = [],
   documentStatus = "",
+  additionalDocsReceivedDate,
   onFileUploaded,
 }: AdditionalDocumentUploadProps) {
   const [uploadingItems, setUploadingItems] = useState<Set<number>>(new Set());
@@ -91,6 +93,8 @@ export function AdditionalDocumentUpload({
       itemIndex: number;
       itemName: string;
     } | null>(null);
+  const [receivingAdditionalDocs, setReceivingAdditionalDocs] = useState(false);
+  const [localReceivedDate, setLocalReceivedDate] = useState<string | undefined>(additionalDocsReceivedDate);
 
   // Check if user can upload files
   const canUpload =
@@ -400,6 +404,38 @@ export function AdditionalDocumentUpload({
     setPendingIncorrectVerification(null);
   };
 
+  // Handle receive additional documents
+  const handleReceiveAdditionalDocs = async () => {
+    try {
+      setReceivingAdditionalDocs(true);
+      const response = await fetch(
+        `/api/documents/${documentId}/receive-additional-docs`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setLocalReceivedDate(result.data.receivedDate);
+        toast.success("บันทึกการรับเอกสารเพิ่มเติมสำเร็จ");
+
+        if (onFileUploaded) {
+          onFileUploaded();
+        }
+      } else {
+        throw new Error(result.error || "Failed to mark as received");
+      }
+    } catch (error) {
+      console.error("Receive additional docs error:", error);
+      toast.error("ไม่สามารถบันทึกการรับเอกสารเพิ่มเติมได้");
+    } finally {
+      setReceivingAdditionalDocs(false);
+    }
+  };
+
   // Format file size
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -411,6 +447,11 @@ export function AdditionalDocumentUpload({
 
   // Calculate days until due date and get status
   const getDueDateStatus = (dueDate: string | null) => {
+    // If documents have been received, show green "received" status
+    if (localReceivedDate) {
+      return { status: 'received', days: 0, color: 'text-green-600 bg-green-50 border-green-200' };
+    }
+
     if (!dueDate) return null;
 
     const today = new Date();
@@ -475,14 +516,46 @@ export function AdditionalDocumentUpload({
       <Card>
         <CardContent className="p-6">
           {/* All documents uploaded indicator */}
-          {allDocsUploaded && (
+          {allDocsUploaded && !localReceivedDate && (
+            <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">
+                    {allDocsVerified
+                      ? "ตรวจสอบเอกสารครบแล้ว"
+                      : "เอกสารแนบครบแล้วกำลังตรวจสอบ"}
+                  </span>
+                </div>
+                {/* Show button only for admin/district_manager when status is sent_back_to_district and all docs verified */}
+                {canVerify && documentStatus === 'sent_back_to_district' && allDocsVerified && (
+                  <Button
+                    onClick={handleReceiveAdditionalDocs}
+                    disabled={receivingAdditionalDocs}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {receivingAdditionalDocs ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        กำลังบันทึก...
+                      </>
+                    ) : (
+                      'รับเอกสารเพิ่มเติมแล้ว'
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Show received confirmation */}
+          {localReceivedDate && (
             <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 <span className="text-sm font-medium text-green-700">
-                  {allDocsVerified
-                    ? "ตรวจสอบเอกสารครบแล้ว กรุณาส่งต้นฉบับ"
-                    : "เอกสารแนบครบแล้วกำลังตรวจสอบ"}
+                  รับเอกสารเพิ่มเติมแล้วเมื่อวันที่ {formatDueDate(localReceivedDate)}
                 </span>
               </div>
             </div>
@@ -513,6 +586,15 @@ export function AdditionalDocumentUpload({
                               {doc}
                             </p>
                             {(() => {
+                              // If documents have been received by admin, show received date for all users
+                              if (localReceivedDate) {
+                                return (
+                                  <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium text-green-600 bg-green-50 border-green-200">
+                                    รับเอกสารแล้วเมื่อวันที่ {formatDueDate(localReceivedDate)}
+                                  </span>
+                                );
+                              }
+
                               const dueDate = existingFile?.dueDate || additionalDocsDueDates[index];
                               const dueDateStatus = getDueDateStatus(dueDate);
                               if (!dueDateStatus) return null;

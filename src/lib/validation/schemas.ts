@@ -212,14 +212,15 @@ export const documentUpdateSchema = z.object({
 export const documentStatusUpdateSchema = z.object({
   status: z.enum([
     DocumentStatus.DRAFT,
-    DocumentStatus.SENT_TO_BRANCH, 
+    DocumentStatus.SENT_TO_BRANCH,
     DocumentStatus.ACKNOWLEDGED,
     DocumentStatus.SENT_BACK_TO_DISTRICT,
+    DocumentStatus.ALL_CHECKED,
     DocumentStatus.COMPLETE
   ], {
     errorMap: () => ({ message: 'Invalid document status' })
   }),
-  
+
   comment: z.string()
     .max(1000, 'Comment must be less than 1000 characters')
     .trim()

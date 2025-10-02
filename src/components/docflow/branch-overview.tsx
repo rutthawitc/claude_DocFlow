@@ -55,7 +55,9 @@ const STATUS_COLORS = {
   draft: 'bg-gray-100 text-gray-700',
   sent_to_branch: 'bg-orange-100 text-orange-700',
   acknowledged: 'bg-green-100 text-green-700',
-  sent_back_to_district: 'bg-blue-100 text-blue-700'
+  sent_back_to_district: 'bg-blue-100 text-blue-700',
+  all_checked: 'bg-green-100 text-green-700',
+  complete: 'bg-emerald-100 text-emerald-700'
 };
 
 export function BranchOverview({ userRoles = [], userBranchBaCode }: BranchOverviewProps) {

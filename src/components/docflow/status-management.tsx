@@ -29,6 +29,10 @@ interface StatusManagementProps {
   documentId: number;
   currentStatus: DocumentStatus;
   userRoles: string[];
+  receivedPaperDocDate?: string | null;
+  additionalDocsReceivedDate?: string | null;
+  sendBackOriginalDocument?: boolean;
+  hasAdditionalDocs?: boolean;
   onStatusUpdate?: (newStatus: DocumentStatus) => void;
 }
 
@@ -48,11 +52,15 @@ interface AdditionalFile {
   updatedAt: string;
 }
 
-export function StatusManagement({ 
-  documentId, 
-  currentStatus, 
+export function StatusManagement({
+  documentId,
+  currentStatus,
   userRoles,
-  onStatusUpdate 
+  receivedPaperDocDate,
+  additionalDocsReceivedDate,
+  sendBackOriginalDocument,
+  hasAdditionalDocs,
+  onStatusUpdate
 }: StatusManagementProps) {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -146,6 +154,8 @@ export function StatusManagement({
         return <CheckCircle className="w-4 h-4" />;
       case DocumentStatus.SENT_BACK_TO_DISTRICT:
         return <RotateCcw className="w-4 h-4" />;
+      case DocumentStatus.ALL_CHECKED:
+        return <CheckCircle className="w-4 h-4" />;
       case DocumentStatus.COMPLETE:
         return <BookCheck className="w-4 h-4" />;
       default:
@@ -163,6 +173,8 @@ export function StatusManagement({
         return 'bg-green-100 text-green-800 border-green-300';
       case DocumentStatus.SENT_BACK_TO_DISTRICT:
         return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case DocumentStatus.ALL_CHECKED:
+        return 'bg-green-100 text-green-800 border-green-300';
       case DocumentStatus.COMPLETE:
         return 'bg-emerald-100 text-emerald-800 border-emerald-300';
       default:
@@ -180,6 +192,8 @@ export function StatusManagement({
         return 'รับทราบแล้ว';
       case DocumentStatus.SENT_BACK_TO_DISTRICT:
         return 'ส่งกลับเขต';
+      case DocumentStatus.ALL_CHECKED:
+        return 'ตรวจสอบแล้ว';
       case DocumentStatus.COMPLETE:
         return 'เสร็จสิ้น';
       default:
@@ -246,6 +260,44 @@ export function StatusManagement({
             requiresComment: true
           });
         }
+        // Show "ตรวจสอบแล้ว" button only for admin/district_manager
+        // when ALL required documents are received
+        if (canComplete) {
+          // Check if paper document is required and received
+          const paperDocRequired = sendBackOriginalDocument === true;
+          const paperDocReceived = !!receivedPaperDocDate;
+          const paperDocConditionMet = !paperDocRequired || (paperDocRequired && paperDocReceived);
+
+          // Check if additional docs are required and received
+          const additionalDocsRequired = hasAdditionalDocs === true;
+          const additionalDocsReceived = !!additionalDocsReceivedDate;
+          const additionalDocsConditionMet = !additionalDocsRequired || (additionalDocsRequired && additionalDocsReceived);
+
+          // Show button only if ALL required documents are received
+          const allRequiredDocsReceived = paperDocConditionMet && additionalDocsConditionMet;
+
+          // At least one type of document must be required
+          const hasRequiredDocs = paperDocRequired || additionalDocsRequired;
+
+          if (allRequiredDocsReceived && hasRequiredDocs) {
+            actions.push({
+              status: DocumentStatus.ALL_CHECKED,
+              label: 'ตรวจสอบแล้ว',
+              variant: 'outline'
+            });
+          }
+        }
+        break;
+
+      case DocumentStatus.ALL_CHECKED:
+        if (isUploader) {
+          actions.push({
+            status: DocumentStatus.SENT_TO_BRANCH,
+            label: 'เอกสารจากเขตใหม่',
+            variant: 'default',
+            requiresComment: true
+          });
+        }
         if (canComplete) {
           actions.push({
             status: DocumentStatus.COMPLETE,
@@ -276,7 +328,7 @@ export function StatusManagement({
 
   const updateStatus = async (newStatus: DocumentStatus, statusComment: string) => {
     setIsUpdating(true);
-    
+
     try {
       const response = await fetch(`/api/documents/${documentId}/status`, {
         method: 'PATCH',
@@ -295,14 +347,17 @@ export function StatusManagement({
 
       // Update local state immediately for instant UI feedback
       onStatusUpdate?.(newStatus);
-      
+
       toast.success('อัปเดตสถานะสำเร็จ');
-      
+
       if (showCommentDialog) {
         setShowCommentDialog(false);
         setComment('');
         setPendingStatus(null);
       }
+
+      // Refresh router to revalidate cache and update UI
+      router.refresh();
 
     } catch (error) {
       console.error('Error updating status:', error);

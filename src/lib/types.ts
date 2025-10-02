@@ -2,9 +2,10 @@
 
 export enum DocumentStatus {
   DRAFT = "draft",
-  SENT_TO_BRANCH = "sent_to_branch", 
+  SENT_TO_BRANCH = "sent_to_branch",
   ACKNOWLEDGED = "acknowledged",
   SENT_BACK_TO_DISTRICT = "sent_back_to_district",
+  ALL_CHECKED = "all_checked",
   COMPLETE = "complete"
 }
 
@@ -47,6 +48,8 @@ export interface Document {
   sendBackOriginalDocument?: boolean;
   sendBackDate?: Date;
   deadlineDate?: Date;
+  receivedPaperDocDate?: Date;
+  additionalDocsReceivedDate?: Date;
   status: string;
   uploaderId: number;
   createdAt: Date;
@@ -123,6 +126,8 @@ export interface DocumentUploadData {
   sendBackOriginalDocument?: boolean;
   sendBackDate?: string;
   deadlineDate?: string;
+  receivedPaperDocDate?: string;
+  additionalDocsReceivedDate?: string;
 }
 
 export interface DocumentFilters {

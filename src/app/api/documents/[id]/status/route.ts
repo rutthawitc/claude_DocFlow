@@ -72,13 +72,34 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       }
     }
 
+    // Validation for ALL_CHECKED status transition
+    if (status === DocumentStatus.ALL_CHECKED) {
+      // Only admin, district_manager can mark as all_checked
+      const canMarkChecked = roles.includes('admin') || roles.includes('district_manager');
+
+      if (!canMarkChecked) {
+        return NextResponse.json(
+          { success: false, error: 'Only admin or district manager can mark documents as checked' },
+          { status: 403 }
+        );
+      }
+
+      // Can only mark as all_checked from sent_back_to_district status
+      if (currentDocument.status !== DocumentStatus.SENT_BACK_TO_DISTRICT) {
+        return NextResponse.json(
+          { success: false, error: 'Documents can only be marked as checked from sent_back_to_district status' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validation for COMPLETE status transition
     if (status === DocumentStatus.COMPLETE) {
       // Only admin, district_manager, uploader can mark as complete
-      const canComplete = roles.includes('admin') || 
-                         roles.includes('district_manager') || 
+      const canComplete = roles.includes('admin') ||
+                         roles.includes('district_manager') ||
                          roles.includes('uploader');
-      
+
       if (!canComplete) {
         return NextResponse.json(
           { success: false, error: 'Only admin, district manager, or uploader can mark documents as complete' },
@@ -86,10 +107,10 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
         );
       }
 
-      // Can only mark as complete from sent_back_to_district status
-      if (currentDocument.status !== DocumentStatus.SENT_BACK_TO_DISTRICT) {
+      // Can only mark as complete from all_checked status
+      if (currentDocument.status !== DocumentStatus.ALL_CHECKED) {
         return NextResponse.json(
-          { success: false, error: 'Documents can only be marked as complete from sent_back_to_district status' },
+          { success: false, error: 'Documents can only be marked as complete from all_checked status' },
           { status: 400 }
         );
       }
@@ -131,14 +152,16 @@ export async function PATCH(request: NextRequest, { params: paramsPromise }: Rou
       });
       const userFullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username : 'Unknown User';
       
-      let notificationAction: 'sent' | 'acknowledged' | 'sent_back' | 'completed' | null = null;
-      
+      let notificationAction: 'sent' | 'acknowledged' | 'sent_back' | 'all_checked' | 'completed' | null = null;
+
       if (status === DocumentStatus.SENT_TO_BRANCH) {
         notificationAction = 'sent';
       } else if (status === DocumentStatus.ACKNOWLEDGED) {
         notificationAction = 'acknowledged';
       } else if (status === DocumentStatus.SENT_BACK_TO_DISTRICT) {
         notificationAction = 'sent_back';
+      } else if (status === DocumentStatus.ALL_CHECKED) {
+        notificationAction = 'all_checked';
       } else if (status === DocumentStatus.COMPLETE) {
         notificationAction = 'completed';
       }
