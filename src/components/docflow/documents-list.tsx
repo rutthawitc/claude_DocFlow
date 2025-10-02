@@ -24,6 +24,8 @@ import {
   BadgeCheck,
   BookCheck,
   ShieldX,
+  Check,
+  Bitcoin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +61,9 @@ interface Document {
   updatedAt: string;
   additionalDocs?: string[];
   commentCount?: number;
+  disbursementDate?: string;
+  disbursementConfirmed?: boolean;
+  disbursementPaid?: boolean;
   branch?: {
     id: number;
     name: string;
@@ -996,16 +1001,48 @@ export function DocumentsList({
                     {/* Header with Status */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="space-y-2">
-                        <Badge
-                          variant="outline"
-                          className={`${STATUS_COLORS[doc.status as keyof typeof STATUS_COLORS]} text-xs font-medium px-2 py-1`}
-                        >
-                          {
-                            STATUS_LABELS[
-                              doc.status as keyof typeof STATUS_LABELS
-                            ]
-                          }
-                        </Badge>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge
+                            variant="outline"
+                            className={`${STATUS_COLORS[doc.status as keyof typeof STATUS_COLORS]} text-xs font-medium px-2 py-1`}
+                          >
+                            {
+                              STATUS_LABELS[
+                                doc.status as keyof typeof STATUS_LABELS
+                              ]
+                            }
+                          </Badge>
+
+                          {/* Disbursement Status Pill */}
+                          {doc.disbursementDate && (
+                            <div
+                              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs ${
+                                doc.disbursementConfirmed
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              <span>
+                                รอบเบิกจ่าย: {format(new Date(doc.disbursementDate), "dd/MM/yyyy", {
+                                  locale: th,
+                                })}
+                              </span>
+                              {doc.disbursementConfirmed && (
+                                <Check className="h-3 w-3" />
+                              )}
+                            </div>
+                          )}
+
+                          {/* Disbursement Paid Icon */}
+                          {doc.disbursementPaid && (
+                            <div className="inline-flex items-center gap-2">
+                              <div className="inline-flex items-center justify-center w-6 h-6 bg-yellow-400 rounded-full">
+                                <Bitcoin className="h-4 w-4 text-yellow-900" />
+                              </div>
+                              <span className="text-xs text-muted-foreground">จ่ายแล้ว</span>
+                            </div>
+                          )}
+                        </div>
                         <div className="text-sm text-gray-500">
                           ประจำ: {doc.monthYear}
                         </div>

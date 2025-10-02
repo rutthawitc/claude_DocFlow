@@ -113,6 +113,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const userRoles = session?.user?.pwa?.roles || [];
   const isAdmin = userRoles.includes("admin");
   const isDistrictManager = userRoles.includes("district_manager");
+  const isBranchUser = userRoles.includes("branch_user") || userRoles.includes("branch_manager");
   const canAccessAdmin = isAdmin || isDistrictManager;
   const canAccessSettings = isAdmin || isDistrictManager;
   const canAccessReports = isAdmin || isDistrictManager;
@@ -135,6 +136,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             title: "อัปโหลดเอกสาร",
             href: "/documents/upload",
             icon: <Upload className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
+          },
+        ]
+      : []),
+    ...(isBranchUser && !canAccessAdmin
+      ? [
+          {
+            title: "รอบเบิกจ่าย",
+            href: "/branch/disbursement-rounds",
+            icon: <Calendar className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
           },
         ]
       : []),

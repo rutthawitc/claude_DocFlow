@@ -286,8 +286,11 @@ export function DisbursementList() {
                   )}
 
                   {doc.disbursementPaid && (
-                    <div className="inline-flex items-center justify-center w-8 h-8 bg-yellow-400 rounded-full">
-                      <Bitcoin className="h-5 w-5 text-yellow-900" />
+                    <div className="inline-flex items-center gap-2">
+                      <div className="inline-flex items-center justify-center w-8 h-8 bg-yellow-400 rounded-full">
+                        <Bitcoin className="h-5 w-5 text-yellow-900" />
+                      </div>
+                      <span className="text-sm text-muted-foreground">จ่ายเงินแล้ว</span>
                     </div>
                   )}
 

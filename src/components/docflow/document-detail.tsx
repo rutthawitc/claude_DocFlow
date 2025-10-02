@@ -430,14 +430,46 @@ export function DocumentDetail({
                     <BookCheck className="h-5 w-5 text-emerald-600" />
                   )}
                 </div>
-                <Badge
-                  variant="outline"
-                  className={
-                    STATUS_COLORS[document.status as keyof typeof STATUS_COLORS]
-                  }
-                >
-                  {STATUS_LABELS[document.status as keyof typeof STATUS_LABELS]}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={
+                      STATUS_COLORS[document.status as keyof typeof STATUS_COLORS]
+                    }
+                  >
+                    {STATUS_LABELS[document.status as keyof typeof STATUS_LABELS]}
+                  </Badge>
+
+                  {/* Disbursement Status Pill */}
+                  {document.disbursementDate && (
+                    <div
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+                        document.disbursementConfirmed
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      <span>
+                        รอบเบิกจ่าย: {format(new Date(document.disbursementDate), "dd/MM/yyyy", {
+                          locale: th,
+                        })}
+                      </span>
+                      {document.disbursementConfirmed && (
+                        <Check className="h-4 w-4" />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Disbursement Paid Icon */}
+                  {document.disbursementPaid && (
+                    <div className="inline-flex items-center gap-2">
+                      <div className="inline-flex items-center justify-center w-8 h-8 bg-yellow-400 rounded-full">
+                        <Bitcoin className="h-5 w-5 text-yellow-900" />
+                      </div>
+                      <span className="text-sm text-muted-foreground">จ่ายแล้ว</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
