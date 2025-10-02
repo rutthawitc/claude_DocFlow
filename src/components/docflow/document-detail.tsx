@@ -21,6 +21,8 @@ import {
   BookCheck,
   Tag,
   Hourglass,
+  Check,
+  Bitcoin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,6 +66,9 @@ interface Document {
   deadlineDate?: string;
   receivedPaperDocDate?: string;
   additionalDocsReceivedDate?: string;
+  disbursementDate?: string;
+  disbursementConfirmed?: boolean;
+  disbursementPaid?: boolean;
   status: string;
   uploaderId: number;
   createdAt: string;
@@ -693,6 +698,57 @@ export function DocumentDetail({
               />
             </CardContent>
           </Card>
+
+          {/* Disbursement Status */}
+          {(document.disbursementDate || document.disbursementConfirmed || document.disbursementPaid) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  สถานะการเบิกจ่าย
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {document.disbursementDate && (
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+                          document.disbursementConfirmed
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        <span>
+                          รอบเบิกจ่าย: {format(new Date(document.disbursementDate), "dd/MM/yyyy", { locale: th })}
+                        </span>
+                        {document.disbursementConfirmed && (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {document.disbursementPaid && (
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex items-center justify-center w-8 h-8 bg-yellow-400 rounded-full">
+                        <Bitcoin className="h-5 w-5 text-yellow-900" />
+                      </div>
+                      <span className="text-sm font-medium text-green-700">
+                        จ่ายเงินแล้ว
+                      </span>
+                    </div>
+                  )}
+
+                  {!document.disbursementDate && (
+                    <p className="text-sm text-muted-foreground">
+                      ยังไม่ได้กำหนดรอบเบิกจ่าย
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Status History */}
           {document.statusHistory && document.statusHistory.length > 0 && (
