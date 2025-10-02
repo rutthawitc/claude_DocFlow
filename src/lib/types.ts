@@ -50,6 +50,9 @@ export interface Document {
   deadlineDate?: Date;
   receivedPaperDocDate?: Date;
   additionalDocsReceivedDate?: Date;
+  disbursementDate?: Date;
+  disbursementConfirmed?: boolean;
+  disbursementPaid?: boolean;
   status: string;
   uploaderId: number;
   createdAt: Date;

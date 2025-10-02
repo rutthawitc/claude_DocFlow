@@ -111,6 +111,9 @@ export const documents = pgTable('documents', {
   deadlineDate: date('deadline_date'),
   receivedPaperDocDate: date('received_paper_doc_date'), // Date when admin received the paper document
   additionalDocsReceivedDate: date('additional_docs_received_date'), // Date when admin received all additional documents
+  disbursementDate: date('disbursement_date'), // Date set for disbursement round
+  disbursementConfirmed: boolean('disbursement_confirmed').default(false), // Confirmation that disbursement is approved
+  disbursementPaid: boolean('disbursement_paid').default(false), // Final confirmation that payment is completed
   status: varchar('status', { length: 50 }).notNull().default('sent_to_branch'),
   uploaderId: integer('uploader_id').notNull().references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),

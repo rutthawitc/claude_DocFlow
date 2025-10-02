@@ -23,6 +23,7 @@ import {
   Shield,
   Upload,
   Building2,
+  Calendar,
 } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
@@ -137,6 +138,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           },
         ]
       : []),
+    ...(canAccessAdmin
+      ? [
+          {
+            title: "บันทึกรอบเบิกจ่าย",
+            href: "/disbursement-rounds",
+            icon: <Calendar className={isMinimal ? "h-6 w-6" : "h-5 w-5"} />,
+          },
+        ]
+      : []),
     {
       title: "โปรไฟล์",
       href: "/profile",
@@ -161,7 +171,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           },
         ]
       : []),
-    
+
     // Settings - only for admins and district managers
     ...(canAccessSettings ? [{
       title: "ตั้งค่า",
