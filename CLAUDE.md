@@ -17,6 +17,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm db:push` - Push schema changes to database
 - `pnpm db:studio` - Open Drizzle Studio for database management
 - `pnpm docflow:init` - Initialize DocFlow data (branches, roles, permissions)
+- `pnpm docflow:init-ts` - TypeScript version of docflow initialization
+- `pnpm admin:create` - Create local admin user (interactive CLI)
 
 ### Docker Commands
 
