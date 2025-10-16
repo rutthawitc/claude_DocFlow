@@ -93,7 +93,7 @@ yarn-error.log*
 lerna-debug.log*
 
 # Claude AI & Development tools
-.claude/
+.claude/*
 .claude/settings.local.json
 
 # IDE & Editor files
