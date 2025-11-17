@@ -107,6 +107,8 @@ async function main() {
     console.log('  - Access the admin panel to assign user roles');
     console.log('  - Begin uploading documents');
 
+    process.exit(0);
+
   } catch (error) {
     console.error('❌ DocFlow initialization failed:', error);
     process.exit(1);

@@ -135,6 +135,7 @@ async function main() {
       console.log(`🔑 Roles: ${newAdmin.roles.join(', ')}`);
       console.log(`⚡ Permissions: ${newAdmin.permissions.length} permissions assigned`);
       console.log('\n🎉 You can now login with these credentials!');
+      process.exit(0);
     } else {
       console.error('❌ Failed to create local admin user');
       process.exit(1);

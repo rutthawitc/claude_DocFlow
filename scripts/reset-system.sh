@@ -3,14 +3,14 @@
 # ==============================================================================
 # DocFlow System Reset Script
 # ==============================================================================
-# 
-# This script resets the DocFlow system to a clean state by:
-# 1. Preserving local admin users (is_local_admin = true)
-# 2. Clearing all other data (documents, users, activities, etc.)
-# 3. Deleting all uploaded files
-# 4. Reinitializing system with default branches, roles, and permissions
-# 
-# WARNING: This will permanently delete all data except local admins!
+#
+# This script completely resets the DocFlow system to a clean state by:
+# 1. Dropping and recreating the entire database
+# 2. Deleting all uploaded files
+# 3. Running database initialization (pnpm init:db)
+# 4. Optionally creating a fresh admin user (pnpm admin:create)
+#
+# WARNING: THIS IS A DESTRUCTIVE OPERATION - ALL DATA WILL BE LOST!
 # ==============================================================================
 
 set -e  # Exit on any error
@@ -82,44 +82,34 @@ check_database() {
     print_status $GREEN "✅ Database connection successful"
 }
 
-# Function to backup local admins
-backup_local_admins() {
-    print_status $BLUE "💾 Backing up local admin users..."
-    
-    local backup_file="$PROJECT_ROOT/tmp/local_admins_backup_$(date +%Y%m%d_%H%M%S).sql"
-    
-    PGPASSWORD="$DB_PASSWORD" pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-        --data-only --table=users \
-        --where="is_local_admin = true" \
-        -f "$backup_file"
-    
+# Function to drop and recreate database
+drop_and_recreate_database() {
+    print_status $BLUE "🗄️  Dropping and recreating database..."
+
+    # Terminate all connections to the database
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "postgres" -c \
+        "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();" 2>/dev/null || true
+
+    # Drop the database
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "postgres" -c \
+        "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null
+
     if [ $? -eq 0 ]; then
-        print_status $GREEN "✅ Local admins backed up to: $backup_file"
-        echo "$backup_file"
+        print_status $GREEN "✅ Database dropped successfully"
     else
-        print_status $RED "❌ Failed to backup local admins!"
+        print_status $RED "❌ Failed to drop database"
         exit 1
     fi
-}
 
-# Function to get local admin data
-get_local_admin_data() {
-    print_status $BLUE "📋 Retrieving local admin data..."
-    
-    local temp_file=$(mktemp)
-    
-    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c \
-        "SELECT id, username, first_name, last_name, email, password, cost_center, ba, part, area, job_name, level, div_name, dep_name, org_name, position, created_at, updated_at 
-         FROM users 
-         WHERE is_local_admin = true;" > "$temp_file"
-    
-    if [ -s "$temp_file" ]; then
-        print_status $GREEN "✅ Found $(wc -l < "$temp_file") local admin(s)"
-        echo "$temp_file"
+    # Create new database
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "postgres" -c \
+        "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
+
+    if [ $? -eq 0 ]; then
+        print_status $GREEN "✅ Database created successfully"
     else
-        print_status $YELLOW "⚠️  No local admins found - will create clean system"
-        rm -f "$temp_file"
-        echo ""
+        print_status $RED "❌ Failed to create database"
+        exit 1
     fi
 }
 
@@ -171,88 +161,52 @@ clean_uploaded_files() {
     print_status $GREEN "✅ File cleanup complete: $total_deleted files ($(numfmt --to=iec $total_size)) deleted"
 }
 
-# Function to reset database
-reset_database() {
-    print_status $BLUE "🗄️  Resetting database..."
-    
-    local admin_data_file="$1"
-    
-    # SQL commands to reset database while preserving structure
-    local reset_sql=$(cat << 'EOF'
--- Disable triggers temporarily to avoid constraint issues
-SET session_replication_role = replica;
+# Function to initialize database
+initialize_database() {
+    print_status $BLUE "🔄 Initializing DocFlow database..."
 
--- Clear all data in correct order (respecting foreign keys)
-DELETE FROM activity_logs;
-DELETE FROM document_status_history;
-DELETE FROM additional_document_files;
-DELETE FROM comments;
-DELETE FROM documents;
-DELETE FROM role_permissions;
-DELETE FROM user_roles;
-DELETE FROM system_settings;
+    cd "$PROJECT_ROOT"
 
--- Clear non-admin users (preserve local admins)
-DELETE FROM users WHERE is_local_admin = false OR is_local_admin IS NULL;
+    # Set DATABASE_URL environment variable
+    export DATABASE_URL="postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
 
--- Clear all roles and permissions (will be recreated)
-DELETE FROM permissions;
-DELETE FROM roles;
+    print_status $BLUE "   Running pnpm init:db..."
 
--- Clear all branches (will be recreated) 
-DELETE FROM branches;
-
--- Re-enable triggers
-SET session_replication_role = DEFAULT;
-
--- Reset sequences to start fresh
-SELECT setval(pg_get_serial_sequence('documents', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('comments', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('additional_document_files', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('activity_logs', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('document_status_history', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('branches', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('roles', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('permissions', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('user_roles', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('role_permissions', 'id'), 1, false);
-SELECT setval(pg_get_serial_sequence('system_settings', 'id'), 1, false);
-EOF
-)
-    
-    # Execute reset SQL
-    echo "$reset_sql" | PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"
-    
-    if [ $? -eq 0 ]; then
-        print_status $GREEN "✅ Database reset completed"
-        
-        # Show remaining admin users
-        local admin_count=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM users WHERE is_local_admin = true;")
-        print_status $GREEN "✅ Preserved $admin_count local admin user(s)"
+    if pnpm init:db >> "$LOG_FILE" 2>&1; then
+        print_status $GREEN "   ✅ Database initialization completed"
     else
-        print_status $RED "❌ Database reset failed!"
+        print_status $RED "   ❌ Database initialization failed!"
+        print_status $YELLOW "   Check log file: $LOG_FILE"
         exit 1
     fi
 }
 
-# Function to reinitialize system
-reinitialize_system() {
-    print_status $BLUE "🔄 Reinitializing DocFlow system..."
-    
-    # Run DocFlow initialization script
-    if [ -f "$SCRIPT_DIR/init-docflow.ts" ]; then
-        print_status $BLUE "   Running DocFlow initialization..."
-        cd "$PROJECT_ROOT"
-        
-        if npx tsx scripts/init-docflow.ts >> "$LOG_FILE" 2>&1; then
-            print_status $GREEN "   ✅ DocFlow initialization completed"
+# Function to create admin user
+create_admin_user() {
+    print_status $BLUE "👤 Creating new admin user..."
+
+    cd "$PROJECT_ROOT"
+
+    # Set DATABASE_URL environment variable
+    export DATABASE_URL="postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
+
+    echo ""
+    read -p "Do you want to create a new admin user now? (y/n): " create_admin
+
+    if [[ "$create_admin" =~ ^[Yy]$ ]]; then
+        print_status $BLUE "   Running pnpm admin:create..."
+        echo ""
+
+        if pnpm admin:create >> "$LOG_FILE" 2>&1; then
+            print_status $GREEN "   ✅ Admin user created successfully"
         else
-            print_status $RED "   ❌ DocFlow initialization failed!"
+            print_status $RED "   ❌ Admin user creation failed!"
             print_status $YELLOW "   Check log file: $LOG_FILE"
-            exit 1
+            print_status $YELLOW "   You can create an admin user later with: pnpm admin:create"
         fi
     else
-        print_status $YELLOW "   ⚠️  DocFlow init script not found - skipping"
+        print_status $YELLOW "   Skipped admin user creation"
+        print_status $BLUE "   You can create an admin user later with: pnpm admin:create"
     fi
 }
 
@@ -279,35 +233,36 @@ show_system_status() {
 # Function to confirm reset action
 confirm_reset() {
     echo ""
-    print_status $RED "⚠️  WARNING: This will permanently delete ALL data except local admins!"
+    print_status $RED "⚠️  WARNING: THIS IS A DESTRUCTIVE OPERATION!"
     echo ""
-    echo "This action will:"
-    echo "  🗑️  Delete all documents and uploaded files"  
-    echo "  👥 Delete all non-admin users"
-    echo "  📊 Delete all activities and logs"
-    echo "  💬 Delete all comments"
-    echo "  🏢 Reset branches (will be recreated)"
-    echo "  🔐 Reset roles and permissions (will be recreated)"
-    echo "  ⚙️  Delete all system settings"
-    echo "  💾 Preserve only local admin users"
+    print_status $RED "This will completely reset the DocFlow system:"
     echo ""
-    
-    read -p "Are you absolutely sure you want to continue? (type 'yes' to confirm): " confirm
-    
+    echo "  - DROP the entire database and recreate it"
+    echo "  - DELETE all documents and uploaded files"
+    echo "  - DELETE all users (no data is preserved)"
+    echo "  - DELETE all activities and logs"
+    echo "  - DELETE all comments and roles/permissions"
+    echo "  - REINITIALIZE all branches, roles, and permissions"
+    echo ""
+    print_status $YELLOW "ALL DATA WILL BE PERMANENTLY LOST!"
+    echo ""
+
+    read -p "Type 'yes' to continue with full reset: " confirm
+
     if [ "$confirm" != "yes" ]; then
-        print_status $YELLOW "❌ Reset cancelled by user"
+        print_status $YELLOW "Reset cancelled by user"
         exit 0
     fi
-    
+
     echo ""
-    read -p "Last chance! Type 'RESET' to proceed: " final_confirm
-    
+    read -p "Final confirmation - Type 'RESET' to irreversibly reset the system: " final_confirm
+
     if [ "$final_confirm" != "RESET" ]; then
-        print_status $YELLOW "❌ Reset cancelled by user"
+        print_status $YELLOW "Reset cancelled by user"
         exit 0
     fi
-    
-    print_status $GREEN "✅ Reset confirmed - proceeding..."
+
+    print_status $GREEN "✅ Reset confirmed - proceeding with full system reset..."
 }
 
 # Main function
@@ -327,32 +282,35 @@ main() {
     
     echo ""
     print_status $BLUE "🏁 Starting system reset process..."
-    
+    echo ""
+
     # Step 1: Check database connection
     check_database
-    
-    # Step 2: Get local admin data for reference
-    local admin_data_file=$(get_local_admin_data)
-    
-    # Step 3: Clean uploaded files
+
+    # Step 2: Clean uploaded files
     clean_uploaded_files
-    
-    # Step 4: Reset database
-    reset_database "$admin_data_file"
-    
-    # Step 5: Reinitialize system
-    reinitialize_system
-    
+
+    # Step 3: Drop and recreate database
+    drop_and_recreate_database
+
+    # Step 4: Initialize database with schema and seed data
+    initialize_database
+
+    # Step 5: Create admin user (optional)
+    create_admin_user
+
     # Step 6: Show final status
     show_system_status
-    
-    # Cleanup temp files
-    [ -n "$admin_data_file" ] && [ -f "$admin_data_file" ] && rm -f "$admin_data_file"
-    
+
     echo ""
     print_status $GREEN "🎉 System reset completed successfully!"
-    print_status $BLUE "💡 You can now use the system as if it were newly installed"
-    print_status $BLUE "🔑 Your local admin accounts are preserved and ready to use"
+    print_status $BLUE "💡 The DocFlow system has been completely reset"
+    print_status $BLUE "📝 Log file: $LOG_FILE"
+    echo ""
+    print_status $YELLOW "Next steps:"
+    echo "  1. Start the development server: pnpm dev"
+    echo "  2. Log in with your admin credentials"
+    echo "  3. Begin using the freshly initialized system"
 }
 
 # Script usage

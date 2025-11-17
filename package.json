@@ -11,9 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "docflow:init": "node scripts/init-docflow-simple.js",
-    "docflow:init-ts": "./scripts/run-ts.sh scripts/init-docflow.ts",
-    "docflow:dev": "pnpm docflow:init && pnpm dev",
+    "init:db": "./scripts/run-ts.sh scripts/init-db.ts",
+    "init:db:legacy": "./scripts/run-ts.sh scripts/init-docflow.ts",
     "admin:create": "./scripts/run-ts.sh scripts/create-admin.ts"
   },
   "dependencies": {

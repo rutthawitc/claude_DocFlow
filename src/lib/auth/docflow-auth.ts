@@ -80,6 +80,8 @@ export class DocFlowAuth {
     try {
       // Define new roles for DocFlow
       const newRoles = [
+        { name: DOCFLOW_ROLES.ADMIN, description: 'ผู้ดูแลระบบ (System Administrator)' },
+        { name: DOCFLOW_ROLES.USER, description: 'ผู้ใช้งานทั่วไป (Regular User)' },
         { name: DOCFLOW_ROLES.UPLOADER, description: 'ผู้อัปโหลดเอกสาร' },
         { name: DOCFLOW_ROLES.BRANCH_USER, description: 'ผู้ใช้สาขา' },
         { name: DOCFLOW_ROLES.BRANCH_MANAGER, description: 'หัวหน้าสาขา' },

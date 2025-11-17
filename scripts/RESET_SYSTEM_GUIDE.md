@@ -2,28 +2,24 @@
 
 ## Overview
 
-The `reset-system.sh` script provides a complete system reset functionality for DocFlow, bringing the system back to a fresh installation state while preserving local admin accounts.
+The `reset-system.sh` script provides a complete system reset functionality for DocFlow, dropping and recreating the entire database from scratch, bringing the system back to a fresh installation state.
 
 ## What the Script Does
 
-### ✅ **Preserves**
-- **Local Admin Users**: All users with `is_local_admin = true`
-- **Database Structure**: All tables and indexes remain intact
-- **Application Code**: No code changes
-
-### 🗑️ **Deletes**
-- **All Documents**: Document records and uploaded PDF files
-- **All Non-Admin Users**: Regular users, branch users, etc.
-- **All Activities**: Activity logs and status history
-- **All Comments**: Document comments and discussions
-- **All Additional Files**: Uploaded additional document files
-- **System Settings**: Telegram settings, system configurations
+### 🗑️ **Deletes Everything**
+- **Complete Database Drop**: The entire database is dropped and recreated
+- **All Data**: All users, documents, comments, logs, activities, settings
+- **All Roles & Permissions**: All role and permission data
+- **All Branches**: All branch configuration
 - **Uploaded Files**: Everything in `uploads/` and `tmp/` directories
+- **Telegram Settings**: Settings stored in `tmp/`
 
-### 🔄 **Recreates**
+### 🔄 **Recreates Fresh**
+- **Empty Database**: Brand new schema created
 - **Branches**: All R6 region branches (22 branches)
-- **Roles & Permissions**: DocFlow role system
-- **Default Settings**: System defaults
+- **Roles & Permissions**: DocFlow role system with default permissions
+- **System Settings**: Default system configuration
+- **Optional Admin User**: Script prompts to create a fresh admin user
 
 ## Usage
 
@@ -32,21 +28,25 @@ The `reset-system.sh` script provides a complete system reset functionality for 
 ./scripts/reset-system.sh
 ```
 - Shows warnings and confirmations
-- Requires typing "yes" and "RESET" to confirm
-- Safe for production use
+- Requires typing "yes" for first confirmation
+- Requires typing "RESET" for final confirmation
+- Prompts for admin user creation
+- Logs all operations to `tmp/reset-system-YYYYMMDD_HHMMSS.log`
 
 ### Force Mode (No Prompts)
 ```bash
 ./scripts/reset-system.sh --force
 ```
-- **⚠️ DANGEROUS**: Skips all confirmations
-- Use only in automated scripts or development
-- **DO NOT use in production without extreme caution**
+- **EXTREMELY DANGEROUS**: Skips all confirmations
+- Does NOT skip admin user creation prompt
+- Use only in automated CI/CD scripts or development
+- **NEVER use in production**
 
 ### Help
 ```bash
 ./scripts/reset-system.sh --help
 ```
+- Shows usage information and configuration options
 
 ## Configuration
 
@@ -71,26 +71,32 @@ export PGPASSWORD=postgres
 
 ### 1. **Backup Important Data**
 ```bash
-# Backup database
-pg_dump -h localhost -p 5432 -U postgres docflow_db > backup.sql
+# Backup full database
+pg_dump -h localhost -p 5432 -U postgres docflow_db > backup_$(date +%Y%m%d_%H%M%S).sql
 
-# Backup uploaded files (if needed)
-tar -czf uploads_backup.tar.gz uploads/
+# Backup uploaded files
+tar -czf uploads_backup_$(date +%Y%m%d_%H%M%S).tar.gz uploads/
+
+# Backup any custom configuration
+tar -czf config_backup_$(date +%Y%m%d_%H%M%S).tar.gz tmp/ --exclude='tmp/tsx'
 ```
 
 ### 2. **Stop Application**
 ```bash
-# Stop the application to prevent conflicts
+# Stop the development server
+Ctrl+C  # If running in terminal
+
+# Or stop Docker containers
 docker-compose down
-# or
-pnpm dev # Stop if running
+
+# Verify no applications are using the database
+lsof -i :5432  # Check for connections on DB port
 ```
 
-### 3. **Verify Local Admins**
+### 3. **Verify Database Connectivity**
 ```bash
-# Check existing local admins
-PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c \
-  "SELECT username, email, created_at FROM users WHERE is_local_admin = true;"
+# Test database connection before running reset
+PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d docflow_db -c "SELECT 1;"
 ```
 
 ## Example Run
@@ -102,51 +108,67 @@ $ ./scripts/reset-system.sh
            DocFlow System Reset
 ================================================
 
-⚠️  WARNING: This will permanently delete ALL data except local admins!
+⚠️  WARNING: THIS IS A DESTRUCTIVE OPERATION!
 
-This action will:
-  🗑️  Delete all documents and uploaded files  
-  👥 Delete all non-admin users
-  📊 Delete all activities and logs
-  💬 Delete all comments
-  🏢 Reset branches (will be recreated)
-  🔐 Reset roles and permissions (will be recreated)
-  ⚙️  Delete all system settings
-  💾 Preserve only local admin users
+This will completely reset the DocFlow system:
 
-Are you absolutely sure you want to continue? (type 'yes' to confirm): yes
+  - DROP the entire database and recreate it
+  - DELETE all documents and uploaded files
+  - DELETE all users (no data is preserved)
+  - DELETE all activities and logs
+  - DELETE all comments and roles/permissions
+  - REINITIALIZE all branches, roles, and permissions
 
-Last chance! Type 'RESET' to proceed: RESET
+ALL DATA WILL BE PERMANENTLY LOST!
 
-✅ Reset confirmed - proceeding...
+Type 'yes' to continue with full reset: yes
+
+Final confirmation - Type 'RESET' to irreversibly reset the system: RESET
+
+✅ Reset confirmed - proceeding with full system reset...
 
 🏁 Starting system reset process...
+
 🔍 Checking database connection...
 ✅ Database connection successful
-📋 Retrieving local admin data...
-✅ Found 1 local admin(s)
+
 🗑️  Cleaning uploaded files...
-✅ File cleanup complete: 45 files (2.3MB) deleted
-🗄️  Resetting database...
-✅ Database reset completed
-✅ Preserved 1 local admin user(s)
-🔄 Reinitializing DocFlow system...
-✅ DocFlow initialization completed
+   Cleaning directory: /path/to/uploads
+   ✅ Cleaned 0 files (0B)
+   ✅ Removed telegram-settings.json
+
+🗄️  Dropping and recreating database...
+✅ Database dropped successfully
+✅ Database created successfully
+
+🔄 Initializing DocFlow database...
+   Running pnpm init:db...
+   ✅ Database initialization completed
+
+👤 Creating new admin user...
+   Do you want to create a new admin user now? (y/n): y
+   Running pnpm admin:create...
+   ✅ Admin user created successfully
 
 📊 System Status After Reset:
 Table                     Records
 -----                     -------
 users                     1
-roles                     4
-permissions              12
+roles                     5
+permissions              20
 branches                 22
 documents                 0
 comments                  0
 activity_logs             0
 
 ✅ System reset completed successfully!
-💡 You can now use the system as if it were newly installed
-🔑 Your local admin accounts are preserved and ready to use
+💡 The DocFlow system has been completely reset
+📝 Log file: /path/to/tmp/reset-system-20231117_160430.log
+
+Next steps:
+  1. Start the development server: pnpm dev
+  2. Log in with your admin credentials
+  3. Begin using the freshly initialized system
 ```
 
 ## Logging
@@ -224,11 +246,19 @@ chmod +x scripts/reset-system.sh
 - Verify database user has proper permissions
 - Ensure no other processes are accessing database
 
-### Issue: Local Admins Lost
-**Prevention**:
-- Always verify local admins exist before running
-- Use backup files created by the script
-- Test in development environment first
+### Issue: Database Operations Timeout
+**Solution**:
+```bash
+# Increase the connection timeout
+export PGCONNECT_TIMEOUT=30
+./scripts/reset-system.sh
+```
+
+### Issue: Admin User Creation Hangs
+**Solution**:
+- Press Ctrl+C to cancel
+- Check if stdin is properly connected
+- Run pnpm admin:create manually after reset completes
 
 ## Security Considerations
 
@@ -252,22 +282,35 @@ chmod +x scripts/reset-system.sh
 
 If you need to recover after a reset:
 
-### 1. **From Database Backup**
+### 1. **From Full Database Backup**
 ```bash
-# Restore full database backup
-psql -h localhost -p 5432 -U postgres -d docflow_db < backup.sql
+# Stop the application first
+docker-compose down
+
+# Restore full database backup (WARNING: This overwrites the reset database)
+psql -h localhost -p 5432 -U postgres -d docflow_db < backup_20231117_160430.sql
+
+# Restart the application
+docker-compose up
 ```
 
-### 2. **From Local Admin Backup**
+### 2. **From Uploaded Files Backup**
 ```bash
-# The script creates backups automatically in tmp/
-# Restore specific local admin backup if needed
+# Restore uploaded files from backup
+tar -xzf uploads_backup_20231117_160430.tar.gz -C ./
 ```
 
-### 3. **Partial Recovery**
-- Local admins are never deleted
-- System structure is preserved
-- Only data content is removed
+### 3. **Selective Recovery**
+If you only need specific data:
+```bash
+# Extract and restore specific documents
+pg_restore -h localhost -p 5432 -U postgres -d docflow_db -t documents backup.dump
+```
+
+### 4. **Point-in-Time Recovery**
+- If running with WAL archiving, use PostgreSQL PITR features
+- Requires PostgreSQL backup WAL files
+- Contact database administrator for assistance
 
 ## Best Practices
 

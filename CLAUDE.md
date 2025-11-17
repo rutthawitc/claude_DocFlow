@@ -14,10 +14,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Database Commands
 
 - `pnpm db:generate` - Generate Drizzle migrations
-- `pnpm db:push` - Push schema changes to database
+- `pnpm db:push` - Push schema changes to database (⚠️ may fail with constraints, use init:db instead)
 - `pnpm db:studio` - Open Drizzle Studio for database management
-- `pnpm docflow:init` - Initialize DocFlow data (branches, roles, permissions)
-- `pnpm docflow:init-ts` - TypeScript version of docflow initialization
+- `pnpm init:db` - **Complete database initialization** (branches, roles, permissions, indexes, settings)
+- `pnpm init:db:legacy` - Legacy initialization script (backup)
 - `pnpm admin:create` - Create local admin user (interactive CLI)
 
 ### Docker Commands
